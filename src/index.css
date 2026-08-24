@@ -13,23 +13,38 @@
   -webkit-font-smoothing: antialiased;
 }
 
+html, body { 
+  margin: 0; 
+  padding: 0;
+  width: 100vw;
+  max-width: 100%;
+  min-width: 320px; 
+  background: #f0f2f5; 
+  overflow-x: hidden;
+}
+
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; background: #f0f2f5; }
+
 button, input, select, textarea { font: inherit; }
 
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #0984e3; }
+
 @layer components {
-  .card { @apply rounded-xl bg-white p-[18px] shadow-[0_4px_10px_rgba(0,0,0,0.05)] transition-all duration-300; }
-  .card:hover { @apply -translate-y-1 shadow-[0_12px_20px_rgba(9,132,227,0.15)]; }
-  .btn { @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg px-4 py-2 text-sm font-bold transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none; }
+  .card { @apply rounded-xl bg-white p-3 sm:p-[18px] shadow-[0_4px_10px_rgba(0,0,0,0.05)] transition-all duration-300 max-w-full; }
+  .card:hover { @apply shadow-[0_12px_20px_rgba(9,132,227,0.15)]; }
+  .btn { @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg px-4 py-2 text-sm font-bold transition-all duration-300 hover:brightness-110 hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none; }
   .btn-primary { @apply bg-primary text-white; }
   .btn-success { @apply bg-success text-white; }
   .btn-danger { @apply bg-danger text-white; }
   .btn-warning { @apply bg-warning text-black; }
-  .field { @apply w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-base outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15 disabled:bg-slate-100 disabled:text-slate-500 disabled:border-transparent; }
+  .field { @apply w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:bg-slate-100 disabled:text-slate-500 disabled:border-transparent; }
 }
 
-.student-card { width: 310px; height: 185px; background: white; border-radius: 10px; position: relative; overflow: hidden; border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; break-inside: avoid; }
-.student-card .card-header { height: 35px; background: linear-gradient(90deg, #2c3e50, #0984e3); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; letter-spacing: 1px; }
+.student-card { width: 310px; height: 185px; background: white; border-radius: 10px; position: relative; overflow: hidden; border: 1px solid #ccc; display: flex; flex-direction: column; break-inside: avoid; max-width: 100%; }
+.student-card .card-header { height: 35px; background: linear-gradient(90deg, #2c3e50, #0984e3); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
 .student-card .card-footer { height: 10px; background: linear-gradient(90deg, #0984e3, #6c5ce7); width: 100%; }
 .student-card .card-body { display: flex; flex: 1; padding: 10px; position: relative; }
 .student-card .photo-area { width: 85px; display: flex; flex-direction: column; align-items: center; }
@@ -38,9 +53,9 @@ button, input, select, textarea { font: inherit; }
 .student-card .info-area { flex: 1; padding-left: 12px; display: flex; flex-direction: column; }
 .student-card .info-area h4 { color: #0984e3; font-size: 15px; margin-bottom: 2px; font-weight: bold; }
 .student-card .info-area p { font-size: 11px; color: #555; margin-bottom: 1px; }
-.student-card .qr-right { position: absolute; right: 10px; bottom: 10px; background: white; padding: 2px; border: 1px solid #eee; }
+.student-card .qr-right { position: absolute; right: 10px; bottom: 10px; background: white; padding: 2px; border: 1px solid #eee; display: flex; justify-content: center; align-items: center; }
 
-.company-card-h { width: 310px; height: 185px; background: #ffffff; border-radius: 12px; position: relative; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; break-inside: avoid; }
+.company-card-h { width: 310px; height: 185px; background: #ffffff; border-radius: 12px; position: relative; overflow: hidden; border: 1px solid #e2e8f0; display: flex; flex-direction: column; break-inside: avoid; max-width: 100%; }
 .company-card-h .card-header { height: 40px; background: #1e293b; color: #ffa801; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; font-size: 12px; font-weight: bold; border-bottom: 2px solid #ffa801; }
 .company-card-h .card-body { display: flex; flex: 1; padding: 12px; position: relative; background: #f8fafc; }
 .company-card-h .photo-placeholder { width: 80px; height: 100px; background: #fff; border: 2px dashed #1e293b; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -48,13 +63,13 @@ button, input, select, textarea { font: inherit; }
 .company-card-h .info-area { flex: 1; padding-left: 15px; display: flex; flex-direction: column; justify-content: center; }
 .company-card-h .info-area h4 { color: #1e293b; font-size: 16px; margin-bottom: 4px; font-weight: 700; }
 .company-card-h .info-area p { font-size: 11px; color: #64748b; margin-bottom: 2px; }
-.company-card-h .qr-right { position: absolute; right: 10px; bottom: 10px; background: white; padding: 2px; border: 1px solid #cbd5e1; }
+.company-card-h .qr-right { position: absolute; right: 10px; bottom: 10px; background: white; padding: 2px; border: 1px solid #cbd5e1; display: flex; justify-content: center; align-items: center; }
 
-.staff-card-v { width: 220px; height: 330px; background: #ffffff; border-radius: 14px; position: relative; overflow: hidden; border: 1px solid #cbd5e1; box-shadow: 0 5px 15px rgba(0,0,0,0.08); display: flex; flex-direction: column; align-items: center; padding: 15px 10px; margin: auto; break-inside: avoid; }
+.staff-card-v { width: 220px; height: 330px; background: #ffffff; border-radius: 14px; position: relative; overflow: hidden; border: 1px solid #cbd5e1; display: flex; flex-direction: column; align-items: center; padding: 15px 10px; margin: auto; break-inside: avoid; max-width: 100%; }
 .staff-card-v .card-top { text-align: center; margin-bottom: 10px; width: 100%; }
 .staff-card-v .card-top h5 { color: #00b894; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
 .staff-card-v .card-top p { font-size: 9px; color: #64748b; }
-.staff-card-v .photo-placeholder { width: 90px; height: 115px; background: #f1f5f9; border: 3px solid #00b894; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; box-shadow: 0 3px 6px rgba(0,0,0,0.05); }
+.staff-card-v .photo-placeholder { width: 90px; height: 115px; background: #f1f5f9; border: 3px solid #00b894; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
 .staff-card-v .photo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
 .staff-card-v .info-area { text-align: center; width: 100%; flex: 1; }
 .staff-card-v .info-area h4 { color: #1e293b; font-size: 15px; margin-bottom: 4px; font-weight: bold; }
@@ -62,7 +77,7 @@ button, input, select, textarea { font: inherit; }
 .staff-card-v .card-id-tag { font-size: 10px; font-weight: bold; color: white; background: #00b894; padding: 2px 10px; border-radius: 20px; display: inline-block; margin-top: 2px; }
 .staff-card-v .qr-bottom { margin-top: 5px; background: white; padding: 2px; border: 1px solid #e2e8f0; display: inline-block; }
 
-.business-card-h { width: 310px; height: 185px; background: #111827; border-radius: 8px; position: relative; overflow: hidden; border: 1px solid #374151; box-shadow: 0 6px 12px rgba(0,0,0,0.15); display: flex; padding: 15px; color: #f3f4f6; break-inside: avoid; }
+.business-card-h { width: 310px; height: 185px; background: #111827; border-radius: 8px; position: relative; overflow: hidden; border: 1px solid #374151; display: flex; padding: 15px; color: #f3f4f6; break-inside: avoid; max-width: 100%; }
 .business-card-h .left-panel { width: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #374151; padding-right: 10px; }
 .business-card-h .photo-placeholder { width: 75px; height: 85px; background: #1f2937; border: 1px solid #4b5563; border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .business-card-h .photo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
@@ -74,7 +89,7 @@ button, input, select, textarea { font: inherit; }
 .business-card-h .info-details p { font-size: 9px; color: #9ca3af; display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
 .business-card-h .qr-area { position: absolute; right: 15px; bottom: 15px; background: white; padding: 2px; border-radius: 2px; }
 
-.press-card-v { width: 220px; height: 330px; background: #ffffff; border-radius: 10px; position: relative; overflow: hidden; border: 2px solid #e11d48; box-shadow: 0 5px 15px rgba(0,0,0,0.08); display: flex; flex-direction: column; align-items: center; margin: auto; break-inside: avoid; }
+.press-card-v { width: 220px; height: 330px; background: #ffffff; border-radius: 10px; position: relative; overflow: hidden; border: 2px solid #e11d48; display: flex; flex-direction: column; align-items: center; margin: auto; break-inside: avoid; max-width: 100%; }
 .press-card-v .card-header { width: 100%; background: #e11d48; color: white; text-align: center; padding: 12px 0; font-size: 18px; font-weight: 900; letter-spacing: 2px; }
 .press-card-v .photo-placeholder { width: 100px; height: 120px; background: #f1f5f9; border: 3px solid #e11d48; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-top: 15px; }
 .press-card-v .photo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
@@ -84,7 +99,7 @@ button, input, select, textarea { font: inherit; }
 .press-card-v .info-area span { font-size: 10px; color: #475569; display: block; }
 .press-card-v .qr-bottom { margin-top: auto; margin-bottom: 10px; background: white; padding: 2px; border: 1px solid #e2e8f0; display: inline-block; }
 
-.library-card-h { width: 310px; height: 185px; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; position: relative; overflow: hidden; border: 1px solid #22c55e; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; padding: 15px; break-inside: avoid; }
+.library-card-h { width: 310px; height: 185px; background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 12px; position: relative; overflow: hidden; border: 1px solid #22c55e; display: flex; padding: 15px; break-inside: avoid; max-width: 100%; }
 .library-card-h .left-col { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
 .library-card-h .lib-header { color: #166534; font-size: 14px; font-weight: 900; border-bottom: 2px solid #22c55e; padding-bottom: 5px; margin-bottom: 8px; display: inline-block; width: max-content; }
 .library-card-h .info-area h4 { color: #14532d; font-size: 16px; margin-bottom: 3px; font-weight: bold; }
@@ -94,6 +109,10 @@ button, input, select, textarea { font: inherit; }
 .library-card-h .photo-placeholder { width: 75px; height: 95px; background: white; border: 2px solid #22c55e; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: auto; }
 .library-card-h .photo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
 .library-card-h .id-text { font-family: monospace; font-size: 10px; color: #15803d; font-weight: bold; margin-top: 5px; text-align: center; width: 100%; }
+
+#reader { width: 100%; height: 100%; position: relative; overflow: hidden; border-radius: 0.75rem; }
+#reader video { object-fit: cover !important; width: 100% !important; height: 100% !important; position: absolute !important; top: 0 !important; left: 0 !important; }
+#reader canvas { display: none !important; }
 
 @media print {
   body { background: white; }
