@@ -33,17 +33,29 @@ button, input, select, textarea { font: inherit; }
 ::-webkit-scrollbar-thumb:hover { background: #0984e3; }
 
 @layer components {
-  .card { @apply rounded-2xl bg-white p-3 sm:p-5 shadow-sm border border-slate-200 transition-all duration-300 max-w-full; }
+  .card { @apply rounded-2xl bg-white p-4 sm:p-5 shadow-sm border border-slate-200 transition-all duration-300 max-w-full; }
   .card:hover { @apply shadow-md border-slate-300; }
   
-  .btn { @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2 sm:py-2.5 text-[0.85rem] sm:text-[0.95rem] font-bold transition-all duration-200 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed min-h-[38px] sm:min-h-[44px]; }
+  .btn { @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-3 sm:py-2.5 text-[0.95rem] font-bold transition-all duration-200 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]; }
   .btn-primary { @apply bg-primary text-white shadow-md shadow-primary/20 hover:bg-blue-600; }
   .btn-success { @apply bg-success text-white shadow-md shadow-success/20 hover:bg-emerald-600; }
   .btn-danger { @apply bg-danger text-white shadow-md shadow-danger/20 hover:bg-red-600; }
   .btn-warning { @apply bg-warning text-slate-900 shadow-md shadow-warning/20 hover:brightness-105; }
   
-  .field { @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 sm:px-4 sm:py-2.5 text-[0.85rem] sm:text-[0.95rem] outline-none transition-all duration-200 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-100 min-h-[38px] sm:min-h-[44px]; }
+  .field { @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:py-2.5 text-[0.95rem] outline-none transition-all duration-200 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-100 min-h-[44px]; }
 }
+
+@keyframes bgSlideMove {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-bg-slide {
+  animation: bgSlideMove 45s linear infinite;
+  will-change: transform;
+}
+
+.show-on-print { display: none !important; }
 
 .student-card { width: 310px; height: 185px; background: white; border-radius: 10px; position: relative; overflow: hidden; border: 1px solid #ccc; display: flex; flex-direction: column; break-inside: avoid; max-width: 100%; }
 .student-card .card-header { height: 35px; background: linear-gradient(90deg, #2c3e50, #0984e3); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
@@ -134,15 +146,18 @@ button, input, select, textarea { font: inherit; }
     box-shadow: none !important;
     background: transparent !important;
   }
-  body.print-attendance #tableContainer {
-    max-height: none !important;
-    overflow: visible !important;
-  }
+  
+  body.print-attendance .show-on-print { display: table-cell !important; visibility: visible !important; }
+  body.print-attendance .hide-on-print { display: none !important; visibility: hidden !important; width: 0 !important; height: 0 !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; }
+
+  body.print-attendance #tableContainer { max-height: none !important; overflow: visible !important; }
   body.print-attendance table { width: 100%; border-collapse: collapse; table-layout: auto; }
   body.print-attendance th, body.print-attendance td { 
-    padding: 8px !important; border-bottom: 1px solid #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    padding: 10px 8px !important; border-bottom: 1px solid #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px !important;
   }
+  body.print-attendance th { background-color: #f8fafc !important; color: #1e293b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-bottom: 2px solid #cbd5e1; }
   body.print-attendance tr { page-break-inside: avoid; }
+  body.print-attendance span.rounded-full { padding: 4px 10px !important; border-radius: 20px !important; border: 1px solid currentColor; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
   body.print-cards * { visibility: hidden; }
   body.print-cards #cardsPrintArea, body.print-cards #cardsPrintArea * { visibility: visible; }
@@ -156,13 +171,5 @@ button, input, select, textarea { font: inherit; }
     gap: 20px;
     justify-content: center;
   }
-  body.print-cards .student-card,
-  body.print-cards .company-card-h,
-  body.print-cards .staff-card-v,
-  body.print-cards .business-card-h,
-  body.print-cards .press-card-v,
-  body.print-cards .library-card-h {
-    page-break-inside: avoid;
-    margin-bottom: 20px;
-  }
+  body.print-cards .student-card, body.print-cards .company-card-h, body.print-cards .staff-card-v, body.print-cards .business-card-h, body.print-cards .press-card-v, body.print-cards .library-card-h { page-break-inside: avoid; margin-bottom: 20px; }
 }

@@ -94,7 +94,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const [attendance, setAttendance] = useState<Attendance[]>([]); 
   const [search, setSearch] = useState('');
   
-  const [adminInfo, setAdminInfo] = useState({ teacher: '', room: '', subject: '', shift: 'វេនព្រឹក', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrl: '' });
+  const [adminInfo, setAdminInfo] = useState({ teacher: '', room: '', subject: '', shift: 'វេនព្រឹក', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', allowManual: false });
   const [initialConfigLoad, setInitialConfigLoad] = useState(true);
   
   const today = new Date().toISOString().slice(0, 10);
@@ -134,7 +134,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
       <Navbar activeTab={tab} isAdmin={isAdmin} userLabel={profile?.full_name || user?.email || ''} role={role} mobileOpen={menu} logoUrl={adminInfo.logo} onTabChange={(nextTab) => { setTab(nextTab); setMenu(false); }} onScanner={() => setScanner(true)} onSignOut={() => void signOut()} onMobileToggle={() => setMenu(!menu)} />
       <div className="mx-auto max-w-[1200px] w-full px-2 sm:px-3 pt-20 sm:pt-24 overflow-x-hidden">
         
-        <Banner mapUrl={adminInfo.mapUrl} bgUrl={adminInfo.bgUrl} />
+        <Banner mapUrl={adminInfo.mapUrl} bgUrls={adminInfo.bgUrls} />
         
         <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 w-full">
           <div className="col-span-2 md:col-span-1 rounded-xl bg-gradient-to-br from-primary to-secondary p-3 sm:p-4 text-center text-white shadow-sm flex flex-col justify-center min-h-[100px]">
@@ -155,18 +155,24 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
             <select className="field" value={adminInfo.shift} onChange={e => setAdminInfo({...adminInfo, shift: e.target.value})}>
               <option>វេនព្រឹក</option><option>វេនរសៀល</option><option>វេនយប់</option>
             </select>
-            <div className="col-span-2 md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3">
+            <div className="col-span-2 md:col-span-4 grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_1fr] gap-2 sm:gap-3 items-center">
                <div className="relative w-full">
                  <MapPin className="absolute left-3 top-2.5 sm:top-3 text-slate-400" size={16} />
                  <input className="field pl-9" placeholder="Google Maps Embed Link..." value={adminInfo.mapUrl} onChange={e => setAdminInfo({...adminInfo, mapUrl: e.target.value})} />
                </div>
                <div className="relative w-full">
                  <ImageIcon className="absolute left-3 top-2.5 sm:top-3 text-slate-400" size={16} />
-                 <input className="field pl-9" placeholder="Background Image Link..." value={adminInfo.bgUrl} onChange={e => setAdminInfo({...adminInfo, bgUrl: e.target.value})} />
+                 <input className="field pl-9" placeholder="Background Link (ដាក់សញ្ញា , ចន្លោះ)" value={adminInfo.bgUrls} onChange={e => setAdminInfo({...adminInfo, bgUrls: e.target.value})} />
                </div>
-               <div className="flex gap-2 w-full">
-                 <input className="field flex-1" placeholder="Logo Link" value={adminInfo.logo} onChange={e => setAdminInfo({...adminInfo, logo: e.target.value})} />
-                 <label className="btn btn-primary cursor-pointer px-3 sm:px-4 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAdminInfo({...adminInfo, logo: ev.target?.result as string}); r.readAsDataURL(f); } }} /></label>
+               <div className="flex flex-col gap-2 w-full">
+                 <div className="flex gap-2 w-full">
+                   <input className="field flex-1" placeholder="Logo Link" value={adminInfo.logo} onChange={e => setAdminInfo({...adminInfo, logo: e.target.value})} />
+                   <label className="btn btn-primary cursor-pointer px-3 sm:px-4 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAdminInfo({...adminInfo, logo: ev.target?.result as string}); r.readAsDataURL(f); } }} /></label>
+                 </div>
+                 <label className="flex items-center gap-2 text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
+                   <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} />
+                   អនុញ្ញាតឱ្យ User ចុះវត្តមានដោយដៃ
+                 </label>
                </div>
             </div>
           </div>
@@ -200,11 +206,18 @@ function Stat({ title, value, color, icon: Icon }: { title: string; value: numbe
   return <div className={`${color} rounded-xl p-3 sm:p-4 text-center text-white shadow-sm flex flex-col justify-center min-h-[90px] sm:min-h-[100px] w-full`}><Icon className="mx-auto mb-1 opacity-90" size={18} /><div className="text-[10px] sm:text-xs font-bold leading-tight uppercase tracking-wide opacity-90">{title}</div><div className="text-2xl sm:text-3xl font-bold">{value}</div></div>; 
 }
 
-function Banner({ mapUrl, bgUrl }: { mapUrl?: string; bgUrl?: string }) { 
-  const defaultBg = "https://images.pexels.com/photos/159844/cellular-education-classroom-159844.jpeg?auto=compress&cs=tinysrgb&w=1200";
+function Banner({ mapUrl, bgUrls }: { mapUrl?: string; bgUrls?: string }) { 
+  const defaults = ["https://images.pexels.com/photos/159844/cellular-education-classroom-159844.jpeg?auto=compress&cs=tinysrgb&w=1200"];
+  const images = (bgUrls || "").split(',').map(s => s.trim()).filter(Boolean);
+  if (images.length === 0) images.push(...defaults);
+
   return (
-    <div className="relative mb-5 h-[140px] sm:h-[200px] w-full overflow-hidden rounded-xl bg-slate-800 shadow-sm border border-slate-200">
-      <img src={bgUrl || defaultBg} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Background" />
+    <div className="relative mb-5 h-[140px] sm:h-[200px] w-full overflow-hidden rounded-xl bg-slate-900 shadow-sm border border-slate-200">
+      <div className="absolute inset-0 flex w-max animate-bg-slide h-full">
+        {[...images, ...images, ...images, ...images].map((img, i) => (
+          <img key={i} src={img} className="w-[100vw] sm:w-[800px] h-full object-cover opacity-50 border-r border-white/10" alt="bg" />
+        ))}
+      </div>
       <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-0">
         <div className="pointer-events-auto w-[90%] sm:w-[80%] md:w-[60%] lg:w-[55%] h-full flex justify-center items-center">
           <iframe 
@@ -226,6 +239,8 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
   const [saving, setSaving] = useState(false); 
   const [totalStudents, setTotalStudents] = useState(0);
   
+  const canManualEntry = isAdmin || adminInfo.allowManual;
+
   async function add() { 
     if (!name.trim()) return;
     setSaving(true); 
@@ -310,38 +325,40 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
 
   return (
     <div className="grid gap-3 lg:gap-4 lg:grid-cols-[.8fr_1.5fr] w-full">
-      <div className="card h-fit w-full">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Plus size={20} className="text-primary" /> ចុះវត្តមាន</h2>
-        
-        <input 
-          list="student-list" 
-          className="field mb-3 w-full" 
-          placeholder="-- Select or type name --" 
-          value={name} 
-          onChange={e => setName(e.target.value)} 
-          disabled={!isAdmin} 
-        />
-        <datalist id="student-list">
-          {students.map((s: any) => <option key={s.id} value={s.name} />)}
-        </datalist>
+      
+      {canManualEntry && (
+        <div className="card h-fit w-full">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Plus size={20} className="text-primary" /> ចុះវត្តមាន</h2>
+          
+          <input 
+            list="student-list" 
+            className="field mb-3 w-full" 
+            placeholder="-- Select or type name --" 
+            value={name} 
+            onChange={e => setName(e.target.value)} 
+          />
+          <datalist id="student-list">
+            {students.map((s: any) => <option key={s.id} value={s.name} />)}
+          </datalist>
 
-        <select className="field mb-4 w-full" value={status} onChange={e => setStatus(e.target.value as string)} disabled={!isAdmin}>
-          {statuses.map(s => <option key={s}>{s}</option>)}
-        </select>
-        
-        {isAdmin && (
+          <select className="field mb-4 w-full" value={status} onChange={e => setStatus(e.target.value as string)}>
+            {statuses.map(s => <option key={s}>{s}</option>)}
+          </select>
+          
           <div className="flex flex-col sm:flex-row gap-2 mt-2">
             <button className="btn btn-success w-full" disabled={!name || saving} onClick={add}>
               <CheckCircle2 size={16} /> {saving ? '...' : 'Save'}
             </button>
-            <button className="btn bg-[#ff9f43] text-white w-full shadow-md shadow-[#ff9f43]/20" disabled={saving} onClick={autoMarkAbsent}>
-              <Users size={16} /> Auto Absent
-            </button>
+            {isAdmin && (
+              <button className="btn bg-[#ff9f43] text-white w-full shadow-md shadow-[#ff9f43]/20" disabled={saving} onClick={autoMarkAbsent}>
+                <Users size={16} /> Auto Absent
+              </button>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="w-full">
+      <div className={`w-full ${!canManualEntry ? 'lg:col-span-2' : ''}`}>
         <div className="card p-3 sm:p-5 bg-white w-full overflow-hidden" id="exportArea">
           <div className="text-center border-b-[3px] border-double border-primary pb-3 sm:pb-4 mb-4 sm:mb-5 relative w-full">
             {adminInfo.logo && <img src={adminInfo.logo} className="w-[50px] h-[50px] sm:w-[70px] sm:h-[70px] object-cover mx-auto mb-2 rounded-full shadow-sm border border-primary" alt="Logo" />}
@@ -367,16 +384,23 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
               <table className="w-full text-[11px] sm:text-sm min-w-[300px]">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-primary text-white text-left">
+                    <th className="p-2 sm:p-3 font-bold text-center show-on-print" style={{width: '60px'}}>ល.រ</th>
                     <th className="p-2 sm:p-3 font-bold whitespace-nowrap">ឈ្មោះសិស្ស</th>
+                    <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap show-on-print">ម៉ោងចូល</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ភេទ</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ស្ថានភាព</th>
                     {isAdmin && <th className="p-2 sm:p-3 font-bold text-center no-print">សកម្មភាព</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {records.length ? records.map((r: any) => (
+                  {records.length ? records.map((r: any, index: number) => (
                     <tr key={r.id} className="border-b hover:bg-slate-50 transition">
-                      <td className="p-2 sm:p-3 font-medium whitespace-nowrap">{r.name}<small className="block text-slate-400 mt-0.5">Time: {r.time || '---'}</small></td>
+                      <td className="p-2 sm:p-3 font-bold text-slate-500 text-center show-on-print">{index + 1}</td>
+                      <td className="p-2 sm:p-3 font-medium whitespace-nowrap">
+                        {r.name}
+                        <small className="block text-slate-400 mt-0.5 hide-on-print">Time: {r.time || '---'}</small>
+                      </td>
+                      <td className="p-2 sm:p-3 text-center font-medium show-on-print">{r.time || '---'}</td>
                       <td className="p-2 sm:p-3 text-center whitespace-nowrap">{r.gender || '---'}</td>
                       <td className="p-2 sm:p-3 text-center whitespace-nowrap"><span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[11px] font-bold inline-block ${r.status === statuses[0] ? 'bg-green-100 text-green-700' : r.status === statuses[1] ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{r.status}</span></td>
                       {isAdmin && (
@@ -386,7 +410,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
                         </td>
                       )}
                     </tr>
-                  )) : <tr><td colSpan={isAdmin ? 4 : 3} className="p-6 text-center text-slate-400">No records today</td></tr>}
+                  )) : <tr><td colSpan={isAdmin ? 5 : 4} className="p-6 text-center text-slate-400">No records today</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -597,6 +621,17 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
     if(!isAdmin) return;
     await supabase.from('custom_cards').delete().eq('id', dbId);
     await fetchCards();
+  }
+
+  function downloadCard(dbId: string, cardName: string) {
+    const el = document.getElementById(`card-${dbId}`);
+    if(!el) return;
+    html2canvas(el, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `ID_Card_${cardName}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
   }
 
   const printCards = () => {
@@ -914,7 +949,7 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: { onClose: ()
 
 function SchedulePanel({ isAdmin }: { isAdmin: boolean }) { 
   const days = ['ច័ន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ']; 
-  const times = ['07:30 - 09:00', '09:30 - 11:00', '01:00 - 14:30', '14:45 - 16:15']; 
+  const defaultTimes = ['07:30 - 09:00', '09:30 - 11:00', '01:00 - 14:30', '14:45 - 16:15']; 
   const [scheduleData, setScheduleData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -935,6 +970,8 @@ function SchedulePanel({ isAdmin }: { isAdmin: boolean }) {
     setSaving(false); 
   }
 
+  const getRowTime = (r: number) => scheduleData[`rowTime_${r}`] !== undefined ? scheduleData[`rowTime_${r}`] : defaultTimes[r];
+
   return (
     <div className="card shadow-sm border border-slate-200 w-full">
       <h2 className="mb-4 flex items-center gap-2 text-lg sm:text-xl font-bold"><CalendarDays className="text-primary" /> កាលវិភាគរៀន</h2>
@@ -942,14 +979,16 @@ function SchedulePanel({ isAdmin }: { isAdmin: boolean }) {
         <table className="min-w-[700px] w-full border-collapse text-xs sm:text-sm">
           <thead>
             <tr>
-              <th className="border-b border-r bg-slate-50 p-2 sm:p-3 text-center w-[100px] sm:w-[120px]">ម៉ោង / ថ្ងៃ</th>
+              <th className="border-b border-r bg-slate-50 p-2 sm:p-3 text-center w-[120px] sm:w-[140px]">ម៉ោង / ថ្ងៃ</th>
               {days.map(d => <th className="border-b border-r bg-slate-50 p-2 sm:p-3 text-center" key={d}>{d}</th>)}
             </tr>
           </thead>
           <tbody>
-            {times.map((time, r) => (
-              <tr key={time}>
-                <td className="border-b border-r bg-[#43f0ed] p-2 sm:p-3 font-bold text-center whitespace-nowrap text-dark">{time}</td>
+            {[0,1,2,3].map((r) => (
+              <tr key={r}>
+                <td className="border-b border-r bg-[#43f0ed] p-1 font-bold text-center whitespace-nowrap text-dark">
+                  <input disabled={!isAdmin} className="w-full text-center bg-transparent border-none outline-none text-dark font-bold disabled:opacity-100 p-1 rounded hover:bg-white/50 focus:bg-white transition-colors" value={getRowTime(r)} onChange={e => setScheduleData({...scheduleData, [`rowTime_${r}`]: e.target.value})} />
+                </td>
                 {days.map((day, c) => {
                   const cellKey = `sch_${r}_${c}`;
                   return (
