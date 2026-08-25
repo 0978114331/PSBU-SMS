@@ -129,7 +129,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const counts = { present: todayAttendance.filter(a => a.status === statuses[0]).length, leave: todayAttendance.filter(a => a.status === statuses[1]).length, absent: todayAttendance.filter(a => a.status === statuses[2]).length };
   
   return (
-    <div className="min-h-screen w-full bg-light pb-5 overflow-x-hidden">
+    <div className="min-h-screen w-full bg-light pb-24 lg:pb-5 overflow-x-hidden">
       <Navbar activeTab={tab} isAdmin={isAdmin} userLabel={profile?.full_name || user?.email || ''} role={role} mobileOpen={menu} logoUrl={adminInfo.logo} onTabChange={(nextTab) => { setTab(nextTab); setMenu(false); }} onScanner={() => setScanner(true)} onSignOut={() => void signOut()} onMobileToggle={() => setMenu(!menu)} />
       <div className="mx-auto max-w-[1200px] w-full px-2 sm:px-3 pt-20 sm:pt-24 overflow-x-hidden">
         
@@ -440,6 +440,8 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
 
 function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, today }: any) {
   const [name, setName] = useState('');
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
   const [reason, setReason] = useState('');
   const [photo, setPhoto] = useState('');
   const [saving, setSaving] = useState(false);
@@ -447,29 +449,41 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
   const leaveRecords = records.filter((r: any) => r.status === 'ច្បាប់' && r.date === today);
 
   async function submitLeave() {
-    if (!name.trim()) return;
+    if (!name.trim() || !startDate || !endDate) return;
     setSaving(true);
+    
     const student = students.find((s: any) => s.name === name.trim());
     const finalName = student ? student.name : name.trim();
     const finalId = student ? student.stu_id : "";
     const finalGender = student ? student.gender : "ប្រុស";
 
-    await supabase.from('attendance').insert({
+    const dateText = startDate === endDate ? '' : ` (ពី ${startDate} ដល់ ${endDate})`;
+    const fullReason = `${reason || 'គ្មានការបញ្ជាក់'}${dateText}`;
+
+    const { error } = await supabase.from('attendance').insert({
       student_id: student?.id || null,
       stu_id: finalId,
       name: finalName,
       gender: finalGender,
       status: 'ច្បាប់',
-      date: today,
+      date: startDate,
       time: new Date().toLocaleTimeString('en-GB'),
       shift: adminInfo.shift || '',
       room: adminInfo.room || '',
       teacher: adminInfo.teacher || '',
       subject: adminInfo.subject || '',
-      reason: reason || 'គ្មានការបញ្ជាក់',
+      reason: fullReason,
       photo: photo || ''
     });
-    setName(''); setReason(''); setPhoto(''); setSaving(false); await refresh();
+
+    if (error) {
+       alert("បរាជ័យក្នុងការបញ្ជូន៖ " + error.message);
+    } else {
+       alert("ពាក្យសុំច្បាប់ត្រូវបានបញ្ជូនដោយជោគជ័យ!");
+       setName(''); setReason(''); setPhoto(''); setStartDate(today); setEndDate(today);
+       await refresh();
+    }
+    setSaving(false);
   }
 
   async function deleteLeave(id: string) {
@@ -487,6 +501,15 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
           <span className="text-sm font-bold text-slate-700 mb-1.5 block">ឈ្មោះសិស្ស៖</span>
           <input list="leave-student-list" className="field w-full text-sm" placeholder="ជ្រើសរើស ឬ វាយឈ្មោះ..." value={name} onChange={e => setName(e.target.value)} />
           <datalist id="leave-student-list">{students.map((s: any) => <option key={s.id} value={s.name} />)}</datalist>
+        </label>
+
+        <label className="block mb-3">
+          <span className="text-sm font-bold text-slate-700 mb-1.5 block">កាលបរិច្ឆេទសុំច្បាប់ (ពីថ្ងៃ - ដល់ថ្ងៃ)៖</span>
+          <div className="flex items-center gap-2">
+             <input type="date" className="field w-full text-sm !px-2" value={startDate} onChange={e => setStartDate(e.target.value)} />
+             <span className="font-bold text-slate-400">-</span>
+             <input type="date" className="field w-full text-sm !px-2" value={endDate} onChange={e => setEndDate(e.target.value)} />
+          </div>
         </label>
 
         <label className="block mb-3">

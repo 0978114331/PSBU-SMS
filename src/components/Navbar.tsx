@@ -29,62 +29,113 @@ const warehouseItems: NavItem[] = [
   { id: 'schedule', label: 'កាលវិភាគរៀន', icon: CalendarDays },
   { id: 'cleaning', label: 'វេនសម្អាតថ្នាក់', icon: CalendarDays },
   { id: 'students', label: 'បញ្ជីឈ្មោះសិស្ស', icon: Users },
+  { id: 'cards' as any, label: 'បង្កើតកាត', icon: FileBadge }
 ];
 
 export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUrl, onTabChange, onScanner, onSignOut, onMobileToggle }: NavbarProps) {
+  
+  const isMenuTabActive = warehouseItems.some(item => item.id === activeTab);
+
   return <>
-    <header className="fixed top-0 z-40 flex w-full items-center justify-between bg-[#2c3e50] px-4 py-2.5 text-white shadow-lg">
+    <header className="fixed top-0 z-40 flex w-full items-center justify-between bg-[#2c3e50] px-4 py-3 sm:py-2.5 text-white shadow-md">
       <div className="flex items-center gap-3">
         {logoUrl ? (
-          <img src={logoUrl} alt="Logo" className="h-10 w-10 rounded-full object-cover border-2 border-white bg-white" />
+          <img src={logoUrl} alt="Logo" className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover border-2 border-white/20 bg-white shadow-sm" />
         ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-primary"><GraduationCap size={24} /></div>
+          <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-primary"><GraduationCap size={22} /></div>
         )}
-        <b className="text-sm sm:text-base hidden sm:block">PSB University</b>
+        <b className="text-sm sm:text-base font-bold tracking-wide hidden min-[360px]:block">PSB System</b>
       </div>
-      <div className="hidden items-center gap-2 lg:flex">
+      
+      <div className="hidden items-center gap-3 lg:flex">
         {primaryItems.map(item => <NavButton key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} />)}
+        
         <WarehouseMenu activeTab={activeTab} onTabChange={onTabChange} />
-        <button className="btn bg-[#bb8e26] text-white" onClick={() => onTabChange('cards' as any)}><FileBadge size={17} /> បង្កើតកាត</button>
-        <button className="btn bg-secondary text-white" onClick={onScanner}><QrCode size={17} /> ស្កែនវត្តមាន</button>
-        <UserProfile userLabel={userLabel} role={role} onSignOut={onSignOut} />
+        
+        <div className="mx-2 pr-4 border-r border-white/20">
+           <UserProfile userLabel={userLabel} role={role} onSignOut={onSignOut} />
+        </div>
+        
+        <button className="btn bg-secondary text-white !min-h-[38px] !py-1.5 shadow-md shadow-secondary/30" onClick={onScanner}>
+           <QrCode size={16} /> ស្កែនវត្តមាន
+        </button>
       </div>
-      <div className="flex items-center gap-2 lg:hidden">
-        <button className="btn bg-secondary px-3 py-2 text-white" onClick={onScanner}><QrCode size={18} /></button>
-        <button onClick={onMobileToggle} className="rounded-lg p-2 bg-white/10 hover:bg-white/20 transition"><Menu size={22} /></button>
+
+      <div className="flex items-center gap-4 lg:hidden">
+        <div className="text-right flex flex-col justify-center">
+           <span className="text-[12px] font-bold leading-none">{userLabel}</span>
+           <span className="text-[9px] text-warning uppercase mt-0.5">{role}</span>
+        </div>
+        <button className="relative flex items-center justify-center bg-gradient-to-r from-secondary to-primary rounded-xl p-2 shadow-lg shadow-primary/30 active:scale-95 transition-transform" onClick={onScanner}>
+           <QrCode size={20} className="text-white" />
+        </button>
       </div>
     </header>
-    {mobileOpen && <div className="fixed top-[60px] z-30 w-full bg-[#2c3e50] p-4 shadow-xl lg:hidden border-t border-white/10">
-      {primaryItems.map(item => <MobileNavButton key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} />)}
-      <div className="mt-2 rounded-xl border border-white/15 bg-black/10 p-2">
-        <div className="mb-2 flex items-center gap-2 px-2 text-sm font-bold text-blue-100"><Database size={17} /> ឃ្លាំងទិន្នន័យ</div>
-        {warehouseItems.map(item => <MobileNavButton key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} nested />)}
-        <MobileNavButton item={{ id: 'cards' as any, label: 'បង្កើតកាត', icon: FileBadge }} active={activeTab === 'cards'} onClick={() => onTabChange('cards' as any)} nested />
+
+    <nav className="fixed bottom-0 left-0 w-full z-40 bg-white border-t border-slate-200 shadow-[0_-4px_15px_rgba(0,0,0,0.03)] lg:hidden flex justify-around items-center pb-[env(safe-area-inset-bottom)]">
+       <BottomNavItem icon={UserCheck} label="វត្តមាន" active={activeTab === 'attendance'} onClick={() => { onTabChange('attendance'); if(mobileOpen) onMobileToggle(); }} />
+       <BottomNavItem icon={FileText} label="សុំច្បាប់" active={activeTab === 'leaves'} onClick={() => { onTabChange('leaves'); if(mobileOpen) onMobileToggle(); }} />
+       <BottomNavItem icon={GraduationCap} label="ពិន្ទុ" active={activeTab === 'scores'} onClick={() => { onTabChange('scores'); if(mobileOpen) onMobileToggle(); }} />
+       <BottomNavItem icon={BarChart3} label="វិភាគ" active={activeTab === 'analytics'} onClick={() => { onTabChange('analytics'); if(mobileOpen) onMobileToggle(); }} />
+       <BottomNavItem icon={Menu} label="ម៉ឺនុយ" active={mobileOpen || isMenuTabActive} onClick={onMobileToggle} />
+    </nav>
+
+    {mobileOpen && (
+      <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm lg:hidden" onClick={onMobileToggle}>
+        <div className="absolute bottom-0 left-0 w-full bg-[#1e293b] rounded-t-3xl p-5 pb-8 shadow-2xl transition-transform transform translate-y-0" onClick={e => e.stopPropagation()}>
+          <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-6 cursor-pointer" onClick={onMobileToggle}></div>
+          
+          <div className="grid grid-cols-2 gap-3 mb-6">
+             {warehouseItems.map(item => (
+                <MoreMenuButton key={item.id} icon={item.icon} label={item.label} active={activeTab === item.id} onClick={() => { onTabChange(item.id as any); onMobileToggle(); }} />
+             ))}
+          </div>
+          
+          <div className="border-t border-white/10 pt-5">
+             <button className="mx-auto flex w-max items-center justify-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-8 py-2.5 font-bold text-red-400 hover:bg-red-500/20 transition active:scale-95" onClick={onSignOut}>
+                <LogOut size={16} /> ចាកចេញពីប្រព័ន្ធ
+             </button>
+          </div>
+        </div>
       </div>
-      <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-red-500/20 p-3 font-bold text-red-200 hover:bg-red-500/30 transition" onClick={onSignOut}><LogOut size={17} /> ចាកចេញ</button>
-    </div>}
+    )}
   </>;
 }
 
 function NavButton({ item, active, onClick }: { item: NavItem; active: boolean; onClick: () => void }) {
   const Icon = item.icon;
-  return <button className={`btn ${active ? 'bg-primary text-white' : 'bg-white/10 text-white'}`} onClick={onClick}><Icon size={17} />{item.label}</button>;
+  return <button className={`btn !min-h-[38px] !py-1.5 ${active ? 'bg-primary text-white shadow-md shadow-primary/20' : 'bg-white/10 text-white hover:bg-white/20'}`} onClick={onClick}><Icon size={16} />{item.label}</button>;
 }
 
-function MobileNavButton({ item, active, onClick, nested = false }: { item: NavItem; active: boolean; onClick: () => void; nested?: boolean }) {
-  const Icon = item.icon;
-  return <button className={`mb-2 flex w-full items-center gap-2 rounded-xl p-3.5 font-bold transition ${nested ? 'justify-start pl-3 text-sm' : 'justify-center'} ${active ? 'bg-primary text-white' : 'bg-white/5 text-white hover:bg-white/10'}`} onClick={onClick}><Icon size={18} />{item.label}</button>;
+function BottomNavItem({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex flex-col items-center justify-center w-full py-2 gap-1 active:scale-95 transition-transform bg-transparent border-none outline-none">
+      <div className={`relative p-1.5 rounded-full transition-colors duration-300 ${active ? 'bg-primary/10 text-primary' : 'text-slate-400'}`}>
+         <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+      </div>
+      <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${active ? 'text-primary' : 'text-slate-400'}`}>{label}</span>
+    </button>
+  );
+}
+
+function MoreMenuButton({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
+  return (
+    <button onClick={onClick} className={`flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl transition-all active:scale-[0.98] border ${active ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'}`}>
+      <Icon size={20} className={active ? 'text-white' : 'text-slate-400'} />
+      <span className="text-[12px] font-bold">{label}</span>
+    </button>
+  );
 }
 
 function WarehouseMenu({ activeTab, onTabChange }: { activeTab: Tab | 'leaves'; onTabChange: (tab: Tab | 'leaves') => void }) {
   return <div className="group relative">
-    <button className={`btn ${warehouseItems.some(item => item.id === activeTab) ? 'bg-[#3b31c4] text-white' : 'bg-[#3b31c4] text-white'}`}><Database size={17} /> ឃ្លាំងទិន្នន័យ <ChevronDown size={15} /></button>
-    <div className="invisible absolute right-0 top-full z-50 mt-2 w-60 translate-y-1 overflow-hidden rounded-xl bg-white opacity-0 shadow-xl transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-      {warehouseItems.map(item => { const Icon = item.icon; return <button key={item.id} className="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left text-sm font-bold text-dark transition hover:bg-primary/10 hover:text-primary" onClick={() => onTabChange(item.id)}><Icon size={17} />{item.label}</button>; })}
+    <button className={`btn !min-h-[38px] !py-1.5 ${warehouseItems.some(item => item.id === activeTab) ? 'bg-[#3b31c4] text-white shadow-md shadow-[#3b31c4]/20' : 'bg-[#3b31c4] text-white hover:brightness-110'}`}><Database size={16} /> ឃ្លាំងទិន្នន័យ <ChevronDown size={14} /></button>
+    <div className="invisible absolute right-0 top-full z-50 mt-2 w-56 translate-y-2 overflow-hidden rounded-xl bg-white opacity-0 shadow-xl transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 border border-slate-100">
+      {warehouseItems.map(item => { const Icon = item.icon; return <button key={item.id} className="flex w-full items-center gap-3 border-b border-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-slate-700 transition hover:bg-primary/5 hover:text-primary" onClick={() => onTabChange(item.id as any)}><Icon size={16} className="text-slate-400" />{item.label}</button>; })}
     </div>
   </div>;
 }
 
 function UserProfile({ userLabel, role, onSignOut }: { userLabel: string; role: string; onSignOut: () => void }) {
-  return <div className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1"><div className="text-right text-xs"><b>{userLabel}</b><span className="ml-2 rounded bg-warning px-1.5 py-0.5 text-[10px] uppercase text-black">{role}</span></div><button onClick={onSignOut} className="hover:scale-110 transition-transform"><LogOut size={18} className="text-red-300" /></button></div>;
+  return <div className="flex items-center gap-3 rounded-full"><div className="text-right text-xs"><b>{userLabel}</b><span className="block text-warning text-[9px] uppercase font-bold mt-0.5">{role}</span></div><button onClick={onSignOut} className="hover:scale-110 transition-transform bg-white/10 p-2 rounded-full"><LogOut size={14} className="text-red-300" /></button></div>;
 }
