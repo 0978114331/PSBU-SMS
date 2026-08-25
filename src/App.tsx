@@ -1,12 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
-import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin, Image as ImageIcon } from 'lucide-react';
+import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin, Image as ImageIcon, FileText } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Navbar } from '@/components/Navbar';
 import { AttendanceHistory } from '@/components/data/AttendanceHistory';
 import { MasterStudentList } from '@/components/data/MasterStudentList';
 import { ScoreResults } from '@/components/data/ScoreResults';
-import { CleaningSchedule } from '@/components/data/CleaningSchedule';
 import type { Attendance, Student, Tab } from '@/types';
 import { statuses } from '@/types';
 import html2canvas from 'html2canvas';
@@ -87,7 +86,7 @@ function LiveClock() {
 function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const { user, profile, signOut } = useAuth(); 
   const isAdmin = role === 'admin';
-  const [tab, setTab] = useState<Tab>('attendance'); 
+  const [tab, setTab] = useState<Tab | 'leaves'>('attendance'); 
   const [menu, setMenu] = useState(false); 
   const [scanner, setScanner] = useState(false);
   const [students, setStudents] = useState<Student[]>([]); 
@@ -187,6 +186,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
 
         <div className="w-full overflow-x-hidden">
           {tab === 'attendance' && <AttendancePanel students={students} records={todayAttendance.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} />}
+          {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
           {tab === 'warehouse_att' && <AttendanceHistory records={attendance} />}
           {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} refresh={refresh} />}
           {tab === 'scores' && <ScoresPanel students={students} isAdmin={isAdmin} />}
@@ -386,7 +386,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
                   <tr className="bg-primary text-white text-left">
                     <th className="p-2 sm:p-3 font-bold text-center show-on-print" style={{width: '60px'}}>ល.រ</th>
                     <th className="p-2 sm:p-3 font-bold whitespace-nowrap">ឈ្មោះសិស្ស</th>
-                    <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap show-on-print">ម៉ោងចូល</th>
+                    <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap show-on-print">ម៉ោង</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ភេទ</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ស្ថានភាព</th>
                     {isAdmin && <th className="p-2 sm:p-3 font-bold text-center no-print">សកម្មភាព</th>}
@@ -436,6 +436,115 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
       </div>
     </div>
   ); 
+}
+
+function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, today }: any) {
+  const [name, setName] = useState('');
+  const [reason, setReason] = useState('');
+  const [photo, setPhoto] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const leaveRecords = records.filter((r: any) => r.status === 'ច្បាប់' && r.date === today);
+
+  async function submitLeave() {
+    if (!name.trim()) return;
+    setSaving(true);
+    const student = students.find((s: any) => s.name === name.trim());
+    const finalName = student ? student.name : name.trim();
+    const finalId = student ? student.stu_id : "";
+    const finalGender = student ? student.gender : "ប្រុស";
+
+    await supabase.from('attendance').insert({
+      student_id: student?.id || null,
+      stu_id: finalId,
+      name: finalName,
+      gender: finalGender,
+      status: 'ច្បាប់',
+      date: today,
+      time: new Date().toLocaleTimeString('en-GB'),
+      shift: adminInfo.shift || '',
+      room: adminInfo.room || '',
+      teacher: adminInfo.teacher || '',
+      subject: adminInfo.subject || '',
+      reason: reason || 'គ្មានការបញ្ជាក់',
+      photo: photo || ''
+    });
+    setName(''); setReason(''); setPhoto(''); setSaving(false); await refresh();
+  }
+
+  async function deleteLeave(id: string) {
+    if(!isAdmin) return;
+    await supabase.from('attendance').delete().eq('id', id);
+    await refresh();
+  }
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1fr_2fr] w-full">
+      <div className="card w-full max-w-full overflow-hidden">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800"><FileText size={20} className="text-warning shrink-0" /> <span className="truncate">ទម្រង់សុំច្បាប់ឈប់សម្រាក</span></h2>
+        
+        <label className="block mb-3">
+          <span className="text-sm font-bold text-slate-700 mb-1.5 block">ឈ្មោះសិស្ស៖</span>
+          <input list="leave-student-list" className="field w-full text-sm" placeholder="ជ្រើសរើស ឬ វាយឈ្មោះ..." value={name} onChange={e => setName(e.target.value)} />
+          <datalist id="leave-student-list">{students.map((s: any) => <option key={s.id} value={s.name} />)}</datalist>
+        </label>
+
+        <label className="block mb-3">
+          <span className="text-sm font-bold text-slate-700 mb-1.5 block">មូលហេតុនៃការឈប់៖</span>
+          <textarea className="field w-full min-h-[80px] text-sm resize-none" placeholder="ឧ. ឈឺ, មានធុរៈគ្រួសារ..." value={reason} onChange={e => setReason(e.target.value)}></textarea>
+        </label>
+
+        <label className="block mb-4">
+          <span className="text-sm font-bold text-slate-700 mb-1.5 block">ភស្តុតាង (បើមាន)៖</span>
+          <div className="flex items-center gap-2 w-full">
+            <label className="btn border border-slate-300 bg-white text-slate-700 cursor-pointer w-full text-sm py-2.5 flex-1 shrink-0"><Camera size={18}/> <span className="truncate">{photo ? 'ប្តូររូបភាព' : 'ភ្ជាប់រូបភាព / ថតរូប'}</span><input type="file" className="hidden" accept="image/*" onChange={(e)=>{const f=e.target.files?.[0]; if(f){const r=new FileReader(); r.onload=(ev)=>setPhoto(ev.target?.result as string); r.readAsDataURL(f);}}} /></label>
+          </div>
+          {photo && <img src={photo} className="mt-3 w-full max-h-[160px] object-contain rounded-xl border border-slate-200 bg-slate-50 p-1 shadow-sm" alt="Evidence" />}
+        </label>
+        
+        <button className="btn btn-warning w-full py-3 text-sm sm:text-base shadow-md" disabled={!name || saving} onClick={submitLeave}>
+          <CheckCircle2 size={18} /> <span className="truncate">{saving ? 'កំពុងបញ្ជូន...' : 'បញ្ជូនពាក្យសុំច្បាប់'}</span>
+        </button>
+      </div>
+
+      <div className="card w-full max-w-full overflow-hidden">
+         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+           <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-800"><ClipboardList size={20} className="text-primary shrink-0" /> <span className="truncate">បញ្ជីសុំច្បាប់ថ្ងៃនេះ</span></h2>
+           <span className="bg-warning/20 text-yellow-700 px-3 py-1 rounded-lg text-xs font-bold shrink-0">{leaveRecords.length} នាក់</span>
+         </div>
+         <div className="w-full overflow-x-auto rounded-xl border border-slate-200">
+          <table className="w-full text-xs sm:text-sm min-w-[500px]">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="p-3 text-left">ឈ្មោះសិស្ស</th>
+                <th className="p-3 text-center">ម៉ោង</th>
+                <th className="p-3 text-left">មូលហេតុ</th>
+                <th className="p-3 text-center">ភស្តុតាង</th>
+                {isAdmin && <th className="p-3 text-center">Action</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {leaveRecords.length ? leaveRecords.map((r: any) => (
+                <tr className="border-t hover:bg-slate-50 transition" key={r.id}>
+                  <td className="p-3 font-bold whitespace-nowrap">{r.name}</td>
+                  <td className="p-3 text-center text-primary font-medium whitespace-nowrap">{r.time}</td>
+                  <td className="p-3 text-slate-600 max-w-[200px] truncate">{r.reason || '---'}</td>
+                  <td className="p-3 text-center">
+                    {r.photo ? <a href={r.photo} target="_blank" rel="noreferrer" className="inline-block"><img src={r.photo} className="w-8 h-8 object-cover rounded shadow-sm border border-slate-200 hover:scale-150 transition-transform" alt="img"/></a> : <span className="text-slate-400">គ្មាន</span>}
+                  </td>
+                  {isAdmin && (
+                    <td className="p-3 text-center">
+                       <button className="text-danger hover:bg-red-50 p-1.5 rounded active:scale-95 transition-transform" onClick={() => deleteLeave(r.id)}><Trash2 size={16} /></button>
+                    </td>
+                  )}
+                </tr>
+              )) : <tr><td colSpan={isAdmin ? 5 : 4} className="p-8 text-center text-slate-400">មិនមានសិស្សសុំច្បាប់ទេថ្ងៃនេះ</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: boolean }) { 
@@ -621,17 +730,6 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
     if(!isAdmin) return;
     await supabase.from('custom_cards').delete().eq('id', dbId);
     await fetchCards();
-  }
-
-  function downloadCard(dbId: string, cardName: string) {
-    const el = document.getElementById(`card-${dbId}`);
-    if(!el) return;
-    html2canvas(el, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
-      const link = document.createElement('a');
-      link.download = `ID_Card_${cardName}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    });
   }
 
   const printCards = () => {
@@ -1005,6 +1103,91 @@ function SchedulePanel({ isAdmin }: { isAdmin: boolean }) {
       {isAdmin && <button className="btn btn-success mt-4" disabled={saving} onClick={saveSchedule}><CheckCircle2 size={16} /> {saving ? 'Saving...' : 'Save Schedule'}</button>}
     </div>
   ); 
+}
+
+function CleaningSchedule({ isAdmin }: { isAdmin: boolean }) {
+  const days = ['ច័ន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
+  const defaultData = {
+    title: 'វេនសម្អាតថ្នាក់', room: '', logo: '',
+    people: { president: { name: '', photo: '' }, viceOne: { name: '', photo: '' }, viceTwo: { name: '', photo: '' } },
+    days: days.map(day => ({ day, time: '07:00 - 07:30', names: '' }))
+  };
+
+  const [data, setData] = useState<any>(defaultData);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    supabase.from('schedules').select('data_json').eq('type', 'cleaning_schedule').maybeSingle().then(({ data: row }) => {
+      if (row?.data_json) setData(row.data_json);
+    });
+  }, []);
+
+  function updatePerson(key: string, changes: any) {
+    setData((current: any) => ({ ...current, people: { ...current.people, [key]: { ...current.people[key], ...changes } } }));
+  }
+
+  async function save() {
+    setSaving(true);
+    const existing = await supabase.from('schedules').select('id').eq('type', 'cleaning_schedule').maybeSingle();
+    if (existing.data?.id) {
+      await supabase.from('schedules').update({ data_json: data }).eq('id', existing.data.id);
+    } else {
+      await supabase.from('schedules').insert({ type: 'cleaning_schedule', data_json: data });
+    }
+    setSaving(false);
+  }
+
+  const promptImage = (currentUrl: string, callback: (url: string) => void) => {
+    if(!isAdmin) return;
+    const url = window.prompt("បញ្ចូល Link រូបភាព (Image URL):", currentUrl);
+    if(url) callback(url);
+  };
+
+  return (
+    <section className="card shadow-sm border border-slate-200">
+      <div className="text-center mb-5 relative">
+        <img src={data.logo || "https://via.placeholder.com/120"} className={`w-[80px] h-[80px] object-cover rounded-full border-2 border-primary mx-auto shadow-sm ${isAdmin ? 'cursor-pointer hover:opacity-80' : ''}`} alt="logo" onClick={() => promptImage(data.logo, (url) => setData({...data, logo: url}))} />
+        <input disabled={!isAdmin} className="w-full text-center text-[1.4rem] font-bold border-none outline-none text-primary bg-transparent mt-2 disabled:bg-transparent" placeholder="..." value={data.title} onChange={e => setData({ ...data, title: e.target.value })} />
+        <input disabled={!isAdmin} className="w-full text-center text-[1.1rem] font-bold border-none outline-none text-[#e67e22] bg-transparent mt-1 disabled:bg-transparent" placeholder="..." value={data.room} onChange={e => setData({ ...data, room: e.target.value })} />
+      </div>
+
+      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5">
+         <div className="flex flex-col items-center mb-4">
+            <label className="font-bold text-[#2c3e50] mb-2 text-[0.85rem]">ប្រធានថ្នាក់</label>
+            <img src={data.people.president.photo || "https://via.placeholder.com/100"} className={`w-[70px] h-[90px] object-cover rounded-md border-2 border-primary shadow-sm mb-2 ${isAdmin ? 'cursor-pointer hover:opacity-80' : ''}`} alt="president" onClick={() => promptImage(data.people.president.photo, (url) => updatePerson('president', {photo: url}))} />
+            <input disabled={!isAdmin} className="w-[180px] text-center p-1 border-none bg-transparent rounded font-bold outline-none text-[#2d3436] disabled:bg-transparent" placeholder="..." value={data.people.president.name} onChange={e => updatePerson('president', { name: e.target.value })} />
+         </div>
+         <div className="flex justify-center gap-4 flex-nowrap">
+            <div className="flex flex-col items-center w-[48%]">
+                <label className="font-bold text-[#2c3e50] mb-2 text-[0.85rem]">អនុប្រធានទី១</label>
+                <img src={data.people.viceOne.photo || "https://via.placeholder.com/100"} className={`w-[70px] h-[90px] object-cover rounded-md border-2 border-primary shadow-sm mb-2 ${isAdmin ? 'cursor-pointer hover:opacity-80' : ''}`} alt="vp1" onClick={() => promptImage(data.people.viceOne.photo, (url) => updatePerson('viceOne', {photo: url}))} />
+                <input disabled={!isAdmin} className="w-full text-center p-1 border-none bg-transparent rounded font-bold outline-none text-[#2d3436] disabled:bg-transparent" placeholder="..." value={data.people.viceOne.name} onChange={e => updatePerson('viceOne', { name: e.target.value })} />
+            </div>
+            <div className="flex flex-col items-center w-[48%]">
+                <label className="font-bold text-[#2c3e50] mb-2 text-[0.85rem]">អនុប្រធានទី២</label>
+                <img src={data.people.viceTwo.photo || "https://via.placeholder.com/100"} className={`w-[70px] h-[90px] object-cover rounded-md border-2 border-primary shadow-sm mb-2 ${isAdmin ? 'cursor-pointer hover:opacity-80' : ''}`} alt="vp2" onClick={() => promptImage(data.people.viceTwo.photo, (url) => updatePerson('viceTwo', {photo: url}))} />
+                <input disabled={!isAdmin} className="w-full text-center p-1 border-none bg-transparent rounded font-bold outline-none text-[#2d3436] disabled:bg-transparent" placeholder="..." value={data.people.viceTwo.name} onChange={e => updatePerson('viceTwo', { name: e.target.value })} />
+            </div>
+         </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+        {data.days.map((item: any, index: number) => (
+          <div className="bg-white border border-primary rounded-lg overflow-hidden flex flex-col shadow-sm" key={item.day}>
+            <div className="bg-primary p-1.5 border-b border-primary">
+               <input disabled={!isAdmin} className="w-full text-center font-bold bg-transparent border-none text-white outline-none text-[1rem] disabled:bg-transparent" value={item.day} onChange={e => setData((current: any) => ({ ...current, days: current.days.map((day: any, dayIndex: number) => dayIndex === index ? { ...day, day: e.target.value } : day) }))} />
+            </div>
+            <div className="bg-blue-50 p-1.5 border-b border-slate-300">
+               <input disabled={!isAdmin} className="w-full text-center bg-transparent border-none text-blue-700 font-medium outline-none text-[0.85rem] disabled:bg-transparent" value={item.time} onChange={e => setData((current: any) => ({ ...current, days: current.days.map((day: any, dayIndex: number) => dayIndex === index ? { ...day, time: e.target.value } : day) }))} />
+            </div>
+            <textarea disabled={!isAdmin} className="h-40 w-full resize-none p-3 text-center outline-none focus:bg-blue-50/30 overflow-y-auto leading-relaxed text-[0.9rem] bg-transparent disabled:bg-slate-50/50" placeholder="..." value={item.names} onChange={e => setData((current: any) => ({ ...current, days: current.days.map((day: any, dayIndex: number) => dayIndex === index ? { ...day, names: e.target.value } : day) }))} />
+          </div>
+        ))}
+      </div>
+
+      {isAdmin && <button className="btn btn-success mt-5 w-full" disabled={saving} onClick={save}><CheckCircle2 size={16}/> {saving ? 'Saving...' : 'Save Data'}</button>}
+    </section>
+  );
 }
 
 function Analytics({ counts, totalStudents }: { counts: { present: number; leave: number; absent: number }; totalStudents: number }) { 

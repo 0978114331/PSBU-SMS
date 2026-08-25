@@ -1,16 +1,16 @@
-import { BarChart3, CalendarDays, ChevronDown, ClipboardList, Database, FileBadge, GraduationCap, LogOut, Menu, QrCode, UserCheck, Users } from 'lucide-react';
+import { BarChart3, CalendarDays, ChevronDown, ClipboardList, Database, FileBadge, GraduationCap, LogOut, Menu, QrCode, UserCheck, Users, FileText } from 'lucide-react';
 import type { Tab } from '@/types';
 
-type NavItem = { id: Tab; label: string; icon: typeof Users };
+type NavItem = { id: Tab | 'leaves'; label: string; icon: typeof Users };
 
 type NavbarProps = {
-  activeTab: Tab;
+  activeTab: Tab | 'leaves';
   isAdmin: boolean;
   userLabel: string;
   role: string;
   mobileOpen: boolean;
   logoUrl?: string;
-  onTabChange: (tab: Tab) => void;
+  onTabChange: (tab: Tab | 'leaves') => void;
   onScanner: () => void;
   onSignOut: () => void;
   onMobileToggle: () => void;
@@ -18,6 +18,7 @@ type NavbarProps = {
 
 const primaryItems: NavItem[] = [
   { id: 'attendance', label: 'វត្តមាន', icon: UserCheck },
+  { id: 'leaves', label: 'សុំច្បាប់', icon: FileText },
   { id: 'scores', label: 'ពិន្ទុ', icon: GraduationCap },
   { id: 'analytics', label: 'វិភាគ', icon: BarChart3 },
 ];
@@ -44,7 +45,7 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
       <div className="hidden items-center gap-2 lg:flex">
         {primaryItems.map(item => <NavButton key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} />)}
         <WarehouseMenu activeTab={activeTab} onTabChange={onTabChange} />
-        <button className="btn bg-[#bb8e26] text-white" onClick={() => onTabChange('cards')}><FileBadge size={17} /> បង្កើតកាត</button>
+        <button className="btn bg-[#bb8e26] text-white" onClick={() => onTabChange('cards' as any)}><FileBadge size={17} /> បង្កើតកាត</button>
         <button className="btn bg-secondary text-white" onClick={onScanner}><QrCode size={17} /> ស្កែនវត្តមាន</button>
         <UserProfile userLabel={userLabel} role={role} onSignOut={onSignOut} />
       </div>
@@ -58,7 +59,7 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
       <div className="mt-2 rounded-xl border border-white/15 bg-black/10 p-2">
         <div className="mb-2 flex items-center gap-2 px-2 text-sm font-bold text-blue-100"><Database size={17} /> ឃ្លាំងទិន្នន័យ</div>
         {warehouseItems.map(item => <MobileNavButton key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} nested />)}
-        <MobileNavButton item={{ id: 'cards', label: 'បង្កើតកាត', icon: FileBadge }} active={activeTab === 'cards'} onClick={() => onTabChange('cards')} nested />
+        <MobileNavButton item={{ id: 'cards' as any, label: 'បង្កើតកាត', icon: FileBadge }} active={activeTab === 'cards'} onClick={() => onTabChange('cards' as any)} nested />
       </div>
       <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-red-500/20 p-3 font-bold text-red-200 hover:bg-red-500/30 transition" onClick={onSignOut}><LogOut size={17} /> ចាកចេញ</button>
     </div>}
@@ -75,7 +76,7 @@ function MobileNavButton({ item, active, onClick, nested = false }: { item: NavI
   return <button className={`mb-2 flex w-full items-center gap-2 rounded-xl p-3.5 font-bold transition ${nested ? 'justify-start pl-3 text-sm' : 'justify-center'} ${active ? 'bg-primary text-white' : 'bg-white/5 text-white hover:bg-white/10'}`} onClick={onClick}><Icon size={18} />{item.label}</button>;
 }
 
-function WarehouseMenu({ activeTab, onTabChange }: { activeTab: Tab; onTabChange: (tab: Tab) => void }) {
+function WarehouseMenu({ activeTab, onTabChange }: { activeTab: Tab | 'leaves'; onTabChange: (tab: Tab | 'leaves') => void }) {
   return <div className="group relative">
     <button className={`btn ${warehouseItems.some(item => item.id === activeTab) ? 'bg-[#3b31c4] text-white' : 'bg-[#3b31c4] text-white'}`}><Database size={17} /> ឃ្លាំងទិន្នន័យ <ChevronDown size={15} /></button>
     <div className="invisible absolute right-0 top-full z-50 mt-2 w-60 translate-y-1 overflow-hidden rounded-xl bg-white opacity-0 shadow-xl transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
