@@ -96,18 +96,30 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const [search, setSearch] = useState('');
   
   const [adminInfo, setAdminInfo] = useState({ teacher: '', room: '', subject: '', shift: 'វេនព្រឹក', time: '7:30-11:00', logo: '' });
+  const [initialConfigLoad, setInitialConfigLoad] = useState(true);
+  
   const today = new Date().toISOString().slice(0, 10);
   
   useEffect(() => {
-    const saved = localStorage.getItem('sys_admin_info');
-    if (saved) setAdminInfo(JSON.parse(saved));
+    supabase.from('schedules').select('data_json').eq('type', 'school_info').maybeSingle().then(({data}) => {
+      if (data?.data_json) setAdminInfo(data.data_json as typeof adminInfo);
+      setInitialConfigLoad(false);
+    });
     void refresh();
   }, []);
 
-  const updateAdminInfo = (newInfo: any) => {
-    setAdminInfo(newInfo);
-    localStorage.setItem('sys_admin_info', JSON.stringify(newInfo));
-  };
+  useEffect(() => {
+    if (initialConfigLoad || !isAdmin) return;
+    const timer = setTimeout(async () => {
+      const { data } = await supabase.from('schedules').select('id').eq('type', 'school_info').maybeSingle();
+      if (data?.id) {
+        await supabase.from('schedules').update({ data_json: adminInfo }).eq('id', data.id);
+      } else {
+        await supabase.from('schedules').insert({ type: 'school_info', data_json: adminInfo });
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [adminInfo, initialConfigLoad, isAdmin]);
   
   async function refresh() { 
     const [{ data: st }, { data: att }] = await Promise.all([supabase.from('students').select('*').order('name'), supabase.from('attendance').select('*').order('created_at', { ascending: false })]); 
@@ -138,15 +150,15 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
 
         {isAdmin && (
           <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3 rounded-xl bg-white p-3 sm:p-4 shadow-sm border border-slate-200 w-full">
-            <input className="field flex-1 min-w-[120px] text-sm sm:text-base" placeholder="Teacher Name..." value={adminInfo.teacher} onChange={e => updateAdminInfo({...adminInfo, teacher: e.target.value})} />
-            <input className="field w-20 sm:w-24 text-sm sm:text-base" placeholder="Room" value={adminInfo.room} onChange={e => updateAdminInfo({...adminInfo, room: e.target.value})} />
-            <input className="field flex-1 min-w-[120px] text-sm sm:text-base" placeholder="Subject..." value={adminInfo.subject} onChange={e => updateAdminInfo({...adminInfo, subject: e.target.value})} />
-            <select className="field w-28 sm:w-32 text-sm sm:text-base" value={adminInfo.shift} onChange={e => updateAdminInfo({...adminInfo, shift: e.target.value})}>
+            <input className="field flex-1 min-w-[120px] text-sm sm:text-base" placeholder="Teacher Name..." value={adminInfo.teacher} onChange={e => setAdminInfo({...adminInfo, teacher: e.target.value})} />
+            <input className="field w-20 sm:w-24 text-sm sm:text-base" placeholder="Room" value={adminInfo.room} onChange={e => setAdminInfo({...adminInfo, room: e.target.value})} />
+            <input className="field flex-1 min-w-[120px] text-sm sm:text-base" placeholder="Subject..." value={adminInfo.subject} onChange={e => setAdminInfo({...adminInfo, subject: e.target.value})} />
+            <select className="field w-28 sm:w-32 text-sm sm:text-base" value={adminInfo.shift} onChange={e => setAdminInfo({...adminInfo, shift: e.target.value})}>
               <option>វេនព្រឹក</option><option>វេនរសៀល</option><option>វេនយប់</option>
             </select>
             <div className="flex gap-2 w-full xl:w-auto mt-1 xl:mt-0">
-              <input className="field flex-1 text-sm sm:text-base" placeholder="Logo Link" value={adminInfo.logo} onChange={e => updateAdminInfo({...adminInfo, logo: e.target.value})} />
-              <label className="btn btn-primary cursor-pointer px-3 sm:px-4"><Upload size={18} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>updateAdminInfo({...adminInfo, logo: ev.target?.result as string}); r.readAsDataURL(f); } }} /></label>
+              <input className="field flex-1 text-sm sm:text-base" placeholder="Logo Link" value={adminInfo.logo} onChange={e => setAdminInfo({...adminInfo, logo: e.target.value})} />
+              <label className="btn btn-primary cursor-pointer px-3 sm:px-4"><Upload size={18} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAdminInfo({...adminInfo, logo: ev.target?.result as string}); r.readAsDataURL(f); } }} /></label>
             </div>
           </div>
         )}
@@ -159,7 +171,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         )}
 
         <div className="w-full overflow-x-hidden">
-          {tab === 'attendance' && <AttendancePanel students={students} records={todayAttendance.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} setAdminInfo={updateAdminInfo} />}
+          {tab === 'attendance' && <AttendancePanel students={students} records={todayAttendance.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} setAdminInfo={setAdminInfo} />}
           {tab === 'warehouse_att' && isAdmin && <AttendanceHistory records={attendance} />}
           {tab === 'students' && isAdmin && <MasterStudentList students={students} isAdmin={isAdmin} refresh={refresh} />}
           {tab === 'scores' && <ScoresPanel students={students} isAdmin={isAdmin} />}
@@ -170,7 +182,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
           {tab === 'cards' && isAdmin && <CardsPanel />}
         </div>
       </div>
-      {scanner && <Scanner onClose={() => setScanner(false)} students={students} refresh={refresh} />}
+      {scanner && <Scanner onClose={() => setScanner(false)} students={students} refresh={refresh} adminInfo={adminInfo} />}
     </div>
   );
 }
@@ -216,7 +228,19 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, setAd
     const finalId = student ? student.stu_id : "";
     const finalGender = student ? student.gender : "ប្រុស";
 
-    await supabase.from('attendance').insert({ student_id: student?.id || null, stu_id: finalId, name: finalName, gender: finalGender, status, date: new Date().toISOString().slice(0, 10), time: new Date().toLocaleTimeString('en-GB') }); 
+    await supabase.from('attendance').insert({ 
+      student_id: student?.id || null, 
+      stu_id: finalId, 
+      name: finalName, 
+      gender: finalGender, 
+      status, 
+      date: new Date().toISOString().slice(0, 10), 
+      time: new Date().toLocaleTimeString('en-GB'),
+      shift: adminInfo.shift || '',
+      room: adminInfo.room || '',
+      teacher: adminInfo.teacher || '',
+      subject: adminInfo.subject || ''
+    }); 
     setName(''); setSaving(false); await refresh(); 
   } 
 
@@ -398,8 +422,11 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
   const [savingId, setSavingId] = useState('');
 
   useEffect(() => {
-    const savedSubs = localStorage.getItem('sys_subjects');
-    if (savedSubs) setSubjects(JSON.parse(savedSubs));
+    supabase.from('schedules').select('data_json').eq('type', 'subjects').maybeSingle().then(({data}) => {
+      if (data?.data_json && Array.isArray(data.data_json)) {
+        setSubjects(data.data_json);
+      }
+    });
     loadScores();
   }, []);
 
@@ -412,16 +439,28 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
     }
   }
 
-  const addSub = () => {
+  async function saveSubjectsToDB(updatedSubjects: string[]) {
+    const { data } = await supabase.from('schedules').select('id').eq('type', 'subjects').maybeSingle();
+    if (data?.id) {
+      await supabase.from('schedules').update({ data_json: updatedSubjects }).eq('id', data.id);
+    } else {
+      await supabase.from('schedules').insert({ type: 'subjects', data_json: updatedSubjects });
+    }
+  }
+
+  const addSub = async () => {
     if(!newSub.trim() || subjects.includes(newSub.trim())) return;
     const updated = [...subjects, newSub.trim()];
-    setSubjects(updated); localStorage.setItem('sys_subjects', JSON.stringify(updated)); setNewSub('');
+    setSubjects(updated); 
+    setNewSub('');
+    await saveSubjectsToDB(updated);
   };
 
-  const removeSub = (sub: string) => {
+  const removeSub = async (sub: string) => {
     if(!window.confirm(`Delete ${sub}?`)) return;
     const updated = subjects.filter(s => s !== sub);
-    setSubjects(updated); localStorage.setItem('sys_subjects', JSON.stringify(updated));
+    setSubjects(updated);
+    await saveSubjectsToDB(updated);
   };
 
   const updateScore = (studentId: string, sub: string, val: string) => {
@@ -504,45 +543,66 @@ function CardsPanel() {
   const [cardType, setCardType] = useState('student');
   const [form, setForm] = useState({ id: '', name: '', f1: '', f2: '', photo: '' });
   const [savedCards, setSavedCards] = useState<any[]>([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState('student');
 
   useEffect(() => {
-    const saved = localStorage.getItem('sys_custom_cards');
-    if (saved) setSavedCards(JSON.parse(saved));
+    fetchCards();
   }, []);
 
-  function saveCard() {
+  async function fetchCards() {
+    const { data } = await supabase.from('custom_cards').select('*').order('created_at', { ascending: false });
+    if (data) {
+      const mapped = data.map(c => ({
+        id: c.card_id,
+        name: c.name,
+        f1: c.field1,
+        f2: c.field2,
+        photo: c.photo,
+        template: c.template,
+        dbId: c.id
+      }));
+      setSavedCards(mapped);
+    }
+  }
+
+  async function saveCard() {
     if(!form.id || !form.name) return alert("Please fill ID and Name!");
-    let newCards = [...savedCards];
+    const payload = {
+      card_id: form.id,
+      name: form.name,
+      field1: form.f1,
+      field2: form.f2,
+      photo: form.photo,
+      template: cardType
+    };
+
     if (editingId) {
-      newCards = newCards.map(c => c.generatedId === editingId ? { ...form, template: cardType, generatedId: editingId } : c);
+      await supabase.from('custom_cards').update(payload).eq('id', editingId);
       setEditingId(null);
     } else {
-      newCards.push({ ...form, template: cardType, generatedId: Date.now() });
+      await supabase.from('custom_cards').insert(payload);
     }
-    setSavedCards(newCards);
-    localStorage.setItem('sys_custom_cards', JSON.stringify(newCards));
     setForm({ id: '', name: '', f1: '', f2: '', photo: '' });
+    await fetchCards();
   }
 
   function editCard(card: any) {
     setCardType(card.template);
     setFilterType(card.template);
     setForm({ id: card.id, name: card.name, f1: card.f1, f2: card.f2, photo: card.photo });
-    setEditingId(card.generatedId);
+    setEditingId(card.dbId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function deleteCard(genId: number) {
+  async function deleteCard(dbId: string) {
     if(!window.confirm("Delete this card?")) return;
-    const newCards = savedCards.filter(c => c.generatedId !== genId);
-    setSavedCards(newCards);
-    localStorage.setItem('sys_custom_cards', JSON.stringify(newCards));
+    await supabase.from('custom_cards').delete().eq('id', dbId);
+    await fetchCards();
   }
 
-  function downloadCard(genId: number, cardName: string) {
-    const el = document.getElementById(`card-${genId}`);
+  function downloadCard(dbId: string, cardName: string) {
+    const el = document.getElementById(`card-${dbId}`);
     if(!el) return;
     html2canvas(el, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
       const link = document.createElement('a');
@@ -557,7 +617,7 @@ function CardsPanel() {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${cardData.id || '000'}`;
     
     if (cType === 'student') return (
-      <div className="student-card" id={isPreview ? undefined : `card-${cardData.generatedId}`}>
+      <div className="student-card" id={isPreview ? undefined : `card-${cardData.dbId}`}>
          <div className="card-header">STUDENT IDENTITY CARD</div>
          <div className="card-body">
             <div className="photo-area">
@@ -575,7 +635,7 @@ function CardsPanel() {
       </div>
     );
     if (cType === 'company') return (
-      <div className="company-card-h" id={isPreview ? undefined : `card-${cardData.generatedId}`}>
+      <div className="company-card-h" id={isPreview ? undefined : `card-${cardData.dbId}`}>
          <div className="card-header"><span>CO. IDENTITY CARD</span><span style={{fontSize:'9px', color:'#64748b'}}>VIP MEMBER</span></div>
          <div className="card-body">
             <div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <UserCheck size={30} className="text-slate-300"/>}</div>
@@ -590,7 +650,7 @@ function CardsPanel() {
       </div>
     );
     if (cType === 'staff') return (
-      <div className="staff-card-v" id={isPreview ? undefined : `card-${cardData.generatedId}`}>
+      <div className="staff-card-v" id={isPreview ? undefined : `card-${cardData.dbId}`}>
          <div className="card-top"><h5>KINGDOM OF CAMBODIA</h5><p>{cardData.f1 || 'Ministry/Unit'}</p></div>
          <div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <UserCheck size={40} className="text-slate-300"/>}</div>
          <div className="info-area">
@@ -602,7 +662,7 @@ function CardsPanel() {
       </div>
     );
     if (cType === 'business') return (
-      <div className="business-card-h" id={isPreview ? undefined : `card-${cardData.generatedId}`}>
+      <div className="business-card-h" id={isPreview ? undefined : `card-${cardData.dbId}`}>
          <div className="left-panel">
             <div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <UserCheck size={30} className="text-slate-500"/>}</div>
             <span>ID: {cardData.id || '---'}</span>
@@ -615,7 +675,7 @@ function CardsPanel() {
       </div>
     );
     if (cType === 'press') return (
-      <div className="press-card-v" id={isPreview ? undefined : `card-${cardData.generatedId}`}>
+      <div className="press-card-v" id={isPreview ? undefined : `card-${cardData.dbId}`}>
          <div className="card-header">PRESS</div>
          <div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <Camera size={40} className="text-slate-300"/>}</div>
          <div className="info-area">
@@ -625,7 +685,7 @@ function CardsPanel() {
       </div>
     );
     if (cType === 'library') return (
-      <div className="library-card-h" id={isPreview ? undefined : `card-${cardData.generatedId}`}>
+      <div className="library-card-h" id={isPreview ? undefined : `card-${cardData.dbId}`}>
          <div className="left-col">
             <div><div className="lib-header">LIBRARY CARD</div><div className="info-area"><h4>{cardData.name || 'Reader Name'}</h4><p>TYPE: <b>{cardData.f1 || '---'}</b></p><p>JOINED: <b>{cardData.f2 || '---'}</b></p></div></div>
             <div className="qr-area"><img src={qrUrl} alt="QR" className="w-[85px] h-[85px] object-contain" /></div>
@@ -712,11 +772,11 @@ function CardsPanel() {
               )}
               
               {savedCards.filter(c => c.template === filterType).map((card) => (
-                <div key={card.generatedId} className="relative group hover:-translate-y-1 transition-transform p-2 bg-white rounded-xl shadow-md border border-slate-200 w-max max-w-full mx-auto sm:mx-0">
+                <div key={card.dbId} className="relative group hover:-translate-y-1 transition-transform p-2 bg-white rounded-xl shadow-md border border-slate-200 w-max max-w-full mx-auto sm:mx-0">
                    <div className="absolute top-3 right-3 flex gap-1 z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                      <button className="bg-green-500 text-white p-1.5 sm:p-2 rounded-full shadow hover:bg-green-600" onClick={() => downloadCard(card.generatedId, card.name)}><Download size={14} className="sm:w-4 sm:h-4"/></button>
+                      <button className="bg-green-500 text-white p-1.5 sm:p-2 rounded-full shadow hover:bg-green-600" onClick={() => downloadCard(card.dbId, card.name)}><Download size={14} className="sm:w-4 sm:h-4"/></button>
                       <button className="bg-blue-500 text-white p-1.5 sm:p-2 rounded-full shadow hover:bg-blue-600" onClick={() => editCard(card)}><Pencil size={14} className="sm:w-4 sm:h-4"/></button>
-                      <button className="bg-red-500 text-white p-1.5 sm:p-2 rounded-full shadow hover:bg-red-600" onClick={() => deleteCard(card.generatedId)}><Trash2 size={14} className="sm:w-4 sm:h-4"/></button>
+                      <button className="bg-red-500 text-white p-1.5 sm:p-2 rounded-full shadow hover:bg-red-600" onClick={() => deleteCard(card.dbId)}><Trash2 size={14} className="sm:w-4 sm:h-4"/></button>
                    </div>
                    <RenderCard cardData={card} />
                 </div>
@@ -731,7 +791,7 @@ function CardsPanel() {
   ); 
 }
 
-function Scanner({ onClose, students, refresh }: { onClose: () => void; students: Student[]; refresh: () => Promise<void> }) { 
+function Scanner({ onClose, students, refresh, adminInfo }: { onClose: () => void; students: Student[]; refresh: () => Promise<void>; adminInfo: any }) { 
   const [value, setValue] = useState(''); 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   
@@ -766,7 +826,19 @@ function Scanner({ onClose, students, refresh }: { onClose: () => void; students
   async function recordText(val: string) {
     const student = students.find(s => s.stu_id === val.trim()); 
     if (!student) { alert("រកមិនឃើញលេខ ID នេះទេ!"); return; } 
-    await supabase.from('attendance').insert({ student_id: student.id, stu_id: student.stu_id, name: student.name, gender: student.gender, status: statuses[0], date: new Date().toISOString().slice(0, 10), time: new Date().toLocaleTimeString('en-GB') }); 
+    await supabase.from('attendance').insert({ 
+      student_id: student.id, 
+      stu_id: student.stu_id, 
+      name: student.name, 
+      gender: student.gender, 
+      status: statuses[0], 
+      date: new Date().toISOString().slice(0, 10), 
+      time: new Date().toLocaleTimeString('en-GB'),
+      shift: adminInfo.shift || '',
+      room: adminInfo.room || '',
+      teacher: adminInfo.teacher || '',
+      subject: adminInfo.subject || ''
+    }); 
     await refresh(); 
     setValue('');
     alert("ស្កែនដោយជោគជ័យ!");
@@ -802,11 +874,22 @@ function SchedulePanel({ isAdmin }: { isAdmin: boolean }) {
   const [scheduleData, setScheduleData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { const saved = localStorage.getItem('sys_schedule_config'); if (saved) setScheduleData(JSON.parse(saved)); }, []);
+  useEffect(() => { 
+    supabase.from('schedules').select('data_json').eq('type', 'class_schedule').maybeSingle().then(({data}) => {
+      if(data?.data_json) setScheduleData(data.data_json as Record<string, string>);
+    }); 
+  }, []);
 
   async function saveSchedule() {
-    setSaving(true); localStorage.setItem('sys_schedule_config', JSON.stringify(scheduleData));
-    setTimeout(() => { setSaving(false); alert('រក្សាទុកកាលវិភាគបានជោគជ័យ!'); }, 500);
+    setSaving(true); 
+    const { data } = await supabase.from('schedules').select('id').eq('type', 'class_schedule').maybeSingle();
+    if (data?.id) {
+      await supabase.from('schedules').update({ data_json: scheduleData }).eq('id', data.id);
+    } else {
+      await supabase.from('schedules').insert({ type: 'class_schedule', data_json: scheduleData });
+    }
+    setSaving(false); 
+    alert('Saved successfully!'); 
   }
 
   return (
@@ -837,7 +920,7 @@ function SchedulePanel({ isAdmin }: { isAdmin: boolean }) {
           </tbody>
         </table>
       </div>
-      {isAdmin && <button className="btn btn-success mt-4 py-2.5 px-5" disabled={saving} onClick={saveSchedule}><CheckCircle2 size={18} /> {saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកកាលវិភាគ'}</button>}
+      {isAdmin && <button className="btn btn-success mt-4 py-2.5 px-5" disabled={saving} onClick={saveSchedule}><CheckCircle2 size={18} /> {saving ? 'Saving...' : 'Save Schedule'}</button>}
     </div>
   ); 
 }

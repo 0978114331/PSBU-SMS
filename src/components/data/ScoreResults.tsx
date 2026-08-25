@@ -2,21 +2,26 @@ import { useEffect, useMemo, useState } from 'react';
 import { Medal, Trophy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Score, Student } from '@/types';
-import { gradeFor, subjects } from '@/types';
+import { gradeFor } from '@/types';
 
 type Props = { students: Student[] };
 
 export function ScoreResults({ students }: Props) {
   const [scores, setScores] = useState<Score[]>([]);
+  const [subjects, setSubjects] = useState<string[]>(['C++', 'C#', 'Web', 'Database']);
+
   useEffect(() => { 
     supabase.from('scores').select('*').then(({ data }) => setScores((data ?? []) as Score[])); 
+    supabase.from('schedules').select('data_json').eq('type', 'subjects').maybeSingle().then(({ data }) => {
+      if (data?.data_json && Array.isArray(data.data_json)) setSubjects(data.data_json);
+    });
   }, []);
   
   const ranking = useMemo(() => students.map(student => { 
     const values = subjects.map(subject => Number(scores.find(score => score.student_id === student.id && score.subject_name === subject)?.score ?? 0)); 
     const average = values.reduce((sum, value) => sum + value, 0) / (values.length || 1); 
     return { student, values, average }; 
-  }).sort((a, b) => b.average - a.average), [scores, students]);
+  }).sort((a, b) => b.average - a.average), [scores, students, subjects]);
 
   return (
     <section className="card">
