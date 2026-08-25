@@ -29,7 +29,7 @@ const warehouseItems: NavItem[] = [
   { id: 'schedule', label: 'កាលវិភាគរៀន', icon: CalendarDays },
   { id: 'cleaning', label: 'វេនសម្អាតថ្នាក់', icon: CalendarDays },
   { id: 'students', label: 'បញ្ជីឈ្មោះសិស្ស', icon: Users },
-  { id: 'cards' as any, label: 'បង្កើតកាត', icon: FileBadge }
+  { id: 'cards' as any, label: 'កាតសិស្ស-បុគ្គលិក', icon: FileBadge }
 ];
 
 export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUrl, onTabChange, onScanner, onSignOut, onMobileToggle }: NavbarProps) {
@@ -44,7 +44,7 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
         ) : (
           <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-primary"><GraduationCap size={22} /></div>
         )}
-        <b className="text-sm sm:text-base font-bold tracking-wide hidden min-[360px]:block">PSB System</b>
+        <b className="text-sm sm:text-base font-bold tracking-wide hidden min-[360px]:block">PSB University</b>
       </div>
       
       <div className="hidden items-center gap-3 lg:flex">
@@ -52,32 +52,30 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
         
         <WarehouseMenu activeTab={activeTab} onTabChange={onTabChange} />
         
-        <div className="mx-2 pr-4 border-r border-white/20">
-           <UserProfile userLabel={userLabel} role={role} onSignOut={onSignOut} />
-        </div>
-        
-        <button className="btn bg-secondary text-white !min-h-[38px] !py-1.5 shadow-md shadow-secondary/30" onClick={onScanner}>
+        <button className="btn bg-secondary text-white !min-h-[38px] !py-1.5 shadow-md shadow-secondary/30 ml-2" onClick={onScanner}>
            <QrCode size={16} /> ស្កែនវត្តមាន
         </button>
       </div>
 
       <div className="flex items-center gap-4 lg:hidden">
-        <div className="text-right flex flex-col justify-center">
-           <span className="text-[12px] font-bold leading-none">{userLabel}</span>
-           <span className="text-[9px] text-warning uppercase mt-0.5">{role}</span>
-        </div>
         <button className="relative flex items-center justify-center bg-gradient-to-r from-secondary to-primary rounded-xl p-2 shadow-lg shadow-primary/30 active:scale-95 transition-transform" onClick={onScanner}>
            <QrCode size={20} className="text-white" />
         </button>
       </div>
     </header>
 
-    <nav className="fixed bottom-0 left-0 w-full z-40 bg-white border-t border-slate-200 shadow-[0_-4px_15px_rgba(0,0,0,0.03)] lg:hidden flex justify-around items-center pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 w-full z-40 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] lg:hidden flex justify-between items-center px-1 pb-[env(safe-area-inset-bottom)] h-[65px]">
        <BottomNavItem icon={UserCheck} label="វត្តមាន" active={activeTab === 'attendance'} onClick={() => { onTabChange('attendance'); if(mobileOpen) onMobileToggle(); }} />
        <BottomNavItem icon={FileText} label="សុំច្បាប់" active={activeTab === 'leaves'} onClick={() => { onTabChange('leaves'); if(mobileOpen) onMobileToggle(); }} />
+       
+       <div className="flex-1 flex justify-center relative -top-6">
+         <button onClick={onMobileToggle} className={`flex items-center justify-center w-[60px] h-[60px] rounded-full text-white shadow-xl transition-transform active:scale-95 border-[4px] border-light ${mobileOpen || isMenuTabActive ? 'bg-secondary shadow-secondary/40' : 'bg-primary shadow-primary/40'}`}>
+           <Menu size={28} />
+         </button>
+       </div>
+
        <BottomNavItem icon={GraduationCap} label="ពិន្ទុ" active={activeTab === 'scores'} onClick={() => { onTabChange('scores'); if(mobileOpen) onMobileToggle(); }} />
        <BottomNavItem icon={BarChart3} label="វិភាគ" active={activeTab === 'analytics'} onClick={() => { onTabChange('analytics'); if(mobileOpen) onMobileToggle(); }} />
-       <BottomNavItem icon={Menu} label="ម៉ឺនុយ" active={mobileOpen || isMenuTabActive} onClick={onMobileToggle} />
     </nav>
 
     {mobileOpen && (
@@ -91,9 +89,17 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
              ))}
           </div>
           
-          <div className="border-t border-white/10 pt-5">
-             <button className="mx-auto flex w-max items-center justify-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-8 py-2.5 font-bold text-red-400 hover:bg-red-500/20 transition active:scale-95" onClick={onSignOut}>
-                <LogOut size={16} /> ចាកចេញពីប្រព័ន្ធ
+          <div className="border-t border-white/10 pt-6 mt-2">
+             <div className="flex flex-col items-center justify-center mb-5">
+                <div className="w-16 h-16 bg-primary/20 text-primary rounded-full flex items-center justify-center mb-2 border border-primary/30">
+                   <UserCheck size={32} />
+                </div>
+                <span className="text-white font-bold tracking-wide">{userLabel}</span>
+                <span className="text-warning text-[10px] uppercase font-bold mt-1 px-2.5 py-0.5 bg-warning/10 rounded-full border border-warning/20">{role}</span>
+             </div>
+             
+             <button className="mx-auto flex w-full max-w-[250px] items-center justify-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-8 py-3 font-bold text-red-400 hover:bg-red-500/20 transition active:scale-95" onClick={onSignOut}>
+                <LogOut size={18} /> ចាកចេញពីប្រព័ន្ធ
              </button>
           </div>
         </div>
@@ -109,7 +115,7 @@ function NavButton({ item, active, onClick }: { item: NavItem; active: boolean; 
 
 function BottomNavItem({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex flex-col items-center justify-center w-full py-2 gap-1 active:scale-95 transition-transform bg-transparent border-none outline-none">
+    <button onClick={onClick} className="flex-1 flex flex-col items-center justify-center py-2 gap-1 active:scale-95 transition-transform bg-transparent border-none outline-none">
       <div className={`relative p-1.5 rounded-full transition-colors duration-300 ${active ? 'bg-primary/10 text-primary' : 'text-slate-400'}`}>
          <Icon size={22} strokeWidth={active ? 2.5 : 2} />
       </div>
@@ -134,8 +140,4 @@ function WarehouseMenu({ activeTab, onTabChange }: { activeTab: Tab | 'leaves'; 
       {warehouseItems.map(item => { const Icon = item.icon; return <button key={item.id} className="flex w-full items-center gap-3 border-b border-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-slate-700 transition hover:bg-primary/5 hover:text-primary" onClick={() => onTabChange(item.id as any)}><Icon size={16} className="text-slate-400" />{item.label}</button>; })}
     </div>
   </div>;
-}
-
-function UserProfile({ userLabel, role, onSignOut }: { userLabel: string; role: string; onSignOut: () => void }) {
-  return <div className="flex items-center gap-3 rounded-full"><div className="text-right text-xs"><b>{userLabel}</b><span className="block text-warning text-[9px] uppercase font-bold mt-0.5">{role}</span></div><button onClick={onSignOut} className="hover:scale-110 transition-transform bg-white/10 p-2 rounded-full"><LogOut size={14} className="text-red-300" /></button></div>;
 }

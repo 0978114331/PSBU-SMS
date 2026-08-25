@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin, Image as ImageIcon, FileText } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -10,6 +10,7 @@ import type { Attendance, Student, Tab } from '@/types';
 import { statuses } from '@/types';
 import html2canvas from 'html2canvas';
 import { Html5Qrcode } from 'html5-qrcode';
+import { jsPDF } from 'jspdf';
 
 function App() {
   const { user, profile, loading } = useAuth();
@@ -125,8 +126,62 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
     setAttendance((att ?? []) as Attendance[]); 
   }
   
-  const todayAttendance = attendance.filter(a => a.date === today); 
-  const counts = { present: todayAttendance.filter(a => a.status === statuses[0]).length, leave: todayAttendance.filter(a => a.status === statuses[1]).length, absent: todayAttendance.filter(a => a.status === statuses[2]).length };
+  const processedToday = useMemo(() => {
+    const unique: Attendance[] = [];
+    const seen = new Set();
+    // Use (a as any).created_at to bypass TS errors if created_at is missing from the interface
+    const todayAtt = attendance.filter(a => a.date === today).sort((a,b) => new Date((b as any).created_at).getTime() - new Date((a as any).created_at).getTime());
+    for (const r of todayAtt) {
+        const key = r.student_id || r.name;
+        if (!seen.has(key)) {
+            seen.add(key);
+            unique.push(r);
+        }
+    }
+    return unique;
+  }, [attendance, today]);
+
+  useEffect(() => {
+    if (!isAdmin || processedToday.length === 0 || students.length === 0) return;
+    
+    // Cast to any to avoid TS errors
+    const earliest = processedToday.reduce((min, curr) => new Date((curr as any).created_at).getTime() < new Date((min as any).created_at).getTime() ? curr : min);
+    
+    const earliestTime = new Date((earliest as any).created_at).getTime();
+    const twoHours = 2 * 60 * 60 * 1000;
+    const waitTime = (earliestTime + twoHours) - Date.now();
+
+    const triggerAutoAbsent = async () => {
+        const scannedIds = processedToday.map(r => r.student_id).filter(Boolean);
+        const absents = students.filter(s => !scannedIds.includes(s.id));
+        if (absents.length > 0) {
+            const payloads = absents.map(s => ({
+                student_id: s.id,
+                stu_id: s.stu_id,
+                name: s.name,
+                gender: s.gender,
+                status: 'អវត្តមាន',
+                date: today,
+                time: new Date().toLocaleTimeString('en-GB'),
+                shift: adminInfo.shift || '',
+                room: adminInfo.room || '',
+                teacher: adminInfo.teacher || '',
+                subject: adminInfo.subject || ''
+            }));
+            await supabase.from('attendance').insert(payloads);
+            refresh();
+        }
+    };
+
+    if (waitTime <= 0) {
+        triggerAutoAbsent();
+    } else {
+        const t = setTimeout(triggerAutoAbsent, waitTime);
+        return () => clearTimeout(t);
+    }
+  }, [processedToday.length, students.length, isAdmin, adminInfo, today]);
+
+  const counts = { present: processedToday.filter(a => a.status === statuses[0]).length, leave: processedToday.filter(a => a.status === statuses[1]).length, absent: processedToday.filter(a => a.status === statuses[2]).length };
   
   return (
     <div className="min-h-screen w-full bg-light pb-24 lg:pb-5 overflow-x-hidden">
@@ -185,7 +240,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         )}
 
         <div className="w-full overflow-x-hidden">
-          {tab === 'attendance' && <AttendancePanel students={students} records={todayAttendance.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} />}
+          {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
           {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
           {tab === 'warehouse_att' && <AttendanceHistory records={attendance} />}
           {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} refresh={refresh} />}
@@ -233,7 +288,7 @@ function Banner({ mapUrl, bgUrls }: { mapUrl?: string; bgUrls?: string }) {
   ); 
 }
 
-function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any) { 
+function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today }: any) { 
   const [name, setName] = useState(''); 
   const [status, setStatus] = useState<string>(statuses[0]); 
   const [saving, setSaving] = useState(false); 
@@ -249,13 +304,17 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
     const finalId = student ? student.stu_id : "";
     const finalGender = student ? student.gender : "ប្រុស";
 
+    if (student?.id) {
+       await supabase.from('attendance').delete().eq('student_id', student.id).eq('date', today);
+    }
+
     await supabase.from('attendance').insert({ 
       student_id: student?.id || null, 
       stu_id: finalId, 
       name: finalName, 
       gender: finalGender, 
       status, 
-      date: new Date().toISOString().slice(0, 10), 
+      date: today, 
       time: new Date().toLocaleTimeString('en-GB'),
       shift: adminInfo.shift || '',
       room: adminInfo.room || '',
@@ -280,7 +339,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
       name: s.name, 
       gender: s.gender, 
       status: 'អវត្តមាន', 
-      date: new Date().toISOString().slice(0, 10), 
+      date: today, 
       time: new Date().toLocaleTimeString('en-GB'),
       shift: adminInfo.shift || '',
       room: adminInfo.room || '',
@@ -445,8 +504,10 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
   const [reason, setReason] = useState('');
   const [photo, setPhoto] = useState('');
   const [saving, setSaving] = useState(false);
+  const [viewDate, setViewDate] = useState(today);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const leaveRecords = records.filter((r: any) => r.status === 'ច្បាប់' && r.date === today);
+  const leaveRecords = records.filter((r: any) => r.status === 'ច្បាប់' && r.date === viewDate);
 
   async function submitLeave() {
     if (!name.trim() || !startDate || !endDate) return;
@@ -457,16 +518,52 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
     const finalId = student ? student.stu_id : "";
     const finalGender = student ? student.gender : "ប្រុស";
 
+    if (editingId) {
+      const { error } = await supabase.from('attendance').update({
+        student_id: student?.id || null,
+        stu_id: finalId,
+        name: finalName,
+        gender: finalGender,
+        date: startDate,
+        reason: reason || 'គ្មានការបញ្ជាក់',
+        photo: photo || ''
+      }).eq('id', editingId);
+
+      if (error) {
+        alert("Error: " + error.message);
+      } else {
+        setEditingId(null);
+        setName(''); setReason(''); setPhoto(''); setStartDate(today); setEndDate(today);
+        await refresh();
+      }
+      setSaving(false);
+      return;
+    }
+
+    const dates = [];
+    let curr = new Date(startDate);
+    const end = new Date(endDate);
+    while (curr <= end) {
+      dates.push(curr.toISOString().slice(0, 10));
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    for (const d of dates) {
+      if (student?.id) {
+         await supabase.from('attendance').delete().eq('student_id', student.id).eq('date', d);
+      }
+    }
+
     const dateText = startDate === endDate ? '' : ` (ពី ${startDate} ដល់ ${endDate})`;
     const fullReason = `${reason || 'គ្មានការបញ្ជាក់'}${dateText}`;
 
-    const { error } = await supabase.from('attendance').insert({
+    const payloads = dates.map(d => ({
       student_id: student?.id || null,
       stu_id: finalId,
       name: finalName,
       gender: finalGender,
       status: 'ច្បាប់',
-      date: startDate,
+      date: d,
       time: new Date().toLocaleTimeString('en-GB'),
       shift: adminInfo.shift || '',
       room: adminInfo.room || '',
@@ -474,28 +571,42 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
       subject: adminInfo.subject || '',
       reason: fullReason,
       photo: photo || ''
-    });
+    }));
+
+    const { error } = await supabase.from('attendance').insert(payloads);
 
     if (error) {
-       alert("បរាជ័យក្នុងការបញ្ជូន៖ " + error.message);
+       alert("Error: " + error.message);
     } else {
-       alert("ពាក្យសុំច្បាប់ត្រូវបានបញ្ជូនដោយជោគជ័យ!");
        setName(''); setReason(''); setPhoto(''); setStartDate(today); setEndDate(today);
        await refresh();
     }
     setSaving(false);
   }
 
+  function editLeave(r: any) {
+    setName(r.name);
+    setStartDate(r.date);
+    setEndDate(r.date);
+    setReason(r.reason);
+    setPhoto(r.photo || '');
+    setEditingId(r.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   async function deleteLeave(id: string) {
-    if(!isAdmin) return;
+    if(!window.confirm("តើអ្នកពិតជាចង់លុបច្បាប់នេះមែនទេ?")) return;
     await supabase.from('attendance').delete().eq('id', id);
     await refresh();
   }
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_2fr] w-full">
-      <div className="card w-full max-w-full overflow-hidden">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800"><FileText size={20} className="text-warning shrink-0" /> <span className="truncate">ទម្រង់សុំច្បាប់ឈប់សម្រាក</span></h2>
+      <div className="card w-full max-w-full overflow-hidden h-fit">
+        <div className="flex justify-between items-center mb-4">
+           <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800"><FileText size={20} className="text-warning shrink-0" /> <span className="truncate">{editingId ? 'កែប្រែការសុំច្បាប់' : 'ទម្រង់សុំច្បាប់'}</span></h2>
+           {editingId && <button className="text-slate-400 hover:text-danger" onClick={() => {setEditingId(null); setName(''); setReason(''); setPhoto(''); setStartDate(today); setEndDate(today);}}><X size={18}/></button>}
+        </div>
         
         <label className="block mb-3">
           <span className="text-sm font-bold text-slate-700 mb-1.5 block">ឈ្មោះសិស្ស៖</span>
@@ -504,17 +615,21 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
         </label>
 
         <label className="block mb-3">
-          <span className="text-sm font-bold text-slate-700 mb-1.5 block">កាលបរិច្ឆេទសុំច្បាប់ (ពីថ្ងៃ - ដល់ថ្ងៃ)៖</span>
+          <span className="text-sm font-bold text-slate-700 mb-1.5 block">សុំច្បាប់ (ពីថ្ងៃទី - ដល់ថ្ងៃទី)៖</span>
           <div className="flex items-center gap-2">
              <input type="date" className="field w-full text-sm !px-2" value={startDate} onChange={e => setStartDate(e.target.value)} />
-             <span className="font-bold text-slate-400">-</span>
-             <input type="date" className="field w-full text-sm !px-2" value={endDate} onChange={e => setEndDate(e.target.value)} />
+             {!editingId && (
+               <>
+                 <span className="font-bold text-slate-400">-</span>
+                 <input type="date" className="field w-full text-sm !px-2" value={endDate} onChange={e => setEndDate(e.target.value)} />
+               </>
+             )}
           </div>
         </label>
 
         <label className="block mb-3">
           <span className="text-sm font-bold text-slate-700 mb-1.5 block">មូលហេតុនៃការឈប់៖</span>
-          <textarea className="field w-full min-h-[80px] text-sm resize-none" placeholder="ឧ. ឈឺ, មានធុរៈគ្រួសារ..." value={reason} onChange={e => setReason(e.target.value)}></textarea>
+          <textarea className="field w-full min-h-[80px] text-sm resize-none" placeholder="..." value={reason} onChange={e => setReason(e.target.value)}></textarea>
         </label>
 
         <label className="block mb-4">
@@ -526,14 +641,20 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
         </label>
         
         <button className="btn btn-warning w-full py-3 text-sm sm:text-base shadow-md" disabled={!name || saving} onClick={submitLeave}>
-          <CheckCircle2 size={18} /> <span className="truncate">{saving ? 'កំពុងបញ្ជូន...' : 'បញ្ជូនពាក្យសុំច្បាប់'}</span>
+          <CheckCircle2 size={18} /> <span className="truncate">{saving ? '...' : (editingId ? 'រក្សាទុកការកែប្រែ' : 'បញ្ជូនពាក្យសុំច្បាប់')}</span>
         </button>
       </div>
 
-      <div className="card w-full max-w-full overflow-hidden">
+      <div className="card w-full max-w-full overflow-hidden h-fit">
          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-           <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-800"><ClipboardList size={20} className="text-primary shrink-0" /> <span className="truncate">បញ្ជីសុំច្បាប់ថ្ងៃនេះ</span></h2>
-           <span className="bg-warning/20 text-yellow-700 px-3 py-1 rounded-lg text-xs font-bold shrink-0">{leaveRecords.length} នាក់</span>
+           <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-800">
+             <ClipboardList size={20} className="text-primary shrink-0" /> 
+             <span className="truncate">បញ្ជីសុំច្បាប់</span>
+           </h2>
+           <div className="flex items-center gap-2">
+             <input type="date" className="field !py-1.5 !px-2 text-sm w-[130px] font-medium" value={viewDate} onChange={e => setViewDate(e.target.value)} />
+             <span className="bg-warning/20 text-yellow-700 px-3 py-1.5 rounded-lg text-xs font-bold shrink-0">{leaveRecords.length} នាក់</span>
+           </div>
          </div>
          <div className="w-full overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-xs sm:text-sm min-w-[500px]">
@@ -543,7 +664,7 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
                 <th className="p-3 text-center">ម៉ោង</th>
                 <th className="p-3 text-left">មូលហេតុ</th>
                 <th className="p-3 text-center">ភស្តុតាង</th>
-                {isAdmin && <th className="p-3 text-center">Action</th>}
+                <th className="p-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -555,13 +676,12 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
                   <td className="p-3 text-center">
                     {r.photo ? <a href={r.photo} target="_blank" rel="noreferrer" className="inline-block"><img src={r.photo} className="w-8 h-8 object-cover rounded shadow-sm border border-slate-200 hover:scale-150 transition-transform" alt="img"/></a> : <span className="text-slate-400">គ្មាន</span>}
                   </td>
-                  {isAdmin && (
-                    <td className="p-3 text-center">
-                       <button className="text-danger hover:bg-red-50 p-1.5 rounded active:scale-95 transition-transform" onClick={() => deleteLeave(r.id)}><Trash2 size={16} /></button>
-                    </td>
-                  )}
+                  <td className="p-3 text-center whitespace-nowrap">
+                     <button className="text-blue-500 hover:bg-blue-50 p-1.5 rounded active:scale-95 transition-transform mr-1" onClick={() => editLeave(r)}><Pencil size={16} /></button>
+                     <button className="text-danger hover:bg-red-50 p-1.5 rounded active:scale-95 transition-transform" onClick={() => deleteLeave(r.id)}><Trash2 size={16} /></button>
+                  </td>
                 </tr>
-              )) : <tr><td colSpan={isAdmin ? 5 : 4} className="p-8 text-center text-slate-400">មិនមានសិស្សសុំច្បាប់ទេថ្ងៃនេះ</td></tr>}
+              )) : <tr><td colSpan={5} className="p-8 text-center text-slate-400">មិនមានសិស្សសុំច្បាប់ទេសម្រាប់ថ្ងៃនេះ</td></tr>}
             </tbody>
           </table>
         </div>
@@ -763,6 +883,17 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
     }, 500);
   };
 
+  const downloadCard = (dbId: string, cardName: string) => {
+    const el = document.getElementById(`card-${dbId}`);
+    if(!el) return;
+    html2canvas(el, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `ID_Card_${cardName}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  }
+
   const RenderCard = ({ cardData, isPreview = false }: { cardData: any, isPreview?: boolean }) => {
     const cType = cardData.template || cardType;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${cardData.id || '000'}`;
@@ -921,11 +1052,12 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
               
               {savedCards.filter(c => c.template === filterType).map((card) => (
                 <div key={card.dbId} className="relative group hover:-translate-y-1 transition-transform p-1.5 bg-white rounded-xl shadow-md border border-slate-200 w-max max-w-full mx-auto sm:mx-0">
-                   <div className={`absolute top-2 right-2 flex gap-1 z-10 opacity-100 sm:opacity-0 ${isAdmin ? 'sm:group-hover:opacity-100' : ''} transition-opacity no-print`}>
+                   <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity no-print">
+                      <button className="bg-emerald-500 text-white p-1.5 rounded-full shadow hover:bg-emerald-600 active:scale-95 transition-all" onClick={() => downloadCard(card.dbId, card.name)}><Download size={14}/></button>
                       {isAdmin && (
                         <>
-                          <button className="bg-blue-500 text-white p-1.5 rounded-full shadow hover:bg-blue-600 active:scale-95 transition-all" onClick={() => editCard(card)}><Pencil size={12}/></button>
-                          <button className="bg-rose-500 text-white p-1.5 rounded-full shadow hover:bg-rose-600 active:scale-95 transition-all" onClick={() => deleteCard(card.dbId)}><Trash2 size={12}/></button>
+                          <button className="bg-blue-500 text-white p-1.5 rounded-full shadow hover:bg-blue-600 active:scale-95 transition-all" onClick={() => editCard(card)}><Pencil size={14}/></button>
+                          <button className="bg-rose-500 text-white p-1.5 rounded-full shadow hover:bg-rose-600 active:scale-95 transition-all" onClick={() => deleteCard(card.dbId)}><Trash2 size={14}/></button>
                         </>
                       )}
                    </div>
@@ -991,19 +1123,24 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: { onClose: ()
     }
 
     const { data: existing } = await supabase.from('attendance')
-      .select('created_at')
+      .select('id, status, created_at')
       .eq('student_id', student.id)
       .eq('date', today)
       .order('created_at', { ascending: false })
       .limit(1);
 
     if (existing && existing.length > 0) {
-       const lastScanTime = new Date(existing[0].created_at).getTime();
-       const now = new Date().getTime();
-       if (now - lastScanTime < 2 * 60 * 60 * 1000) {
-          setMessage({ text: "បានស្កែនរួចរាល់ហើយ", type: 'error' });
+       if (existing[0].status === statuses[0]) {
+          setMessage({ text: "ស្កែនរួចរាល់ហើយ", type: 'error' });
           setValue('');
           setTimeout(() => { setMessage(null); processingRef.current = false; }, 2500);
+          return;
+       } else {
+          await supabase.from('attendance').update({ status: statuses[0], time: new Date().toLocaleTimeString('en-GB') }).eq('id', existing[0].id);
+          await refresh(); 
+          setValue('');
+          setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
+          setTimeout(() => { onClose(); }, 1500);
           return;
        }
     }
@@ -1018,7 +1155,7 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: { onClose: ()
       name: student.name, 
       gender: student.gender, 
       status: statuses[0], 
-      date: new Date().toISOString().slice(0, 10), 
+      date: today, 
       time: new Date().toLocaleTimeString('en-GB'),
       shift: adminInfo.shift || '',
       room: adminInfo.room || '',
