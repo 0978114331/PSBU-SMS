@@ -25,6 +25,7 @@ const primaryItems: NavItem[] = [
 const warehouseItems: NavItem[] = [
   { id: 'warehouse_att', label: 'ទិន្នន័យវត្តមាន', icon: ClipboardList },
   { id: 'warehouse_score', label: 'លទ្ធផលពិន្ទុ', icon: GraduationCap },
+  { id: 'schedule', label: 'កាលវិភាគរៀន', icon: CalendarDays },
   { id: 'cleaning', label: 'វេនសម្អាតថ្នាក់', icon: CalendarDays },
   { id: 'students', label: 'បញ្ជីឈ្មោះសិស្ស', icon: Users },
 ];

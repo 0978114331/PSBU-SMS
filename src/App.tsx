@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin } from 'lucide-react';
+import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Navbar } from '@/components/Navbar';
@@ -94,7 +94,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const [attendance, setAttendance] = useState<Attendance[]>([]); 
   const [search, setSearch] = useState('');
   
-  const [adminInfo, setAdminInfo] = useState({ teacher: '', room: '', subject: '', shift: 'វេនព្រឹក', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed' });
+  const [adminInfo, setAdminInfo] = useState({ teacher: '', room: '', subject: '', shift: 'វេនព្រឹក', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrl: '' });
   const [initialConfigLoad, setInitialConfigLoad] = useState(true);
   
   const today = new Date().toISOString().slice(0, 10);
@@ -132,15 +132,15 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   return (
     <div className="min-h-screen w-full bg-light pb-5 overflow-x-hidden">
       <Navbar activeTab={tab} isAdmin={isAdmin} userLabel={profile?.full_name || user?.email || ''} role={role} mobileOpen={menu} logoUrl={adminInfo.logo} onTabChange={(nextTab) => { setTab(nextTab); setMenu(false); }} onScanner={() => setScanner(true)} onSignOut={() => void signOut()} onMobileToggle={() => setMenu(!menu)} />
-      <div className="mx-auto max-w-[1200px] w-full px-3 pt-20 sm:pt-24 overflow-x-hidden">
+      <div className="mx-auto max-w-[1200px] w-full px-2 sm:px-3 pt-20 sm:pt-24 overflow-x-hidden">
         
-        <Banner mapUrl={adminInfo.mapUrl} />
+        <Banner mapUrl={adminInfo.mapUrl} bgUrl={adminInfo.bgUrl} />
         
-        <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
-          <div className="col-span-2 md:col-span-1 rounded-xl bg-gradient-to-br from-primary to-secondary p-4 text-center text-white shadow-sm flex flex-col justify-center min-h-[100px]">
+        <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 w-full">
+          <div className="col-span-2 md:col-span-1 rounded-xl bg-gradient-to-br from-primary to-secondary p-3 sm:p-4 text-center text-white shadow-sm flex flex-col justify-center min-h-[100px]">
             <LiveClock />
           </div>
-          <div className="col-span-2 md:col-span-3 grid grid-cols-3 gap-3">
+          <div className="col-span-2 md:col-span-3 grid grid-cols-3 gap-2 sm:gap-3">
             <Stat title="វត្តមាន" value={counts.present} color="bg-success" icon={CheckCircle2} />
             <Stat title="ច្បាប់" value={counts.leave} color="bg-warning" icon={ClipboardList} />
             <Stat title="អវត្តមាន" value={counts.absent} color="bg-danger" icon={X} />
@@ -148,30 +148,34 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         </div>
 
         {isAdmin && (
-          <div className="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 rounded-xl bg-white p-4 shadow-sm border border-slate-200 w-full">
-            <input className="field text-sm sm:text-base" placeholder="Teacher Name..." value={adminInfo.teacher} onChange={e => setAdminInfo({...adminInfo, teacher: e.target.value})} />
-            <input className="field text-sm sm:text-base" placeholder="Room" value={adminInfo.room} onChange={e => setAdminInfo({...adminInfo, room: e.target.value})} />
-            <input className="field text-sm sm:text-base" placeholder="Subject..." value={adminInfo.subject} onChange={e => setAdminInfo({...adminInfo, subject: e.target.value})} />
-            <select className="field text-sm sm:text-base" value={adminInfo.shift} onChange={e => setAdminInfo({...adminInfo, shift: e.target.value})}>
+          <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 rounded-xl bg-white p-3 sm:p-4 shadow-sm border border-slate-200 w-full">
+            <input className="field" placeholder="Teacher Name..." value={adminInfo.teacher} onChange={e => setAdminInfo({...adminInfo, teacher: e.target.value})} />
+            <input className="field" placeholder="Room" value={adminInfo.room} onChange={e => setAdminInfo({...adminInfo, room: e.target.value})} />
+            <input className="field" placeholder="Subject..." value={adminInfo.subject} onChange={e => setAdminInfo({...adminInfo, subject: e.target.value})} />
+            <select className="field" value={adminInfo.shift} onChange={e => setAdminInfo({...adminInfo, shift: e.target.value})}>
               <option>វេនព្រឹក</option><option>វេនរសៀល</option><option>វេនយប់</option>
             </select>
-            <div className="md:col-span-2 lg:col-span-4 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3">
+            <div className="col-span-2 md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3">
                <div className="relative w-full">
-                 <MapPin className="absolute left-3.5 top-3.5 text-slate-400" size={18} />
-                 <input className="field pl-10 text-sm sm:text-base" placeholder="Google Maps Embed Link..." value={adminInfo.mapUrl} onChange={e => setAdminInfo({...adminInfo, mapUrl: e.target.value})} />
+                 <MapPin className="absolute left-3 top-2.5 sm:top-3 text-slate-400" size={16} />
+                 <input className="field pl-9" placeholder="Google Maps Embed Link..." value={adminInfo.mapUrl} onChange={e => setAdminInfo({...adminInfo, mapUrl: e.target.value})} />
+               </div>
+               <div className="relative w-full">
+                 <ImageIcon className="absolute left-3 top-2.5 sm:top-3 text-slate-400" size={16} />
+                 <input className="field pl-9" placeholder="Background Image Link..." value={adminInfo.bgUrl} onChange={e => setAdminInfo({...adminInfo, bgUrl: e.target.value})} />
                </div>
                <div className="flex gap-2 w-full">
-                 <input className="field flex-1 text-sm sm:text-base" placeholder="Logo Link" value={adminInfo.logo} onChange={e => setAdminInfo({...adminInfo, logo: e.target.value})} />
-                 <label className="btn btn-primary cursor-pointer px-4 shrink-0"><Upload size={18} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAdminInfo({...adminInfo, logo: ev.target?.result as string}); r.readAsDataURL(f); } }} /></label>
+                 <input className="field flex-1" placeholder="Logo Link" value={adminInfo.logo} onChange={e => setAdminInfo({...adminInfo, logo: e.target.value})} />
+                 <label className="btn btn-primary cursor-pointer px-3 sm:px-4 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAdminInfo({...adminInfo, logo: ev.target?.result as string}); r.readAsDataURL(f); } }} /></label>
                </div>
             </div>
           </div>
         )}
 
         {!tab.startsWith('warehouse') && tab !== 'students' && tab !== 'cards' && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl bg-white p-2.5 sm:p-3 shadow-sm border border-slate-200 w-full">
-            <Search size={19} className="text-slate-400 shrink-0 ml-2" />
-            <input className="w-full bg-transparent outline-none text-sm sm:text-base px-2" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-white p-2 sm:p-2.5 shadow-sm border border-slate-200 w-full">
+            <Search size={18} className="text-slate-400 shrink-0 ml-2" />
+            <input className="w-full bg-transparent outline-none text-sm sm:text-[0.95rem] px-2 py-1" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         )}
 
@@ -196,19 +200,16 @@ function Stat({ title, value, color, icon: Icon }: { title: string; value: numbe
   return <div className={`${color} rounded-xl p-3 sm:p-4 text-center text-white shadow-sm flex flex-col justify-center min-h-[90px] sm:min-h-[100px] w-full`}><Icon className="mx-auto mb-1 opacity-90" size={18} /><div className="text-[10px] sm:text-xs font-bold leading-tight uppercase tracking-wide opacity-90">{title}</div><div className="text-2xl sm:text-3xl font-bold">{value}</div></div>; 
 }
 
-function Banner({ mapUrl }: { mapUrl?: string }) { 
+function Banner({ mapUrl, bgUrl }: { mapUrl?: string; bgUrl?: string }) { 
+  const defaultBg = "https://images.pexels.com/photos/159844/cellular-education-classroom-159844.jpeg?auto=compress&cs=tinysrgb&w=1200";
   return (
-    <div className="relative mb-5 h-[140px] sm:h-[200px] w-full overflow-hidden rounded-xl bg-transparent">
-      <div className="absolute inset-0 flex w-max animate-slider-move gap-2 items-center">
-        {['Angkor Wat temple', 'Cambodia university', 'Bayon temple', 'School campus', 'Angkor Wat temple', 'Cambodia university'].map((label, i) => (
-          <img key={i} src={`https://images.pexels.com/photos/${[161853, 301926, 21014, 159844][i % 4]}?auto=compress&cs=tinysrgb&w=800`} className="h-[120px] sm:h-[180px] w-[220px] sm:w-[350px] object-cover rounded-xl border-2 border-[#825bec] shadow-sm" alt={label} />
-        ))}
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-2 sm:p-0">
+    <div className="relative mb-5 h-[140px] sm:h-[200px] w-full overflow-hidden rounded-xl bg-slate-800 shadow-sm border border-slate-200">
+      <img src={bgUrl || defaultBg} className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Background" />
+      <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-0">
         <div className="pointer-events-auto w-[90%] sm:w-[80%] md:w-[60%] lg:w-[55%] h-full flex justify-center items-center">
           <iframe 
             src={mapUrl || "https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed"} 
-            className="w-full h-full max-w-[500px] max-h-[120px] sm:max-h-[180px] rounded-xl border-2 border-primary shadow-lg bg-white" 
+            className="w-full h-full max-w-[500px] max-h-[120px] sm:max-h-[180px] rounded-xl border-2 border-white/20 shadow-lg bg-white" 
             allowFullScreen 
             loading="lazy" 
             referrerPolicy="no-referrer-when-downgrade"
@@ -308,7 +309,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[.8fr_1.5fr] w-full">
+    <div className="grid gap-3 lg:gap-4 lg:grid-cols-[.8fr_1.5fr] w-full">
       <div className="card h-fit w-full">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Plus size={20} className="text-primary" /> ចុះវត្តមាន</h2>
         
@@ -329,41 +330,41 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
         </select>
         
         {isAdmin && (
-          <div className="flex flex-col gap-3 mt-2">
+          <div className="flex flex-col sm:flex-row gap-2 mt-2">
             <button className="btn btn-success w-full" disabled={!name || saving} onClick={add}>
-              <CheckCircle2 size={18} /> {saving ? 'Saving...' : 'Save'}
+              <CheckCircle2 size={16} /> {saving ? '...' : 'Save'}
             </button>
             <button className="btn bg-[#ff9f43] text-white w-full shadow-md shadow-[#ff9f43]/20" disabled={saving} onClick={autoMarkAbsent}>
-              <Users size={18} /> Auto-Mark Absent
+              <Users size={16} /> Auto Absent
             </button>
           </div>
         )}
       </div>
 
       <div className="w-full">
-        <div className="card p-3 sm:p-6 bg-white w-full overflow-hidden" id="exportArea">
-          <div className="text-center border-b-[3px] border-double border-primary pb-4 mb-4 sm:pb-5 sm:mb-6 relative w-full">
-            {adminInfo.logo && <img src={adminInfo.logo} className="w-[60px] h-[60px] sm:w-[80px] sm:h-[80px] object-cover mx-auto mb-2 sm:mb-3 rounded-full shadow-sm border border-primary" alt="Logo" />}
-            <h1 className="text-primary text-lg sm:text-2xl md:text-3xl font-bold my-1 sm:my-2 w-full truncate px-2">របាយការណ៍វត្តមានសិស្សប្រចាំថ្ងៃ</h1>
-            <p className="text-slate-500 text-[10px] sm:text-sm md:text-base w-full truncate px-2">ប្រព័ន្ធគ្រប់គ្រងវត្តមានស្វ័យប្រវត្តិ</p>
+        <div className="card p-3 sm:p-5 bg-white w-full overflow-hidden" id="exportArea">
+          <div className="text-center border-b-[3px] border-double border-primary pb-3 sm:pb-4 mb-4 sm:mb-5 relative w-full">
+            {adminInfo.logo && <img src={adminInfo.logo} className="w-[50px] h-[50px] sm:w-[70px] sm:h-[70px] object-cover mx-auto mb-2 rounded-full shadow-sm border border-primary" alt="Logo" />}
+            <h1 className="text-primary text-lg sm:text-2xl font-bold my-1 w-full truncate px-2">របាយការណ៍វត្តមានសិស្សប្រចាំថ្ងៃ</h1>
+            <p className="text-slate-500 text-[10px] sm:text-sm w-full truncate px-2">ប្រព័ន្ធគ្រប់គ្រងវត្តមានស្វ័យប្រវត្តិ</p>
           </div>
           
-          <div className="flex flex-row justify-between bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-4 sm:mb-6 text-[11px] sm:text-sm w-full gap-2 overflow-hidden">
-            <div className="flex flex-col gap-y-2 flex-1 min-w-0">
+          <div className="flex flex-row justify-between bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-4 text-[10px] sm:text-sm w-full gap-2 overflow-hidden">
+            <div className="flex flex-col gap-y-1.5 flex-1 min-w-0">
               <div className="flex items-center w-full"><strong className="w-[60px] sm:w-[85px] shrink-0 text-slate-700">គ្រូបង្រៀន៖</strong> <span className="text-slate-600 font-medium truncate">{adminInfo.teacher || '---'}</span></div>
               <div className="flex items-center w-full"><strong className="w-[60px] sm:w-[85px] shrink-0 text-slate-700">មុខវិជ្ជា៖</strong> <span className="text-slate-600 font-medium truncate">{adminInfo.subject || '---'}</span></div>
               <div className="flex items-center w-full"><strong className="w-[60px] sm:w-[85px] shrink-0 text-slate-700">ម៉ោងសិក្សា៖</strong> <span className="text-primary font-bold truncate">{adminInfo.time || '---'}</span></div>
             </div>
-            <div className="flex flex-col gap-y-2 flex-1 min-w-0 items-end text-right">
-              <div className="flex items-center justify-end w-full"><strong className="text-slate-700 mr-2 shrink-0">បន្ទប់សិក្សា៖</strong> <span className="text-slate-600 font-medium truncate">{adminInfo.room || '---'}</span></div>
-              <div className="flex items-center justify-end w-full"><strong className="text-slate-700 mr-2 shrink-0">វេនសិក្សា៖</strong> <span className="text-warning font-bold truncate">{adminInfo.shift || '---'}</span></div>
-              <div className="flex items-center justify-end w-full"><strong className="text-slate-700 mr-2 shrink-0">កាលបរិច្ឆេទ៖</strong> <span className="text-slate-600 font-medium truncate">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></div>
+            <div className="flex flex-col gap-y-1.5 flex-1 min-w-0 items-end text-right">
+              <div className="flex items-center justify-end w-full"><strong className="text-slate-700 mr-1.5 shrink-0">បន្ទប់៖</strong> <span className="text-slate-600 font-medium truncate">{adminInfo.room || '---'}</span></div>
+              <div className="flex items-center justify-end w-full"><strong className="text-slate-700 mr-1.5 shrink-0">វេន៖</strong> <span className="text-warning font-bold truncate">{adminInfo.shift || '---'}</span></div>
+              <div className="flex items-center justify-end w-full"><strong className="text-slate-700 mr-1.5 shrink-0">កាលបរិច្ឆេទ៖</strong> <span className="text-slate-600 font-medium truncate">{new Date().toLocaleDateString('en-GB')}</span></div>
             </div>
           </div>
 
           <div className="rounded-lg border border-slate-200 w-full overflow-hidden">
             <div id="tableContainer" className="max-h-[350px] sm:max-h-[400px] overflow-y-auto w-full overflow-x-auto">
-              <table className="w-full text-xs sm:text-sm min-w-[300px]">
+              <table className="w-full text-[11px] sm:text-sm min-w-[300px]">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-primary text-white text-left">
                     <th className="p-2 sm:p-3 font-bold whitespace-nowrap">ឈ្មោះសិស្ស</th>
@@ -377,35 +378,35 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
                     <tr key={r.id} className="border-b hover:bg-slate-50 transition">
                       <td className="p-2 sm:p-3 font-medium whitespace-nowrap">{r.name}<small className="block text-slate-400 mt-0.5">Time: {r.time || '---'}</small></td>
                       <td className="p-2 sm:p-3 text-center whitespace-nowrap">{r.gender || '---'}</td>
-                      <td className="p-2 sm:p-3 text-center whitespace-nowrap"><span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-bold inline-block ${r.status === statuses[0] ? 'bg-green-100 text-green-700' : r.status === statuses[1] ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{r.status}</span></td>
+                      <td className="p-2 sm:p-3 text-center whitespace-nowrap"><span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[11px] font-bold inline-block ${r.status === statuses[0] ? 'bg-green-100 text-green-700' : r.status === statuses[1] ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{r.status}</span></td>
                       {isAdmin && (
                         <td className="p-2 sm:p-3 text-center no-print whitespace-nowrap">
-                          <button className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 mr-1 sm:mr-2" onClick={() => editRecord(r)}><Pencil size={16} className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
-                          <button className="text-danger hover:text-red-700 p-1 rounded hover:bg-red-50" onClick={() => deleteRecord(r.id)}><Trash2 size={16} className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></button>
+                          <button className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 mr-1" onClick={() => editRecord(r)}><Pencil size={14} /></button>
+                          <button className="text-danger hover:text-red-700 p-1 rounded hover:bg-red-50" onClick={() => deleteRecord(r.id)}><Trash2 size={14} /></button>
                         </td>
                       )}
                     </tr>
-                  )) : <tr><td colSpan={isAdmin ? 4 : 3} className="p-8 sm:p-10 text-center text-slate-400">No records today</td></tr>}
+                  )) : <tr><td colSpan={isAdmin ? 4 : 3} className="p-6 text-center text-slate-400">No records today</td></tr>}
                 </tbody>
               </table>
             </div>
           </div>
-          <div className="mt-4 sm:mt-6 flex flex-wrap justify-center gap-2 sm:gap-3 border-t-2 border-primary pt-3 sm:pt-5 w-full">
-            <div className="flex-1 min-w-[80px] sm:min-w-[100px] bg-blue-50 text-blue-700 p-2 sm:p-3 rounded-xl text-center font-bold text-xs sm:text-sm shadow-sm">ស.សរុប: {totalStudents}</div>
-            <div className="flex-1 min-w-[80px] sm:min-w-[100px] bg-green-50 text-green-700 p-2 sm:p-3 rounded-xl text-center font-bold text-xs sm:text-sm shadow-sm">វត្តមាន: {records.filter((r:any)=>r.status==='វត្តមាន').length}</div>
-            <div className="flex-1 min-w-[80px] sm:min-w-[100px] bg-yellow-50 text-yellow-700 p-2 sm:p-3 rounded-xl text-center font-bold text-xs sm:text-sm shadow-sm">ច្បាប់: {records.filter((r:any)=>r.status==='ច្បាប់').length}</div>
-            <div className="flex-1 min-w-[80px] sm:min-w-[100px] bg-red-50 text-red-700 p-2 sm:p-3 rounded-xl text-center font-bold text-xs sm:text-sm shadow-sm">អវត្តមាន: {records.filter((r:any)=>r.status==='អវត្តមាន').length}</div>
+          <div className="mt-4 sm:mt-5 flex flex-wrap justify-center gap-2 border-t-2 border-primary pt-3 sm:pt-4 w-full">
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-blue-50 text-blue-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ស.សរុប: {totalStudents}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-green-50 text-green-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">វត្តមាន: {records.filter((r:any)=>r.status==='វត្តមាន').length}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-yellow-50 text-yellow-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ច្បាប់: {records.filter((r:any)=>r.status==='ច្បាប់').length}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-red-50 text-red-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">អវត្តមាន: {records.filter((r:any)=>r.status==='អវត្តមាន').length}</div>
           </div>
         </div>
         
-        <div className="mt-4 sm:mt-5 flex flex-wrap gap-3 items-center justify-center w-full">
-           <div className="flex items-center gap-2 bg-white p-2 sm:p-2.5 rounded-xl border border-slate-200 shadow-sm w-full sm:w-auto justify-center">
+        <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 items-center justify-center w-full">
+           <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-sm w-full sm:w-auto justify-center">
               <label className="font-bold text-xs sm:text-sm text-slate-700">សិស្សសរុប៖</label>
-              <input type="number" className="field w-20 py-2 text-center text-xs sm:text-sm" value={totalStudents} onChange={e => setTotalStudents(Number(e.target.value))} disabled={!isAdmin} />
+              <input type="number" className="field !w-16 !py-1 text-center text-xs" value={totalStudents} onChange={e => setTotalStudents(Number(e.target.value))} disabled={!isAdmin} />
            </div>
-           <div className="flex w-full sm:w-auto gap-3">
-             {isAdmin && <button className="btn bg-danger text-white flex-1 sm:flex-none" onClick={deleteAll}><Trash2 size={18} /> លុប</button>}
-             <button className="btn bg-[#2c3e50] text-white flex-1 sm:flex-none shadow-md shadow-[#2c3e50]/20" onClick={downloadPDF}><Download size={18} /> ទាញយក PDF</button>
+           <div className="flex w-full sm:w-auto gap-2">
+             {isAdmin && <button className="btn bg-danger text-white flex-1 sm:flex-none" onClick={deleteAll}><Trash2 size={16} /> លុប</button>}
+             <button className="btn bg-[#2c3e50] text-white flex-1 sm:flex-none shadow-md shadow-[#2c3e50]/20" onClick={downloadPDF}><Printer size={16} /> Print PDF</button>
            </div>
         </div>
       </div>
@@ -477,18 +478,18 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
 
   return (
     <div className="card w-full">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-xl font-bold"><GraduationCap className="text-primary" /> លទ្ធផលពិន្ទុ</h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-lg sm:text-xl font-bold"><GraduationCap className="text-primary" /> លទ្ធផលពិន្ទុ</h2>
       </div>
 
       {isAdmin && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-          <input className="field w-full sm:w-48 text-sm sm:text-base" placeholder="Add Subject..." value={newSub} onChange={e => setNewSub(e.target.value)} />
+        <div className="mb-4 flex flex-wrap items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <input className="field w-full sm:w-40" placeholder="Add Subject..." value={newSub} onChange={e => setNewSub(e.target.value)} />
           <button className="btn btn-primary w-full sm:w-auto" onClick={addSub}><Plus size={16}/> Add</button>
           <div className="flex gap-2 overflow-x-auto flex-1 items-center w-full pb-1">
              {subjects.map(s => (
-               <span key={s} className="bg-white border border-slate-200 shadow-sm px-3 py-1.5 rounded-xl text-sm font-bold flex items-center gap-2 whitespace-nowrap shrink-0">
-                 {s} <X size={14} className="cursor-pointer text-danger hover:scale-125 transition-transform" onClick={() => removeSub(s)} />
+               <span key={s} className="bg-white border border-slate-200 shadow-sm px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap shrink-0">
+                 {s} <X size={12} className="cursor-pointer text-danger hover:scale-125 transition-transform" onClick={() => removeSub(s)} />
                </span>
              ))}
           </div>
@@ -496,13 +497,13 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
       )}
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 w-full">
-        <table className="w-full min-w-[600px] text-sm">
+        <table className="w-full min-w-[500px] text-xs sm:text-sm">
           <thead className="bg-slate-50">
             <tr>
-              <th className="p-3 text-left whitespace-nowrap">ឈ្មោះសិស្ស</th>
-              {subjects.map(s => <th className="p-3 text-center whitespace-nowrap" key={s}>{s}</th>)}
-              <th className="p-3 text-center whitespace-nowrap">មធ្យមភាគ</th>
-              {isAdmin && <th className="p-3 text-center whitespace-nowrap">Action</th>}
+              <th className="p-2 sm:p-3 text-left whitespace-nowrap">ឈ្មោះសិស្ស</th>
+              {subjects.map(s => <th className="p-2 sm:p-3 text-center whitespace-nowrap" key={s}>{s}</th>)}
+              <th className="p-2 sm:p-3 text-center whitespace-nowrap">មធ្យមភាគ</th>
+              {isAdmin && <th className="p-2 sm:p-3 text-center whitespace-nowrap">Action</th>}
             </tr>
           </thead>
           <tbody>
@@ -512,22 +513,22 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
               const avg = subjects.length ? (total / subjects.length) : 0;
               return (
               <tr className="border-t hover:bg-slate-50 transition" key={s.id}>
-                <td className="p-3 font-medium whitespace-nowrap">{s.name}</td>
+                <td className="p-2 sm:p-3 font-medium whitespace-nowrap">{s.name}</td>
                 {subjects.map(sub => (
-                  <td key={sub} className="p-2 text-center">
-                    <input disabled={!isAdmin} value={stuScores[sub] || ''} onChange={e => updateScore(s.id, sub, e.target.value)} className="w-16 rounded border border-slate-300 p-2 text-center disabled:bg-slate-100 disabled:border-transparent outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm" type="number" min="0" max="100" placeholder="0" />
+                  <td key={sub} className="p-1 sm:p-2 text-center">
+                    <input disabled={!isAdmin} value={stuScores[sub] || ''} onChange={e => updateScore(s.id, sub, e.target.value)} className="w-12 sm:w-16 rounded border border-slate-300 p-1 sm:p-1.5 text-center disabled:bg-slate-100 disabled:border-transparent outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm" type="number" min="0" max="100" placeholder="0" />
                   </td>
                 ))}
-                <td className="p-3 text-center font-bold text-secondary whitespace-nowrap">{avg.toFixed(2)}</td>
+                <td className="p-2 sm:p-3 text-center font-bold text-secondary whitespace-nowrap">{avg.toFixed(2)}</td>
                 {isAdmin && (
-                  <td className="p-3 text-center">
-                     <button className="btn btn-success py-1.5 px-3" onClick={() => saveScoreRow(s.id)} disabled={savingId === s.id}>
-                       <Save size={16} />
+                  <td className="p-2 sm:p-3 text-center">
+                     <button className="btn btn-success !px-2 !py-1" onClick={() => saveScoreRow(s.id)} disabled={savingId === s.id}>
+                       <Save size={14} />
                      </button>
                   </td>
                 )}
               </tr>
-            )}) : <tr><td colSpan={subjects.length + 3} className="p-10 text-center text-slate-400">No students</td></tr>}
+            )}) : <tr><td colSpan={subjects.length + 3} className="p-8 text-center text-slate-400">No students</td></tr>}
           </tbody>
         </table>
       </div>
@@ -596,17 +597,6 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
     if(!isAdmin) return;
     await supabase.from('custom_cards').delete().eq('id', dbId);
     await fetchCards();
-  }
-
-  function downloadCard(dbId: string, cardName: string) {
-    const el = document.getElementById(`card-${dbId}`);
-    if(!el) return;
-    html2canvas(el, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
-      const link = document.createElement('a');
-      link.download = `ID_Card_${cardName}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    });
   }
 
   const printCards = () => {
@@ -707,39 +697,39 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="card-creator-container mx-auto p-0 w-full">
       {isAdmin && (
-        <div className="card mb-5 w-full">
-          <h3 className="text-primary font-bold text-lg mb-4 flex items-center gap-2"><FileBadge /> ជ្រើសរើសទម្រង់កាតដែលចង់បង្កើត</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            <div className={`cursor-pointer border-2 rounded-xl p-3 sm:p-4 text-center transition ${cardType === 'student' ? 'border-primary bg-blue-50 shadow-md' : 'border-slate-200 hover:border-primary hover:-translate-y-1'}`} onClick={() => {setCardType('student'); setFilterType('student'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
-              <div className="w-full h-[60px] sm:h-[80px] rounded-lg mb-2 sm:mb-3 flex items-center justify-center text-white font-bold text-[10px] sm:text-xs" style={{ background: 'linear-gradient(90deg, #2c3e50, #0984e3)' }}>STUDENT</div><h4 className="font-bold text-xs sm:text-sm">កាតសិស្ស</h4>
+        <div className="card mb-4 w-full">
+          <h3 className="text-primary font-bold text-base sm:text-lg mb-3 flex items-center gap-2"><FileBadge /> ជ្រើសរើសទម្រង់កាតដែលចង់បង្កើត</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4">
+            <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'student' ? 'border-primary bg-blue-50 shadow-md' : 'border-slate-200 hover:border-primary hover:-translate-y-1'}`} onClick={() => {setCardType('student'); setFilterType('student'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
+              <div className="w-full h-[50px] sm:h-[60px] rounded-lg mb-2 flex items-center justify-center text-white font-bold text-[9px] sm:text-[10px]" style={{ background: 'linear-gradient(90deg, #2c3e50, #0984e3)' }}>STUDENT</div><h4 className="font-bold text-[11px] sm:text-xs">កាតសិស្ស</h4>
             </div>
-            <div className={`cursor-pointer border-2 rounded-xl p-3 sm:p-4 text-center transition ${cardType === 'company' ? 'border-orange-500 bg-orange-50 shadow-md' : 'border-slate-200 hover:border-orange-500 hover:-translate-y-1'}`} onClick={() => {setCardType('company'); setFilterType('company'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
-              <div className="w-full h-[60px] sm:h-[80px] rounded-lg mb-2 sm:mb-3 flex items-center justify-center text-orange-500 font-bold text-[10px] sm:text-xs border-b-4 border-orange-500 bg-slate-800">COMPANY</div><h4 className="font-bold text-xs sm:text-sm">ក្រុមហ៊ុន</h4>
+            <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'company' ? 'border-orange-500 bg-orange-50 shadow-md' : 'border-slate-200 hover:border-orange-500 hover:-translate-y-1'}`} onClick={() => {setCardType('company'); setFilterType('company'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
+              <div className="w-full h-[50px] sm:h-[60px] rounded-lg mb-2 flex items-center justify-center text-orange-500 font-bold text-[9px] sm:text-[10px] border-b-4 border-orange-500 bg-slate-800">COMPANY</div><h4 className="font-bold text-[11px] sm:text-xs">ក្រុមហ៊ុន</h4>
             </div>
-            <div className={`cursor-pointer border-2 rounded-xl p-3 sm:p-4 text-center transition ${cardType === 'staff' ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-slate-200 hover:border-emerald-500 hover:-translate-y-1'}`} onClick={() => {setCardType('staff'); setFilterType('staff'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
-              <div className="w-full h-[60px] sm:h-[80px] rounded-lg mb-2 sm:mb-3 flex items-center justify-center text-emerald-500 font-bold text-[10px] sm:text-xs border-2 border-emerald-500 bg-white">STAFF</div><h4 className="font-bold text-xs sm:text-sm">បុគ្គលិក</h4>
+            <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'staff' ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-slate-200 hover:border-emerald-500 hover:-translate-y-1'}`} onClick={() => {setCardType('staff'); setFilterType('staff'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
+              <div className="w-full h-[50px] sm:h-[60px] rounded-lg mb-2 flex items-center justify-center text-emerald-500 font-bold text-[9px] sm:text-[10px] border-2 border-emerald-500 bg-white">STAFF</div><h4 className="font-bold text-[11px] sm:text-xs">បុគ្គលិក</h4>
             </div>
-            <div className={`cursor-pointer border-2 rounded-xl p-3 sm:p-4 text-center transition ${cardType === 'business' ? 'border-amber-500 bg-amber-50 shadow-md' : 'border-slate-200 hover:border-amber-500 hover:-translate-y-1'}`} onClick={() => {setCardType('business'); setFilterType('business'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
-              <div className="w-full h-[60px] sm:h-[80px] rounded-lg mb-2 sm:mb-3 flex items-center justify-center text-amber-500 font-bold text-[10px] sm:text-xs border-l-4 border-amber-500 bg-slate-900">VIP BUSINESS</div><h4 className="font-bold text-xs sm:text-sm">កាត VIP</h4>
+            <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'business' ? 'border-amber-500 bg-amber-50 shadow-md' : 'border-slate-200 hover:border-amber-500 hover:-translate-y-1'}`} onClick={() => {setCardType('business'); setFilterType('business'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
+              <div className="w-full h-[50px] sm:h-[60px] rounded-lg mb-2 flex items-center justify-center text-amber-500 font-bold text-[9px] sm:text-[10px] border-l-4 border-amber-500 bg-slate-900">BUSINESS</div><h4 className="font-bold text-[11px] sm:text-xs">កាត VIP</h4>
             </div>
-            <div className={`cursor-pointer border-2 rounded-xl p-3 sm:p-4 text-center transition ${cardType === 'press' ? 'border-rose-500 bg-rose-50 shadow-md' : 'border-slate-200 hover:border-rose-500 hover:-translate-y-1'}`} onClick={() => {setCardType('press'); setFilterType('press'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
-              <div className="w-full h-[60px] sm:h-[80px] rounded-lg mb-2 sm:mb-3 flex items-center justify-center text-rose-500 font-bold text-[10px] sm:text-xs border-t-8 border-rose-500 bg-white shadow-inner">PRESS</div><h4 className="font-bold text-xs sm:text-sm">អ្នកកាសែត</h4>
+            <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'press' ? 'border-rose-500 bg-rose-50 shadow-md' : 'border-slate-200 hover:border-rose-500 hover:-translate-y-1'}`} onClick={() => {setCardType('press'); setFilterType('press'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
+              <div className="w-full h-[50px] sm:h-[60px] rounded-lg mb-2 flex items-center justify-center text-rose-500 font-bold text-[9px] sm:text-[10px] border-t-8 border-rose-500 bg-white shadow-inner">PRESS</div><h4 className="font-bold text-[11px] sm:text-xs">អ្នកកាសែត</h4>
             </div>
-            <div className={`cursor-pointer border-2 rounded-xl p-3 sm:p-4 text-center transition ${cardType === 'library' ? 'border-green-500 bg-green-50 shadow-md' : 'border-slate-200 hover:border-green-500 hover:-translate-y-1'}`} onClick={() => {setCardType('library'); setFilterType('library'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
-              <div className="w-full h-[60px] sm:h-[80px] rounded-lg mb-2 sm:mb-3 flex items-center justify-center text-green-800 font-bold text-[10px] sm:text-xs border border-green-500 bg-gradient-to-br from-green-50 to-green-100">LIBRARY</div><h4 className="font-bold text-xs sm:text-sm">បណ្ណាល័យ</h4>
+            <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'library' ? 'border-green-500 bg-green-50 shadow-md' : 'border-slate-200 hover:border-green-500 hover:-translate-y-1'}`} onClick={() => {setCardType('library'); setFilterType('library'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
+              <div className="w-full h-[50px] sm:h-[60px] rounded-lg mb-2 flex items-center justify-center text-green-800 font-bold text-[9px] sm:text-[10px] border border-green-500 bg-gradient-to-br from-green-50 to-green-100">LIBRARY</div><h4 className="font-bold text-[11px] sm:text-xs">បណ្ណាល័យ</h4>
             </div>
           </div>
           
-          <div className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 shadow-sm w-full">
-             <h3 className="font-bold text-primary mb-4 flex items-center gap-2"><GraduationCap size={20} /> បញ្ចូលព័ត៌មានកាត</h3>
-             <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1.5fr_1.5fr_auto] gap-3">
-               <input className="field" placeholder="អត្តលេខសិស្ស (ID)" value={form.id} onChange={e => setForm({...form, id: e.target.value})} />
+          <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 shadow-sm w-full">
+             <h3 className="font-bold text-primary mb-3 flex items-center gap-2 text-sm sm:text-base"><GraduationCap size={18} /> បញ្ចូលព័ត៌មានកាត</h3>
+             <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1.5fr_1.5fr_auto] gap-2">
+               <input className="field" placeholder="អត្តលេខ (ID)" value={form.id} onChange={e => setForm({...form, id: e.target.value})} />
                <input className="field" placeholder="ឈ្មោះ" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
                <input className="field" placeholder={cardType==='student'?'ឆ្នាំសិក្សា':cardType==='company'?'ផ្នែក':'តួនាទី'} value={form.f1} onChange={e => setForm({...form, f1: e.target.value})} />
                <input className="field" placeholder={cardType==='student'?'ជំនាញ':cardType==='library'?'ថ្ងៃចុះឈ្មោះ':'ផ្សេងៗ'} value={form.f2} onChange={e => setForm({...form, f2: e.target.value})} />
-               <label className="btn border border-slate-300 bg-white text-slate-700 cursor-pointer w-full sm:w-auto"><Upload size={18}/> រូបភាព<input type="file" className="hidden" accept="image/*" onChange={(e)=>{const f=e.target.files?.[0]; if(f){const r=new FileReader(); r.onload=(ev)=>setForm({...form, photo: ev.target?.result as string}); r.readAsDataURL(f);}}} /></label>
+               <label className="btn border border-slate-300 bg-white text-slate-700 cursor-pointer w-full sm:w-auto"><Upload size={16}/> រូបភាព<input type="file" className="hidden" accept="image/*" onChange={(e)=>{const f=e.target.files?.[0]; if(f){const r=new FileReader(); r.onload=(ev)=>setForm({...form, photo: ev.target?.result as string}); r.readAsDataURL(f);}}} /></label>
              </div>
-             <div className="flex flex-col sm:flex-row justify-end gap-3 mt-4 w-full">
+             <div className="flex flex-col sm:flex-row justify-end gap-2 mt-3 w-full">
                <button className="btn bg-slate-200 text-slate-700 w-full sm:w-auto hover:bg-slate-300" onClick={() => { setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null); }}>បោះបង់</button>
                <button className="btn btn-primary w-full sm:w-auto" onClick={saveCard}>{editingId ? 'រក្សាទុកការកែប្រែ' : 'បង្កើតកាត'}</button>
              </div>
@@ -748,10 +738,10 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
       )}
 
       <div className="card min-h-[400px] w-full">
-         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b border-slate-200 gap-4 sm:gap-0 w-full">
-            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-               <FileBadge className="text-primary shrink-0" size={24} />
-               <select className="field w-full sm:w-48 !py-2 !px-3 font-bold bg-white" value={filterType} onChange={e => setFilterType(e.target.value)}>
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 pb-3 border-b border-slate-200 gap-3 w-full">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+               <FileBadge className="text-primary shrink-0" size={20} />
+               <select className="field w-full sm:w-40 !py-1.5 !px-2 font-bold bg-white text-sm" value={filterType} onChange={e => setFilterType(e.target.value)}>
                  <option value="student">សិស្ស-និស្សិត</option>
                  <option value="company">ក្រុមហ៊ុន-អាជីវកម្ម</option>
                  <option value="staff">បុគ្គលិក</option>
@@ -759,28 +749,27 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
                  <option value="press">អ្នកសារព័ត៌មាន</option>
                  <option value="library">បណ្ណាល័យ</option>
                </select>
-               <span className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg text-sm font-bold shrink-0">{savedCards.filter(c => c.template === filterType).length}</span>
+               <span className="bg-primary/10 text-primary px-2.5 py-1 rounded-lg text-xs font-bold shrink-0">{savedCards.filter(c => c.template === filterType).length}</span>
             </div>
-            <button className="btn btn-primary w-full sm:w-auto" onClick={printCards}><Printer size={18} /> បោះពុម្ព (A4)</button>
+            <button className="btn btn-primary w-full sm:w-auto !py-2" onClick={printCards}><Printer size={16} /> បោះពុម្ព (A4)</button>
          </div>
          
          <div className="w-full overflow-x-auto pb-4">
-           <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center min-w-min mx-auto" id="cardsPrintArea">
+           <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5 justify-items-center min-w-min mx-auto" id="cardsPrintArea">
               {isAdmin && (form.id || form.name) && (
-                <div className="relative opacity-60 w-max max-w-full mx-auto sm:mx-0">
-                  <div className="absolute -top-3 -right-3 z-10 bg-warning text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-md">PREVIEW</div>
+                <div className="relative opacity-60 w-max max-w-full mx-auto sm:mx-0 no-print">
+                  <div className="absolute -top-3 -right-3 z-10 bg-warning text-black text-[9px] font-bold px-2 py-1 rounded-full shadow-md">PREVIEW</div>
                   <RenderCard cardData={form} isPreview={true} />
                 </div>
               )}
               
               {savedCards.filter(c => c.template === filterType).map((card) => (
-                <div key={card.dbId} className="relative group hover:-translate-y-1 transition-transform p-2 bg-white rounded-xl shadow-md border border-slate-200 w-max max-w-full mx-auto sm:mx-0">
-                   <div className={`absolute top-3 right-3 flex gap-1 z-10 opacity-100 sm:opacity-0 ${isAdmin ? 'sm:group-hover:opacity-100' : ''} transition-opacity no-print`}>
-                      <button className="bg-emerald-500 text-white p-2 rounded-full shadow hover:bg-emerald-600 active:scale-95 transition-all" onClick={() => downloadCard(card.dbId, card.name)}><Download size={14}/></button>
+                <div key={card.dbId} className="relative group hover:-translate-y-1 transition-transform p-1.5 bg-white rounded-xl shadow-md border border-slate-200 w-max max-w-full mx-auto sm:mx-0">
+                   <div className={`absolute top-2 right-2 flex gap-1 z-10 opacity-100 sm:opacity-0 ${isAdmin ? 'sm:group-hover:opacity-100' : ''} transition-opacity no-print`}>
                       {isAdmin && (
                         <>
-                          <button className="bg-blue-500 text-white p-2 rounded-full shadow hover:bg-blue-600 active:scale-95 transition-all" onClick={() => editCard(card)}><Pencil size={14}/></button>
-                          <button className="bg-rose-500 text-white p-2 rounded-full shadow hover:bg-rose-600 active:scale-95 transition-all" onClick={() => deleteCard(card.dbId)}><Trash2 size={14}/></button>
+                          <button className="bg-blue-500 text-white p-1.5 rounded-full shadow hover:bg-blue-600 active:scale-95 transition-all" onClick={() => editCard(card)}><Pencil size={12}/></button>
+                          <button className="bg-rose-500 text-white p-1.5 rounded-full shadow hover:bg-rose-600 active:scale-95 transition-all" onClick={() => deleteCard(card.dbId)}><Trash2 size={12}/></button>
                         </>
                       )}
                    </div>
@@ -790,9 +779,9 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
            </div>
          </div>
          {savedCards.filter(c => c.template === filterType).length === 0 && !form.id && !form.name && (
-            <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-               <FileBadge size={48} className="mb-3 opacity-20" />
-               <p>មិនទាន់មានកាតប្រភេទនេះត្រូវបានបង្កើតទេ</p>
+            <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+               <FileBadge size={40} className="mb-2 opacity-20" />
+               <p className="text-sm">មិនទាន់មានកាតប្រភេទនេះត្រូវបានបង្កើតទេ</p>
             </div>
          )}
       </div>
@@ -895,8 +884,8 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: { onClose: ()
       <div className="relative z-10 flex h-full flex-col items-center justify-center p-4">
         
         {message && (
-          <div className={`absolute top-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full font-bold text-white shadow-lg animate-fade-in z-50 flex items-center gap-2 ${message.type === 'success' ? 'bg-success' : 'bg-danger'}`}>
-            {message.type === 'success' ? <CheckCircle2 size={20}/> : <X size={20}/>}
+          <div className={`absolute top-10 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-full text-sm font-bold text-white shadow-lg animate-fade-in z-50 flex items-center gap-2 ${message.type === 'success' ? 'bg-success' : 'bg-danger'}`}>
+            {message.type === 'success' ? <CheckCircle2 size={18}/> : <X size={18}/>}
             {message.text}
           </div>
         )}
@@ -910,14 +899,14 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: { onClose: ()
           <div className="absolute left-[5%] top-0 h-0.5 w-[90%] animate-scan-laser bg-green-400 shadow-[0_0_15px_#00ff00] z-20 pointer-events-none" />
         </div>
         
-        <p className="mt-8 text-center text-slate-300 font-medium tracking-wide">ដាក់កូដ QR ឱ្យចំកណ្តាល</p>
+        <p className="mt-8 text-center text-slate-300 text-sm font-medium tracking-wide">ដាក់កូដ QR ឱ្យចំកណ្តាល</p>
         
-        <div className="mt-6 flex w-full max-w-[300px] gap-2">
-          <input className="field !bg-white/10 !border-white/20 !text-white placeholder:text-slate-400" placeholder="បញ្ចូល ID ដោយដៃ" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void recordText(value); }} />
-          <button className="btn bg-success text-white px-4" onClick={() => void recordText(value)}><CheckCircle2 size={20} /></button>
+        <div className="mt-5 flex w-full max-w-[280px] gap-2">
+          <input className="field !bg-white/10 !border-white/20 !text-white placeholder:text-slate-400 !py-2" placeholder="បញ្ចូល ID ដោយដៃ" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void recordText(value); }} />
+          <button className="btn bg-success text-white px-3" onClick={() => void recordText(value)}><CheckCircle2 size={18} /></button>
         </div>
         
-        <button className="btn mt-8 border border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md px-6 py-3" onClick={onClose}><X size={18} /> បិទកាំមេរ៉ា</button>
+        <button className="btn mt-6 border border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md px-5 py-2.5 text-sm" onClick={onClose}><X size={16} /> បិទកាំមេរ៉ា</button>
       </div>
     </div>
   ); 
@@ -947,25 +936,25 @@ function SchedulePanel({ isAdmin }: { isAdmin: boolean }) {
   }
 
   return (
-    <div className="card shadow-sm border border-slate-200">
-      <h2 className="mb-4 flex items-center gap-2 text-xl font-bold"><CalendarDays className="text-primary" /> កាលវិភាគរៀន</h2>
-      <div className="overflow-x-auto rounded-xl border border-slate-200">
-        <table className="min-w-[800px] w-full border-collapse text-sm">
+    <div className="card shadow-sm border border-slate-200 w-full">
+      <h2 className="mb-4 flex items-center gap-2 text-lg sm:text-xl font-bold"><CalendarDays className="text-primary" /> កាលវិភាគរៀន</h2>
+      <div className="overflow-x-auto rounded-xl border border-slate-200 w-full">
+        <table className="min-w-[700px] w-full border-collapse text-xs sm:text-sm">
           <thead>
             <tr>
-              <th className="border-b border-r bg-slate-50 p-3 text-center w-[120px]">ម៉ោង / ថ្ងៃ</th>
-              {days.map(d => <th className="border-b border-r bg-slate-50 p-3 text-center" key={d}>{d}</th>)}
+              <th className="border-b border-r bg-slate-50 p-2 sm:p-3 text-center w-[100px] sm:w-[120px]">ម៉ោង / ថ្ងៃ</th>
+              {days.map(d => <th className="border-b border-r bg-slate-50 p-2 sm:p-3 text-center" key={d}>{d}</th>)}
             </tr>
           </thead>
           <tbody>
             {times.map((time, r) => (
               <tr key={time}>
-                <td className="border-b border-r bg-[#43f0ed] p-3 font-bold text-center whitespace-nowrap text-dark">{time}</td>
+                <td className="border-b border-r bg-[#43f0ed] p-2 sm:p-3 font-bold text-center whitespace-nowrap text-dark">{time}</td>
                 {days.map((day, c) => {
                   const cellKey = `sch_${r}_${c}`;
                   return (
                     <td className="border-b border-r p-1" key={cellKey}>
-                      <textarea disabled={!isAdmin} value={scheduleData[cellKey] || ''} onChange={(e) => setScheduleData({...scheduleData, [cellKey]: e.target.value})} className="h-16 w-full resize-none rounded-lg p-2 text-center outline-none disabled:bg-transparent text-sm font-medium border-2 border-transparent focus:border-[#7f8e3c] focus:bg-[#2f67a0] focus:text-white transition-colors" placeholder="..." />
+                      <textarea disabled={!isAdmin} value={scheduleData[cellKey] || ''} onChange={(e) => setScheduleData({...scheduleData, [cellKey]: e.target.value})} className="h-12 sm:h-16 w-full resize-none rounded-lg p-1.5 sm:p-2 text-center outline-none disabled:bg-transparent text-xs sm:text-sm font-medium border-2 border-transparent focus:border-[#7f8e3c] focus:bg-[#2f67a0] focus:text-white transition-colors" placeholder="..." />
                     </td>
                   );
                 })}
@@ -974,7 +963,7 @@ function SchedulePanel({ isAdmin }: { isAdmin: boolean }) {
           </tbody>
         </table>
       </div>
-      {isAdmin && <button className="btn btn-success mt-4" disabled={saving} onClick={saveSchedule}><CheckCircle2 size={18} /> {saving ? 'Saving...' : 'Save Schedule'}</button>}
+      {isAdmin && <button className="btn btn-success mt-4" disabled={saving} onClick={saveSchedule}><CheckCircle2 size={16} /> {saving ? 'Saving...' : 'Save Schedule'}</button>}
     </div>
   ); 
 }
@@ -982,29 +971,29 @@ function SchedulePanel({ isAdmin }: { isAdmin: boolean }) {
 function Analytics({ counts, totalStudents }: { counts: { present: number; leave: number; absent: number }; totalStudents: number }) { 
   const total = counts.present + counts.leave + counts.absent || 1; 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="card">
-        <h2 className="mb-5 text-xl font-bold">វិភាគវត្តមានសិស្ស</h2>
-        <div className="mx-auto flex h-64 w-64 items-center justify-center rounded-full shadow-inner" style={{ background: `conic-gradient(#00b894 0 ${(counts.present / total) * 100}%, #f1c40f ${(counts.present / total) * 100}% ${((counts.present + counts.leave) / total) * 100}%, #d63031 ${((counts.present + counts.leave) / total) * 100}% 100%)` }}>
-          <div className="flex h-40 w-40 items-center justify-center rounded-full bg-white text-center shadow-md">
+    <div className="grid gap-3 lg:gap-4 lg:grid-cols-2">
+      <div className="card w-full">
+        <h2 className="mb-4 text-lg font-bold">វិភាគវត្តមានសិស្ស</h2>
+        <div className="mx-auto flex h-48 w-48 sm:h-56 sm:w-56 items-center justify-center rounded-full shadow-inner" style={{ background: `conic-gradient(#00b894 0 ${(counts.present / total) * 100}%, #f1c40f ${(counts.present / total) * 100}% ${((counts.present + counts.leave) / total) * 100}%, #d63031 ${((counts.present + counts.leave) / total) * 100}% 100%)` }}>
+          <div className="flex h-32 w-32 sm:h-36 sm:w-36 items-center justify-center rounded-full bg-white text-center shadow-md">
             <div>
-              <b className="text-3xl">{total === 1 && counts.present === 0 && counts.leave === 0 && counts.absent === 0 ? 0 : total}</b>
-              <small className="block text-slate-500">កំណត់ត្រា</small>
+              <b className="text-2xl sm:text-3xl">{total === 1 && counts.present === 0 && counts.leave === 0 && counts.absent === 0 ? 0 : total}</b>
+              <small className="block text-slate-500 text-[10px] sm:text-xs">កំណត់ត្រា</small>
             </div>
           </div>
         </div>
-        <div className="mt-5 grid grid-cols-3 gap-2 text-center text-sm">
-          <div className="text-success bg-success/10 rounded-xl p-3"><b>{counts.present}</b><span className="block text-slate-600 mt-1">វត្តមាន</span></div>
-          <div className="text-yellow-600 bg-warning/10 rounded-xl p-3"><b>{counts.leave}</b><span className="block text-slate-600 mt-1">ច្បាប់</span></div>
-          <div className="text-danger bg-danger/10 rounded-xl p-3"><b>{counts.absent}</b><span className="block text-slate-600 mt-1">អវត្តមាន</span></div>
+        <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs sm:text-sm">
+          <div className="text-success bg-success/10 rounded-xl p-2 sm:p-3"><b>{counts.present}</b><span className="block text-slate-600 mt-0.5 sm:mt-1">វត្តមាន</span></div>
+          <div className="text-yellow-600 bg-warning/10 rounded-xl p-2 sm:p-3"><b>{counts.leave}</b><span className="block text-slate-600 mt-0.5 sm:mt-1">ច្បាប់</span></div>
+          <div className="text-danger bg-danger/10 rounded-xl p-2 sm:p-3"><b>{counts.absent}</b><span className="block text-slate-600 mt-0.5 sm:mt-1">អវត្តមាន</span></div>
         </div>
       </div>
-      <div className="card">
-        <h2 className="mb-5 text-xl font-bold">ស្ថិតិទូទៅ</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-xl bg-primary/10 p-4 border border-primary/20"><span>សិស្សសរុប</span><b className="text-2xl text-primary">{totalStudents}</b></div>
-          <div className="flex items-center justify-between rounded-xl bg-success/10 p-4 border border-success/20"><span>អត្រាវត្តមាន</span><b className="text-2xl text-success">{Math.round((counts.present / total) * 100)}%</b></div>
-          <div className="flex items-center justify-between rounded-xl bg-slate-100 p-4 border border-slate-200"><span>ថ្ងៃនេះ</span><b className="text-lg text-slate-700">{new Date().toLocaleDateString('en-CA')}</b></div>
+      <div className="card w-full">
+        <h2 className="mb-4 text-lg font-bold">ស្ថិតិទូទៅ</h2>
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex items-center justify-between rounded-xl bg-primary/10 p-3 sm:p-4 border border-primary/20"><span className="text-sm sm:text-base">សិស្សសរុប</span><b className="text-xl sm:text-2xl text-primary">{totalStudents}</b></div>
+          <div className="flex items-center justify-between rounded-xl bg-success/10 p-3 sm:p-4 border border-success/20"><span className="text-sm sm:text-base">អត្រាវត្តមាន</span><b className="text-xl sm:text-2xl text-success">{Math.round((counts.present / total) * 100)}%</b></div>
+          <div className="flex items-center justify-between rounded-xl bg-slate-100 p-3 sm:p-4 border border-slate-200"><span className="text-sm sm:text-base">ថ្ងៃនេះ</span><b className="text-base sm:text-lg text-slate-700">{new Date().toLocaleDateString('en-CA')}</b></div>
         </div>
       </div>
     </div>

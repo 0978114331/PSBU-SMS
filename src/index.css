@@ -33,16 +33,16 @@ button, input, select, textarea { font: inherit; }
 ::-webkit-scrollbar-thumb:hover { background: #0984e3; }
 
 @layer components {
-  .card { @apply rounded-2xl bg-white p-4 sm:p-5 shadow-sm border border-slate-200 transition-all duration-300 max-w-full; }
+  .card { @apply rounded-2xl bg-white p-3 sm:p-5 shadow-sm border border-slate-200 transition-all duration-300 max-w-full; }
   .card:hover { @apply shadow-md border-slate-300; }
   
-  .btn { @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-3 sm:py-2.5 text-[0.95rem] font-bold transition-all duration-200 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]; }
+  .btn { @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2 sm:py-2.5 text-[0.85rem] sm:text-[0.95rem] font-bold transition-all duration-200 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed min-h-[38px] sm:min-h-[44px]; }
   .btn-primary { @apply bg-primary text-white shadow-md shadow-primary/20 hover:bg-blue-600; }
   .btn-success { @apply bg-success text-white shadow-md shadow-success/20 hover:bg-emerald-600; }
   .btn-danger { @apply bg-danger text-white shadow-md shadow-danger/20 hover:bg-red-600; }
   .btn-warning { @apply bg-warning text-slate-900 shadow-md shadow-warning/20 hover:brightness-105; }
   
-  .field { @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:py-2.5 text-[0.95rem] outline-none transition-all duration-200 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-100 min-h-[44px]; }
+  .field { @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 sm:px-4 sm:py-2.5 text-[0.85rem] sm:text-[0.95rem] outline-none transition-all duration-200 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-100 min-h-[38px] sm:min-h-[44px]; }
 }
 
 .student-card { width: 310px; height: 185px; background: white; border-radius: 10px; position: relative; overflow: hidden; border: 1px solid #ccc; display: flex; flex-direction: column; break-inside: avoid; max-width: 100%; }
@@ -117,7 +117,8 @@ button, input, select, textarea { font: inherit; }
 #reader canvas { display: none !important; }
 
 @media print {
-  body { background: white; margin: 0; padding: 0; }
+  @page { size: A4 portrait; margin: 12mm; }
+  body { background: white !important; margin: 0; padding: 0; min-width: 900px !important; font-size: 12px; }
   .no-print { display: none !important; }
 
   body.print-attendance * { visibility: hidden; }
@@ -131,15 +132,17 @@ button, input, select, textarea { font: inherit; }
     margin: 0;
     border: none !important;
     box-shadow: none !important;
+    background: transparent !important;
   }
   body.print-attendance #tableContainer {
     max-height: none !important;
     overflow: visible !important;
   }
-  body.print-attendance table { page-break-inside: auto; width: 100%; }
-  body.print-attendance tr { page-break-inside: avoid; page-break-after: auto; }
-  body.print-attendance thead { display: table-header-group; }
-  body.print-attendance tbody { display: table-row-group; }
+  body.print-attendance table { width: 100%; border-collapse: collapse; table-layout: auto; }
+  body.print-attendance th, body.print-attendance td { 
+    padding: 8px !important; border-bottom: 1px solid #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  body.print-attendance tr { page-break-inside: avoid; }
 
   body.print-cards * { visibility: hidden; }
   body.print-cards #cardsPrintArea, body.print-cards #cardsPrintArea * { visibility: visible; }
