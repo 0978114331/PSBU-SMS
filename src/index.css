@@ -6,8 +6,8 @@
 
 :root {
   font-family: 'Kantumruy Pro', sans-serif;
-  color: #2d3436;
-  background: #f0f2f5;
+  color: #1e293b;
+  background: #f1f5f9;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -19,7 +19,7 @@ html, body {
   width: 100vw;
   max-width: 100%;
   min-width: 320px; 
-  background: #f0f2f5; 
+  background: #f1f5f9; 
   overflow-x: hidden;
 }
 
@@ -29,18 +29,20 @@ button, input, select, textarea { font: inherit; }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #0984e3; }
 
 @layer components {
-  .card { @apply rounded-xl bg-white p-3 sm:p-[18px] shadow-[0_4px_10px_rgba(0,0,0,0.05)] transition-all duration-300 max-w-full; }
-  .card:hover { @apply shadow-[0_12px_20px_rgba(9,132,227,0.15)]; }
-  .btn { @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg px-4 py-2 text-sm font-bold transition-all duration-300 hover:brightness-110 hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none; }
-  .btn-primary { @apply bg-primary text-white; }
-  .btn-success { @apply bg-success text-white; }
-  .btn-danger { @apply bg-danger text-white; }
-  .btn-warning { @apply bg-warning text-black; }
-  .field { @apply w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:bg-slate-100 disabled:text-slate-500 disabled:border-transparent; }
+  .card { @apply rounded-2xl bg-white p-4 sm:p-5 shadow-sm border border-slate-200 transition-all duration-300 max-w-full; }
+  .card:hover { @apply shadow-md border-slate-300; }
+  
+  .btn { @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-3 sm:py-2.5 text-[0.95rem] font-bold transition-all duration-200 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]; }
+  .btn-primary { @apply bg-primary text-white shadow-md shadow-primary/20 hover:bg-blue-600; }
+  .btn-success { @apply bg-success text-white shadow-md shadow-success/20 hover:bg-emerald-600; }
+  .btn-danger { @apply bg-danger text-white shadow-md shadow-danger/20 hover:bg-red-600; }
+  .btn-warning { @apply bg-warning text-slate-900 shadow-md shadow-warning/20 hover:brightness-105; }
+  
+  .field { @apply w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:py-2.5 text-[0.95rem] outline-none transition-all duration-200 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-100 min-h-[44px]; }
 }
 
 .student-card { width: 310px; height: 185px; background: white; border-radius: 10px; position: relative; overflow: hidden; border: 1px solid #ccc; display: flex; flex-direction: column; break-inside: avoid; max-width: 100%; }

@@ -42,8 +42,8 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
       </div>
       <div className="hidden items-center gap-2 lg:flex">
         {primaryItems.map(item => <NavButton key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} />)}
-        {isAdmin && <WarehouseMenu activeTab={activeTab} onTabChange={onTabChange} />}
-        {isAdmin && <button className="btn bg-[#bb8e26] text-white" onClick={() => onTabChange('cards')}><FileBadge size={17} /> បង្កើតកាត</button>}
+        <WarehouseMenu activeTab={activeTab} onTabChange={onTabChange} />
+        <button className="btn bg-[#bb8e26] text-white" onClick={() => onTabChange('cards')}><FileBadge size={17} /> បង្កើតកាត</button>
         <button className="btn bg-secondary text-white" onClick={onScanner}><QrCode size={17} /> ស្កែនវត្តមាន</button>
         <UserProfile userLabel={userLabel} role={role} onSignOut={onSignOut} />
       </div>
@@ -54,11 +54,11 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
     </header>
     {mobileOpen && <div className="fixed top-[60px] z-30 w-full bg-[#2c3e50] p-4 shadow-xl lg:hidden border-t border-white/10">
       {primaryItems.map(item => <MobileNavButton key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} />)}
-      {isAdmin && <div className="mt-2 rounded-xl border border-white/15 bg-black/10 p-2">
+      <div className="mt-2 rounded-xl border border-white/15 bg-black/10 p-2">
         <div className="mb-2 flex items-center gap-2 px-2 text-sm font-bold text-blue-100"><Database size={17} /> ឃ្លាំងទិន្នន័យ</div>
         {warehouseItems.map(item => <MobileNavButton key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} nested />)}
         <MobileNavButton item={{ id: 'cards', label: 'បង្កើតកាត', icon: FileBadge }} active={activeTab === 'cards'} onClick={() => onTabChange('cards')} nested />
-      </div>}
+      </div>
       <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-red-500/20 p-3 font-bold text-red-200 hover:bg-red-500/30 transition" onClick={onSignOut}><LogOut size={17} /> ចាកចេញ</button>
     </div>}
   </>;
@@ -71,7 +71,7 @@ function NavButton({ item, active, onClick }: { item: NavItem; active: boolean; 
 
 function MobileNavButton({ item, active, onClick, nested = false }: { item: NavItem; active: boolean; onClick: () => void; nested?: boolean }) {
   const Icon = item.icon;
-  return <button className={`mb-2 flex w-full items-center gap-2 rounded-lg p-3 font-bold transition ${nested ? 'justify-start pl-3 text-sm' : 'justify-center'} ${active ? 'bg-primary text-white' : 'bg-white/5 text-white hover:bg-white/10'}`} onClick={onClick}><Icon size={18} />{item.label}</button>;
+  return <button className={`mb-2 flex w-full items-center gap-2 rounded-xl p-3.5 font-bold transition ${nested ? 'justify-start pl-3 text-sm' : 'justify-center'} ${active ? 'bg-primary text-white' : 'bg-white/5 text-white hover:bg-white/10'}`} onClick={onClick}><Icon size={18} />{item.label}</button>;
 }
 
 function WarehouseMenu({ activeTab, onTabChange }: { activeTab: Tab; onTabChange: (tab: Tab) => void }) {
