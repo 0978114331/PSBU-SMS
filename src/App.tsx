@@ -10,7 +10,6 @@ import { CleaningSchedule } from '@/components/data/CleaningSchedule';
 import type { Attendance, Student, Tab } from '@/types';
 import { statuses } from '@/types';
 import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { Html5Qrcode } from 'html5-qrcode';
 
 function App() {
@@ -300,48 +299,12 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo }: any
     await refresh();
   }
 
-  const downloadPDF = async () => {
-    const area = document.getElementById('exportArea');
-    const tableContainer = document.getElementById('tableContainer');
-    if (!area || !tableContainer) return;
-    
-    const noPrints = document.querySelectorAll('.no-print');
-    noPrints.forEach(el => el.classList.add('hidden'));
-
-    const originalMaxHeight = tableContainer.style.maxHeight;
-    const originalOverflow = tableContainer.style.overflowY;
-    tableContainer.style.maxHeight = 'none';
-    tableContainer.style.overflowY = 'visible';
-
-    try {
-      const canvas = await html2canvas(area, { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: -window.scrollY });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = (canvas.height * pdfW) / canvas.width;
-      
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      let heightLeft = pdfH;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, pdfW, pdfH);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - pdfH;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfW, pdfH);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save(`Attendance_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      tableContainer.style.maxHeight = originalMaxHeight;
-      tableContainer.style.overflowY = originalOverflow;
-      noPrints.forEach(el => el.classList.remove('hidden'));
-    }
+  const downloadPDF = () => {
+    document.body.classList.add('print-attendance');
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove('print-attendance');
+    }, 500);
   };
 
   return (
@@ -646,6 +609,14 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
     });
   }
 
+  const printCards = () => {
+    document.body.classList.add('print-cards');
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove('print-cards');
+    }, 500);
+  };
+
   const RenderCard = ({ cardData, isPreview = false }: { cardData: any, isPreview?: boolean }) => {
     const cType = cardData.template || cardType;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${cardData.id || '000'}`;
@@ -790,11 +761,11 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
                </select>
                <span className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg text-sm font-bold shrink-0">{savedCards.filter(c => c.template === filterType).length}</span>
             </div>
-            <button className="btn btn-primary w-full sm:w-auto"><Printer size={18} /> បោះពុម្ព (A4)</button>
+            <button className="btn btn-primary w-full sm:w-auto" onClick={printCards}><Printer size={18} /> បោះពុម្ព (A4)</button>
          </div>
          
          <div className="w-full overflow-x-auto pb-4">
-           <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center min-w-min mx-auto">
+           <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center min-w-min mx-auto" id="cardsPrintArea">
               {isAdmin && (form.id || form.name) && (
                 <div className="relative opacity-60 w-max max-w-full mx-auto sm:mx-0">
                   <div className="absolute -top-3 -right-3 z-10 bg-warning text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-md">PREVIEW</div>
@@ -804,7 +775,7 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
               
               {savedCards.filter(c => c.template === filterType).map((card) => (
                 <div key={card.dbId} className="relative group hover:-translate-y-1 transition-transform p-2 bg-white rounded-xl shadow-md border border-slate-200 w-max max-w-full mx-auto sm:mx-0">
-                   <div className={`absolute top-3 right-3 flex gap-1 z-10 opacity-100 sm:opacity-0 ${isAdmin ? 'sm:group-hover:opacity-100' : ''} transition-opacity`}>
+                   <div className={`absolute top-3 right-3 flex gap-1 z-10 opacity-100 sm:opacity-0 ${isAdmin ? 'sm:group-hover:opacity-100' : ''} transition-opacity no-print`}>
                       <button className="bg-emerald-500 text-white p-2 rounded-full shadow hover:bg-emerald-600 active:scale-95 transition-all" onClick={() => downloadCard(card.dbId, card.name)}><Download size={14}/></button>
                       {isAdmin && (
                         <>
@@ -885,7 +856,7 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: { onClose: ()
        const lastScanTime = new Date(existing[0].created_at).getTime();
        const now = new Date().getTime();
        if (now - lastScanTime < 2 * 60 * 60 * 1000) {
-          setMessage({ text: "បានស្កែនរួចរាល់ហើយក្នុងរង្វង់ ២ម៉ោងនេះ", type: 'error' });
+          setMessage({ text: "បានស្កែនរួចរាល់ហើយ", type: 'error' });
           setValue('');
           setTimeout(() => { setMessage(null); processingRef.current = false; }, 2500);
           return;

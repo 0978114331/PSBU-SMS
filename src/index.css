@@ -117,6 +117,49 @@ button, input, select, textarea { font: inherit; }
 #reader canvas { display: none !important; }
 
 @media print {
-  body { background: white; }
+  body { background: white; margin: 0; padding: 0; }
   .no-print { display: none !important; }
+
+  body.print-attendance * { visibility: hidden; }
+  body.print-attendance #exportArea, body.print-attendance #exportArea * { visibility: visible; }
+  body.print-attendance #exportArea {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  body.print-attendance #tableContainer {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  body.print-attendance table { page-break-inside: auto; width: 100%; }
+  body.print-attendance tr { page-break-inside: avoid; page-break-after: auto; }
+  body.print-attendance thead { display: table-header-group; }
+  body.print-attendance tbody { display: table-row-group; }
+
+  body.print-cards * { visibility: hidden; }
+  body.print-cards #cardsPrintArea, body.print-cards #cardsPrintArea * { visibility: visible; }
+  body.print-cards #cardsPrintArea {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+  }
+  body.print-cards .student-card,
+  body.print-cards .company-card-h,
+  body.print-cards .staff-card-v,
+  body.print-cards .business-card-h,
+  body.print-cards .press-card-v,
+  body.print-cards .library-card-h {
+    page-break-inside: avoid;
+    margin-bottom: 20px;
+  }
 }
