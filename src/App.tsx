@@ -461,11 +461,13 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
 
           <div className="rounded-lg border border-slate-200 w-full overflow-hidden">
             <div id="tableContainer" className="max-h-[350px] sm:max-h-[400px] overflow-y-auto w-full overflow-x-auto">
-              <table className="w-full text-[11px] sm:text-sm min-w-[350px]">
-                <thead className="sticky top-0 z-10 shadow-sm">
+              {/* តារាងត្រូវបានបកមកជាទម្រង់ស្តង់ដារ Responsive ១០០% */}
+              <table className="w-full text-[11px] sm:text-sm min-w-[300px]">
+                <thead className="sticky top-0 z-10">
                   <tr className="bg-primary text-white text-left">
-                    <th className="p-2 sm:p-3 font-bold text-center w-[50px] sm:w-[60px]">ល.រ</th>
+                    <th className="p-2 sm:p-3 font-bold text-center show-on-print" style={{width: '60px'}}>ល.រ</th>
                     <th className="p-2 sm:p-3 font-bold whitespace-nowrap">ឈ្មោះសិស្ស</th>
+                    <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap show-on-print">ម៉ោង</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ភេទ</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ស្ថានភាព</th>
                     {isAdmin && <th className="p-2 sm:p-3 font-bold text-center no-print">សកម្មភាព</th>}
@@ -474,17 +476,14 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
                 <tbody>
                   {records.length ? records.map((r: any, index: number) => (
                     <tr key={r.id} className="border-b hover:bg-slate-50 transition">
-                      <td className="p-2 sm:p-3 font-bold text-slate-500 text-center">{index + 1}</td>
-                      <td className="p-2 sm:p-3 font-medium whitespace-nowrap text-slate-700">
+                      <td className="p-2 sm:p-3 font-bold text-slate-500 text-center show-on-print">{index + 1}</td>
+                      <td className="p-2 sm:p-3 font-medium whitespace-nowrap">
                         {r.name}
-                        <span className="block text-slate-400 text-[10px] mt-0.5 hide-on-print">ម៉ោង៖ {r.time || '---'}</span>
+                        <small className="block text-slate-400 mt-0.5 hide-on-print">Time: {r.time || '---'}</small>
                       </td>
+                      <td className="p-2 sm:p-3 text-center font-medium show-on-print">{r.time || '---'}</td>
                       <td className="p-2 sm:p-3 text-center whitespace-nowrap">{r.gender || '---'}</td>
-                      <td className="p-2 sm:p-3 text-center whitespace-nowrap">
-                         <span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[11px] font-bold inline-block ${r.status === statuses[0] ? 'bg-green-100 text-green-700' : r.status === statuses[1] ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                           {r.status}
-                         </span>
-                      </td>
+                      <td className="p-2 sm:p-3 text-center whitespace-nowrap"><span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[11px] font-bold inline-block ${r.status === statuses[0] ? 'bg-green-100 text-green-700' : r.status === statuses[1] ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{r.status}</span></td>
                       {isAdmin && (
                         <td className="p-2 sm:p-3 text-center no-print whitespace-nowrap">
                           <button className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 mr-1" onClick={() => editRecord(r)}><Pencil size={14} /></button>
@@ -492,7 +491,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
                         </td>
                       )}
                     </tr>
-                  )) : <tr><td colSpan={isAdmin ? 5 : 4} className="p-6 text-center text-slate-400">មិនទាន់មានទិន្នន័យទេ</td></tr>}
+                  )) : <tr><td colSpan={isAdmin ? 5 : 4} className="p-6 text-center text-slate-400">មិនមានទិន្នន័យសម្រាប់ថ្ងៃនេះទេ</td></tr>}
                 </tbody>
               </table>
             </div>
