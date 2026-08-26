@@ -520,6 +520,8 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
   const [saving, setSaving] = useState(false);
   const [viewDate, setViewDate] = useState(today);
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  const [viewLetter, setViewLetter] = useState<any>(null);
 
   const leaveRecords = records.filter((r: any) => r.status === 'ច្បាប់' && r.date === viewDate);
   const canManualName = isAdmin || adminInfo.allowLeaveManualName;
@@ -615,8 +617,125 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
     await refresh();
   }
 
+  const printLetter = () => {
+    window.print();
+  };
+
+  const studentDetail = viewLetter ? students.find((s: any) => s.id === viewLetter.student_id || s.name === viewLetter.name) : null;
+  
+  const formatDateKH = (dateStr: string) => {
+    if(!dateStr) return { day: '...', month: '...', year: '...' };
+    const d = new Date(dateStr);
+    return {
+      day: d.getDate().toString().padStart(2, '0'),
+      month: (d.getMonth() + 1).toString().padStart(2, '0'),
+      year: d.getFullYear().toString()
+    };
+  };
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_2fr] w-full">
+    <div className="grid gap-4 lg:grid-cols-[1fr_2fr] w-full relative">
+      
+      {/* ផ្ទាំង Popup លិខិតសុំច្បាប់ផ្លូវការ */}
+      {viewLetter && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 p-2 sm:p-4 backdrop-blur-sm print:bg-transparent print:p-0">
+          
+          <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap');
+            .font-moul { font-family: 'Moul', serif; }
+            .font-siemreap { font-family: 'Siemreap', sans-serif; }
+            @media print {
+              body * { visibility: hidden; background: white; }
+              #print-letter-section, #print-letter-section * { visibility: visible; }
+              #print-letter-section { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; padding: 20px; background: white; }
+              .hide-on-print { display: none !important; }
+            }
+          `}</style>
+
+          <div id="print-letter-section" className="bg-white rounded-xl w-full max-w-[700px] max-h-[95vh] overflow-y-auto p-5 sm:p-10 relative shadow-2xl font-siemreap text-slate-800 text-[12px] sm:text-[14px] print:max-h-none print:shadow-none">
+            
+            <div className="sticky top-0 right-0 flex justify-end gap-2 mb-2 hide-on-print z-10">
+              <button className="btn btn-primary !py-1.5 !px-3 shadow-md" onClick={printLetter}>
+                <Printer size={16}/> បោះពុម្ព
+              </button>
+              <button className="btn bg-rose-100 text-rose-600 hover:bg-rose-200 !py-1.5 !px-2" onClick={() => setViewLetter(null)}>
+                <X size={18}/>
+              </button>
+            </div>
+
+            {/* ក្បាលលិខិត (Logo ឆ្វេង និង ព្រះរាជាណាចក្រកណ្តាល) */}
+            <div className="relative flex justify-center items-start w-full mb-4 pt-2">
+              <div className="absolute left-0 top-0 flex flex-col items-center w-max">
+                 {adminInfo.logo && <img src={adminInfo.logo} alt="Logo" className="w-12 h-12 sm:w-16 sm:h-16 object-contain mb-1 drop-shadow-sm" />}
+                 <span className="font-moul text-[8px] sm:text-[10px] text-blue-900 text-center leading-tight">ពុទ្ធិកសាកលវិទ្យាល័យ<br/>ព្រះសីហមុនីរាជា</span>
+              </div>
+              
+              <div className="flex flex-col items-center text-center">
+                 <span className="font-moul text-[13px] sm:text-[16px] text-blue-900 leading-none">ព្រះរាជាណាចក្រកម្ពុជា</span>
+                 <span className="font-moul text-[13px] sm:text-[16px] mt-2 text-blue-900 leading-none">ជាតិ សាសនា ព្រះមហាក្សត្រ</span>
+                 <div className="w-14 sm:w-20 h-[2px] bg-blue-900 mt-2"></div>
+              </div>
+            </div>
+
+            {/* ចំណងជើងលិខិត */}
+            <div className="text-center mb-6 mt-10 sm:mt-12">
+               <h1 className="font-moul text-[14px] sm:text-lg text-blue-900 tracking-wide">លិខិតសុំអនុញ្ញាតច្បាប់</h1>
+            </div>
+
+            {/* ខ្លឹមសារលិខិត */}
+            <div className="px-1 sm:px-4">
+               <div className="mb-4">
+                  <span className="font-extrabold mr-2">សូមគោរពជូន៖</span> លោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលា
+               </div>
+               
+               {/* ជួរទី១៖ ឈ្មោះ ភេទ អត្តលេខ (ស្ថិតក្នុង១ជួររហូត) */}
+               <div className="mb-4 flex items-end justify-between w-full text-[10px] sm:text-[14px]">
+                 <span className="font-bold whitespace-nowrap">ខ្ញុំបាទ/នាងខ្ញុំឈ្មោះ៖</span> 
+                 <span className="font-moul text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.name}</span>
+                 <span className="font-bold whitespace-nowrap">ភេទ៖</span> 
+                 <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 text-center whitespace-nowrap">{viewLetter.gender || studentDetail?.gender || '...'}</span>
+                 <span className="font-bold whitespace-nowrap">អត្តលេខ៖</span> 
+                 <span className="font-bold uppercase text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 ml-1 text-center whitespace-nowrap">{viewLetter.stu_id || studentDetail?.stu_id || '......'}</span>
+               </div>
+
+               {/* ជួរទី២៖ មុខវិជ្ជា បន្ទប់ វេន (ស្ថិតក្នុង១ជួររហូត) */}
+               <div className="mb-5 flex items-end justify-between w-full text-[10px] sm:text-[14px]">
+                 <span className="font-bold whitespace-nowrap">មុខវិជ្ជា៖</span> 
+                 <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.subject || adminInfo.subject || '...................'}</span>
+                 <span className="font-bold whitespace-nowrap">បន្ទប់៖</span> 
+                 <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 text-center whitespace-nowrap">{viewLetter.room || adminInfo.room || '......'}</span>
+                 <span className="font-bold whitespace-nowrap">វេន៖</span> 
+                 <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 ml-1 text-center whitespace-nowrap">{viewLetter.shift || adminInfo.shift || '......'}</span>
+               </div>
+
+               <p className="indent-8 text-justify mb-2 leading-[2] sm:leading-[2.2]">
+                  ត្បិតខ្ញុំបាទ/នាងខ្ញុំ មានធុរៈចាំបាច់ផ្ទាល់ខ្លួន / ឈឺ ពិតប្រាកដមែន ដោយមានមូលហេតុជាក់លាក់ដូចជា៖ 
+                  <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-2 mx-1">« {viewLetter.reason} »</span>។
+               </p>
+               <p className="indent-8 text-justify mb-8 leading-[2] sm:leading-[2.2]">
+                  អាស្រ័យហេតុនេះ សូម លោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលា មេត្តាអនុញ្ញាតច្បាប់ឈប់សម្រាកដល់ខ្ញុំបាទ/នាងខ្ញុំ តាមការស្នើសុំខាងលើ ដោយក្ដីអនុគ្រោះ និងយោគយល់បំផុត។
+               </p>
+            </div>
+
+            {/* កន្ទុយលិខិត និង ហត្ថលេខា */}
+            <div className="flex flex-row justify-between mt-8 px-1 sm:px-4 text-[9px] sm:text-[12px]">
+               <div className="text-center w-[45%] flex flex-col items-center">
+                  <span className="font-moul text-[9px] sm:text-[11px] text-blue-900 mb-1">បានឃើញ និងឯកភាព</span>
+                  <span className="mb-14">នាយកសាលា / គ្រូបន្ទុកថ្នាក់</span>
+                  <div className="border-t border-slate-400 border-dashed pt-1 w-[80%] text-slate-500">ហត្ថលេខា និងឈ្មោះ</div>
+               </div>
+               <div className="text-center w-[55%] flex flex-col items-center">
+                  <span className="mb-2 italic">រាជធានីភ្នំពេញ, ថ្ងៃទី {formatDateKH(viewLetter.date).day} ខែ {formatDateKH(viewLetter.date).month} ឆ្នាំ {formatDateKH(viewLetter.date).year}</span>
+                  <span className="font-moul text-[9px] sm:text-[11px] text-blue-900 mb-14">ស្នាមមេដៃសាមីខ្លួន</span>
+                  <div className="border-t border-slate-400 border-dashed pt-1 w-[70%] text-slate-500">ឈ្មោះសិស្ស</div>
+               </div>
+            </div>
+
+         </div>
+        </div>
+      )}
+
+      {/* Form បញ្ចូលទិន្នន័យ */}
       <div className="card w-full max-w-full overflow-hidden h-fit">
         <div className="flex justify-between items-center mb-4">
            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800"><FileText size={20} className="text-warning shrink-0" /> <span className="truncate">{editingId ? 'កែប្រែការសុំច្បាប់' : 'ទម្រង់សុំច្បាប់'}</span></h2>
@@ -669,6 +788,7 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
         </button>
       </div>
 
+      {/* តារាងបញ្ជីអ្នកសុំច្បាប់ */}
       <div className="card w-full max-w-full overflow-hidden h-fit">
          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
            <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-800">
@@ -701,6 +821,7 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
                     {r.photo ? <a href={r.photo} target="_blank" rel="noreferrer" className="inline-block"><img src={r.photo} className="w-8 h-8 object-cover rounded shadow-sm border border-slate-200 hover:scale-150 transition-transform" alt="img"/></a> : <span className="text-slate-400">គ្មាន</span>}
                   </td>
                   <td className="p-3 text-center whitespace-nowrap">
+                     <button className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded active:scale-95 transition-transform mr-1" onClick={() => setViewLetter(r)} title="មើលលិខិតសុំច្បាប់"><Eye size={16} /></button>
                      <button className="text-blue-500 hover:bg-blue-50 p-1.5 rounded active:scale-95 transition-transform mr-1" onClick={() => editLeave(r)}><Pencil size={16} /></button>
                      {isAdmin && <button className="text-danger hover:bg-red-50 p-1.5 rounded active:scale-95 transition-transform" onClick={() => deleteLeave(r.id)}><Trash2 size={16} /></button>}
                   </td>
@@ -779,13 +900,13 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
   return (
     <div className="card w-full">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-lg sm:text-xl font-bold"><GraduationCap className="text-primary" /> លទ្ធផលពិន្ទុ</h2>
+        <h2 className="flex items-center gap-2 text-lg sm:text-xl font-bold"><GraduationCap className="text-primary" /> បញ្ចូលលទ្ធផលពិន្ទុ</h2>
       </div>
 
       {isAdmin && (
         <div className="mb-4 flex flex-wrap items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-          <input className="field w-full sm:w-40" placeholder="Add Subject..." value={newSub} onChange={e => setNewSub(e.target.value)} />
-          <button className="btn btn-primary w-full sm:w-auto" onClick={addSub}><Plus size={16}/> Add</button>
+          <input className="field w-full sm:w-40" placeholder="បញ្ចូលមុខវិជ្ជាថ្មី..." value={newSub} onChange={e => setNewSub(e.target.value)} />
+          <button className="btn btn-primary w-full sm:w-auto" onClick={addSub}><Plus size={16}/> បន្ថែម</button>
           <div className="flex gap-2 overflow-x-auto flex-1 items-center w-full pb-1">
              {subjects.map(s => (
                <span key={s} className="bg-white border border-slate-200 shadow-sm px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap shrink-0">
@@ -796,41 +917,43 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 w-full">
-        <table className="w-full min-w-[500px] text-xs sm:text-sm">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="p-2 sm:p-3 text-left whitespace-nowrap">ឈ្មោះសិស្ស</th>
-              {subjects.map(s => <th className="p-2 sm:p-3 text-center whitespace-nowrap" key={s}>{s}</th>)}
-              <th className="p-2 sm:p-3 text-center whitespace-nowrap">មធ្យមភាគ</th>
-              {isAdmin && <th className="p-2 sm:p-3 text-center whitespace-nowrap">Action</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {students.length ? students.map(s => {
-              const stuScores = scores[s.id] || {};
-              const total = subjects.reduce((sum, sub) => sum + (stuScores[sub] || 0), 0);
-              const avg = subjects.length ? (total / subjects.length) : 0;
-              return (
-              <tr className="border-t hover:bg-slate-50 transition" key={s.id}>
-                <td className="p-2 sm:p-3 font-medium whitespace-nowrap">{s.name}</td>
-                {subjects.map(sub => (
-                  <td key={sub} className="p-1 sm:p-2 text-center">
-                    <input disabled={!isAdmin} value={stuScores[sub] || ''} onChange={e => updateScore(s.id, sub, e.target.value)} className="w-12 sm:w-16 rounded border border-slate-300 p-1 sm:p-1.5 text-center disabled:bg-slate-100 disabled:border-transparent outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm" type="number" min="0" max="100" placeholder="0" />
-                  </td>
-                ))}
-                <td className="p-2 sm:p-3 text-center font-bold text-secondary whitespace-nowrap">{avg.toFixed(2)}</td>
-                {isAdmin && (
-                  <td className="p-2 sm:p-3 text-center">
-                     <button className="btn btn-success !px-2 !py-1" onClick={() => saveScoreRow(s.id)} disabled={savingId === s.id}>
-                       <Save size={14} />
-                     </button>
-                  </td>
-                )}
+      <div className="rounded-xl border border-slate-200 overflow-hidden w-full">
+        <div className="max-h-[400px] overflow-y-auto overflow-x-auto w-full">
+          <table className="w-full min-w-[500px] text-xs sm:text-sm relative">
+            <thead className="sticky top-0 z-10 shadow-sm">
+              <tr className="bg-slate-100">
+                <th className="p-2 sm:p-3 text-left whitespace-nowrap sticky left-0 z-10 bg-slate-100">ឈ្មោះសិស្ស</th>
+                {subjects.map(s => <th className="p-2 sm:p-3 text-center whitespace-nowrap" key={s}>{s}</th>)}
+                <th className="p-2 sm:p-3 text-center whitespace-nowrap">មធ្យមភាគ</th>
+                {isAdmin && <th className="p-2 sm:p-3 text-center whitespace-nowrap">Action</th>}
               </tr>
-            )}) : <tr><td colSpan={subjects.length + 3} className="p-8 text-center text-slate-400">No students</td></tr>}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {students.length ? students.map(s => {
+                const stuScores = scores[s.id] || {};
+                const total = subjects.reduce((sum, sub) => sum + (stuScores[sub] || 0), 0);
+                const avg = subjects.length ? (total / subjects.length) : 0;
+                return (
+                <tr className="border-t hover:bg-slate-50 transition" key={s.id}>
+                  <td className="p-2 sm:p-3 font-medium whitespace-nowrap bg-white sticky left-0 z-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">{s.name}</td>
+                  {subjects.map(sub => (
+                    <td key={sub} className="p-1 sm:p-2 text-center">
+                      <input disabled={!isAdmin} value={stuScores[sub] || ''} onChange={e => updateScore(s.id, sub, e.target.value)} className="w-12 sm:w-16 rounded border border-slate-300 p-1 sm:p-1.5 text-center disabled:bg-slate-100 disabled:border-transparent outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-xs sm:text-sm" type="number" min="0" max="100" placeholder="0" />
+                    </td>
+                  ))}
+                  <td className="p-2 sm:p-3 text-center font-bold text-secondary whitespace-nowrap">{avg.toFixed(2)}</td>
+                  {isAdmin && (
+                    <td className="p-2 sm:p-3 text-center">
+                       <button className="btn btn-success !px-2 !py-1" onClick={() => saveScoreRow(s.id)} disabled={savingId === s.id}>
+                         <Save size={14} />
+                       </button>
+                    </td>
+                  )}
+                </tr>
+              )}) : <tr><td colSpan={subjects.length + 3} className="p-8 text-center text-slate-400">មិនទាន់មានសិស្សទេ</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   ); 
