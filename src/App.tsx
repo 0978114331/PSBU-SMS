@@ -99,7 +99,8 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   });
   const [initialConfigLoad, setInitialConfigLoad] = useState(true);
   
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;  
   
   useEffect(() => {
     supabase.from('schedules').select('data_json').eq('type', 'school_info').maybeSingle().then(({data}) => {
@@ -379,12 +380,18 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
   }
 
   async function deleteRecord(id: string) {
+    if(!window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?")) return;
     await supabase.from('attendance').delete().eq('id', id);
     await refresh();
   }
 
   async function deleteAll() {
-    for (const r of records) { await supabase.from('attendance').delete().eq('id', r.id); }
+    if(!window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យវត្តមានថ្ងៃនេះ ទាំងអស់មែនទេ? ទង្វើនេះមិនអាចត្រឡប់វិញបានទេ។")) return;
+    
+    const ids = records.map((r: any) => r.id);
+    if (ids.length > 0) {
+       await supabase.from('attendance').delete().in('id', ids);
+    }
     await refresh();
   }
 
@@ -454,12 +461,11 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
 
           <div className="rounded-lg border border-slate-200 w-full overflow-hidden">
             <div id="tableContainer" className="max-h-[350px] sm:max-h-[400px] overflow-y-auto w-full overflow-x-auto">
-              <table className="w-full text-[11px] sm:text-sm min-w-[300px]">
-                <thead className="sticky top-0 z-10">
+              <table className="w-full text-[11px] sm:text-sm min-w-[350px]">
+                <thead className="sticky top-0 z-10 shadow-sm">
                   <tr className="bg-primary text-white text-left">
-                    <th className="p-2 sm:p-3 font-bold text-center show-on-print" style={{width: '60px'}}>ល.រ</th>
+                    <th className="p-2 sm:p-3 font-bold text-center w-[50px] sm:w-[60px]">ល.រ</th>
                     <th className="p-2 sm:p-3 font-bold whitespace-nowrap">ឈ្មោះសិស្ស</th>
-                    <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap show-on-print">ម៉ោងស្គេនចូល</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ភេទ</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ស្ថានភាព</th>
                     {isAdmin && <th className="p-2 sm:p-3 font-bold text-center no-print">សកម្មភាព</th>}
@@ -468,14 +474,17 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
                 <tbody>
                   {records.length ? records.map((r: any, index: number) => (
                     <tr key={r.id} className="border-b hover:bg-slate-50 transition">
-                      <td className="p-2 sm:p-3 font-bold text-slate-500 text-center show-on-print">{index + 1}</td>
-                      <td className="p-2 sm:p-3 font-medium whitespace-nowrap">
+                      <td className="p-2 sm:p-3 font-bold text-slate-500 text-center">{index + 1}</td>
+                      <td className="p-2 sm:p-3 font-medium whitespace-nowrap text-slate-700">
                         {r.name}
-                        <small className="block text-slate-400 mt-0.5 hide-on-print">Time: {r.time || '---'}</small>
+                        <span className="block text-slate-400 text-[10px] mt-0.5 hide-on-print">ម៉ោង៖ {r.time || '---'}</span>
                       </td>
-                      <td className="p-2 sm:p-3 text-center font-medium show-on-print">{r.time || '---'}</td>
                       <td className="p-2 sm:p-3 text-center whitespace-nowrap">{r.gender || '---'}</td>
-                      <td className="p-2 sm:p-3 text-center whitespace-nowrap"><span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[11px] font-bold inline-block ${r.status === statuses[0] ? 'bg-green-100 text-green-700' : r.status === statuses[1] ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{r.status}</span></td>
+                      <td className="p-2 sm:p-3 text-center whitespace-nowrap">
+                         <span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[11px] font-bold inline-block ${r.status === statuses[0] ? 'bg-green-100 text-green-700' : r.status === statuses[1] ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                           {r.status}
+                         </span>
+                      </td>
                       {isAdmin && (
                         <td className="p-2 sm:p-3 text-center no-print whitespace-nowrap">
                           <button className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 mr-1" onClick={() => editRecord(r)}><Pencil size={14} /></button>
@@ -483,7 +492,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
                         </td>
                       )}
                     </tr>
-                  )) : <tr><td colSpan={isAdmin ? 5 : 4} className="p-6 text-center text-slate-400">No records today</td></tr>}
+                  )) : <tr><td colSpan={isAdmin ? 5 : 4} className="p-6 text-center text-slate-400">មិនទាន់មានទិន្នន័យទេ</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -502,7 +511,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
               <input type="number" className="field !w-16 !py-1 text-center text-xs" value={totalStudents} onChange={e => setTotalStudents(Number(e.target.value))} disabled={!isAdmin} />
            </div>
            <div className="flex w-full sm:w-auto gap-2">
-             {isAdmin && <button className="btn bg-danger text-white flex-1 sm:flex-none" onClick={deleteAll}><Trash2 size={16} /> លុប</button>}
+             {isAdmin && <button className="btn bg-danger text-white flex-1 sm:flex-none" onClick={deleteAll}><Trash2 size={16} /> លុបទាំងអស់</button>}
              <button className="btn bg-[#2c3e50] text-white flex-1 sm:flex-none shadow-md shadow-[#2c3e50]/20" onClick={downloadPDF}><Printer size={16} /> Print PDF</button>
            </div>
         </div>
@@ -886,14 +895,24 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
     setScores(prev => ({ ...prev, [studentId]: { ...(prev[studentId] || {}), [sub]: Number(val) } }));
   };
 
+  // ប្តូរទៅជាការ Save លឿនបំផុត (Bulk Upsert/Insert) កាត់បន្ថយការទាក់
   const saveScoreRow = async (studentId: string) => {
     setSavingId(studentId);
     const stuScores = scores[studentId] || {};
-    for (const sub of subjects) {
-        const val = stuScores[sub] || 0;
-        await supabase.from('scores').delete().eq('student_id', studentId).eq('subject_name', sub);
-        await supabase.from('scores').insert({ student_id: studentId, subject_name: sub, score: val });
-    }
+    
+    // លុបពិន្ទុចាស់របស់សិស្សនេះចោលមុនសិន (១ Request គត់)
+    await supabase.from('scores').delete().eq('student_id', studentId);
+    
+    // បង្កើតទម្រង់ទិន្នន័យដើម្បីបញ្ចូលថ្មី
+    const payloads = subjects.map(sub => ({ 
+       student_id: studentId, 
+       subject_name: sub, 
+       score: stuScores[sub] || 0 
+    }));
+    
+    // បញ្ចូលពិន្ទុថ្មីទាំងអស់ក្នុងពេលតែមួយ (១ Request គត់)
+    await supabase.from('scores').insert(payloads);
+    
     setSavingId('');
   };
 
