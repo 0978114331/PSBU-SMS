@@ -10,7 +10,6 @@ import type { Attendance, Student, Tab } from '@/types';
 import { statuses } from '@/types';
 import html2canvas from 'html2canvas';
 import { Html5Qrcode } from 'html5-qrcode';
-import { jsPDF } from 'jspdf';
 
 function App() {
   const { user, profile, loading } = useAuth();
@@ -94,7 +93,10 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const [attendance, setAttendance] = useState<Attendance[]>([]); 
   const [search, setSearch] = useState('');
   
-  const [adminInfo, setAdminInfo] = useState({ teacher: '', room: '', subject: '', shift: 'វេនព្រឹក', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', allowManual: false });
+  const [adminInfo, setAdminInfo] = useState({ 
+    teacher: '', room: '', subject: '', shift: 'វេនព្រឹក', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
+    allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false 
+  });
   const [initialConfigLoad, setInitialConfigLoad] = useState(true);
   
   const today = new Date().toISOString().slice(0, 10);
@@ -129,7 +131,6 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const processedToday = useMemo(() => {
     const unique: Attendance[] = [];
     const seen = new Set();
-    // Use (a as any).created_at to bypass TS errors if created_at is missing from the interface
     const todayAtt = attendance.filter(a => a.date === today).sort((a,b) => new Date((b as any).created_at).getTime() - new Date((a as any).created_at).getTime());
     for (const r of todayAtt) {
         const key = r.student_id || r.name;
@@ -144,7 +145,6 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   useEffect(() => {
     if (!isAdmin || processedToday.length === 0 || students.length === 0) return;
     
-    // Cast to any to avoid TS errors
     const earliest = processedToday.reduce((min, curr) => new Date((curr as any).created_at).getTime() < new Date((min as any).created_at).getTime() ? curr : min);
     
     const earliestTime = new Date((earliest as any).created_at).getTime();
@@ -209,7 +209,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
             <select className="field" value={adminInfo.shift} onChange={e => setAdminInfo({...adminInfo, shift: e.target.value})}>
               <option>វេនព្រឹក</option><option>វេនរសៀល</option><option>វេនយប់</option>
             </select>
-            <div className="col-span-2 md:col-span-4 grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_1fr] gap-2 sm:gap-3 items-center">
+            <div className="col-span-2 md:col-span-4 grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_1.5fr] gap-2 sm:gap-3 items-start">
                <div className="relative w-full">
                  <MapPin className="absolute left-3 top-2.5 sm:top-3 text-slate-400" size={16} />
                  <input className="field pl-9" placeholder="Google Maps Embed Link..." value={adminInfo.mapUrl} onChange={e => setAdminInfo({...adminInfo, mapUrl: e.target.value})} />
@@ -223,10 +223,24 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
                    <input className="field flex-1" placeholder="Logo Link" value={adminInfo.logo} onChange={e => setAdminInfo({...adminInfo, logo: e.target.value})} />
                    <label className="btn btn-primary cursor-pointer px-3 sm:px-4 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAdminInfo({...adminInfo, logo: ev.target?.result as string}); r.readAsDataURL(f); } }} /></label>
                  </div>
-                 <label className="flex items-center gap-2 text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
-                   <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} />
-                   អនុញ្ញាតឱ្យ User ចុះវត្តមានដោយដៃ
-                 </label>
+                 <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1">
+                   <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
+                     <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} />
+                     User ចុះវត្តមានដោយដៃ
+                   </label>
+                   <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
+                     <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowStudentEdit || false} onChange={e => setAdminInfo({...adminInfo, allowStudentEdit: e.target.checked})} />
+                     User កែបញ្ជីសិស្ស
+                   </label>
+                   <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
+                     <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowLeaveManualName || false} onChange={e => setAdminInfo({...adminInfo, allowLeaveManualName: e.target.checked})} />
+                     User វាយឈ្មោះសុំច្បាប់
+                   </label>
+                   <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
+                     <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} />
+                     User បង្កើតកាត
+                   </label>
+                 </div>
                </div>
             </div>
           </div>
@@ -243,13 +257,13 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
           {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
           {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
           {tab === 'warehouse_att' && <AttendanceHistory records={attendance} />}
-          {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} refresh={refresh} />}
+          {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={refresh} />}
           {tab === 'scores' && <ScoresPanel students={students} isAdmin={isAdmin} />}
           {tab === 'warehouse_score' && <ScoreResults students={students} />}
           {tab === 'analytics' && <Analytics counts={counts} totalStudents={students.length} />}
           {tab === 'schedule' && <SchedulePanel isAdmin={isAdmin} />}
           {tab === 'cleaning' && <CleaningSchedule isAdmin={isAdmin} />}
-          {tab === 'cards' && <CardsPanel isAdmin={isAdmin} />}
+          {tab === 'cards' && <CardsPanel isAdmin={isAdmin} adminInfo={adminInfo} />}
         </div>
       </div>
       {scanner && <Scanner onClose={() => setScanner(false)} students={students} refresh={refresh} adminInfo={adminInfo} today={today} />}
@@ -445,7 +459,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
                   <tr className="bg-primary text-white text-left">
                     <th className="p-2 sm:p-3 font-bold text-center show-on-print" style={{width: '60px'}}>ល.រ</th>
                     <th className="p-2 sm:p-3 font-bold whitespace-nowrap">ឈ្មោះសិស្ស</th>
-                    <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap show-on-print">ម៉ោងស្គេនចូល</th>
+                    <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap show-on-print">ម៉ោង</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ភេទ</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ស្ថានភាព</th>
                     {isAdmin && <th className="p-2 sm:p-3 font-bold text-center no-print">សកម្មភាព</th>}
@@ -508,6 +522,7 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const leaveRecords = records.filter((r: any) => r.status === 'ច្បាប់' && r.date === viewDate);
+  const canManualName = isAdmin || adminInfo.allowLeaveManualName;
 
   async function submitLeave() {
     if (!name.trim() || !startDate || !endDate) return;
@@ -610,8 +625,17 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
         
         <label className="block mb-3">
           <span className="text-sm font-bold text-slate-700 mb-1.5 block">ឈ្មោះសិស្ស៖</span>
-          <input list="leave-student-list" className="field w-full text-sm" placeholder="ជ្រើសរើស ឬ វាយឈ្មោះ..." value={name} onChange={e => setName(e.target.value)} />
-          <datalist id="leave-student-list">{students.map((s: any) => <option key={s.id} value={s.name} />)}</datalist>
+          {canManualName ? (
+            <>
+              <input list="leave-student-list" className="field w-full text-sm" placeholder="ជ្រើសរើស ឬ វាយឈ្មោះ..." value={name} onChange={e => setName(e.target.value)} />
+              <datalist id="leave-student-list">{students.map((s: any) => <option key={s.id} value={s.name} />)}</datalist>
+            </>
+          ) : (
+            <select className="field w-full text-sm" value={name} onChange={e => setName(e.target.value)}>
+              <option value="">-- ជ្រើសរើសឈ្មោះសិស្ស --</option>
+              {students.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)}
+            </select>
+          )}
         </label>
 
         <label className="block mb-3">
@@ -678,7 +702,7 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
                   </td>
                   <td className="p-3 text-center whitespace-nowrap">
                      <button className="text-blue-500 hover:bg-blue-50 p-1.5 rounded active:scale-95 transition-transform mr-1" onClick={() => editLeave(r)}><Pencil size={16} /></button>
-                     <button className="text-danger hover:bg-red-50 p-1.5 rounded active:scale-95 transition-transform" onClick={() => deleteLeave(r.id)}><Trash2 size={16} /></button>
+                     {isAdmin && <button className="text-danger hover:bg-red-50 p-1.5 rounded active:scale-95 transition-transform" onClick={() => deleteLeave(r.id)}><Trash2 size={16} /></button>}
                   </td>
                 </tr>
               )) : <tr><td colSpan={5} className="p-8 text-center text-slate-400">មិនមានសិស្សសុំច្បាប់ទេសម្រាប់ថ្ងៃនេះ</td></tr>}
@@ -812,12 +836,14 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
   ); 
 }
 
-function CardsPanel({ isAdmin }: { isAdmin: boolean }) { 
+function CardsPanel({ isAdmin, adminInfo }: any) { 
   const [cardType, setCardType] = useState('student');
   const [form, setForm] = useState({ id: '', name: '', f1: '', f2: '', photo: '' });
   const [savedCards, setSavedCards] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState('student');
+
+  const canCreateCard = isAdmin || adminInfo?.allowCardCreation;
 
   useEffect(() => {
     fetchCards();
@@ -861,7 +887,7 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
   }
 
   function editCard(card: any) {
-    if(!isAdmin) return;
+    if(!canCreateCard) return;
     setCardType(card.template);
     setFilterType(card.template);
     setForm({ id: card.id, name: card.name, f1: card.f1, f2: card.f2, photo: card.photo });
@@ -870,7 +896,8 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
   }
 
   async function deleteCard(dbId: string) {
-    if(!isAdmin) return;
+    if(!canCreateCard) return;
+    if(!window.confirm("តើអ្នកពិតជាចង់លុបកាតនេះមែនទេ?")) return;
     await supabase.from('custom_cards').delete().eq('id', dbId);
     await fetchCards();
   }
@@ -983,7 +1010,7 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <div className="card-creator-container mx-auto p-0 w-full">
-      {isAdmin && (
+      {canCreateCard && (
         <div className="card mb-4 w-full">
           <h3 className="text-primary font-bold text-base sm:text-lg mb-3 flex items-center gap-2"><FileBadge /> ជ្រើសរើសទម្រង់កាតដែលចង់បង្កើត</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4">
@@ -1043,7 +1070,7 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
          
          <div className="w-full overflow-x-auto pb-4">
            <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5 justify-items-center min-w-min mx-auto" id="cardsPrintArea">
-              {isAdmin && (form.id || form.name) && (
+              {canCreateCard && (form.id || form.name) && (
                 <div className="relative opacity-60 w-max max-w-full mx-auto sm:mx-0 no-print">
                   <div className="absolute -top-3 -right-3 z-10 bg-warning text-black text-[9px] font-bold px-2 py-1 rounded-full shadow-md">PREVIEW</div>
                   <RenderCard cardData={form} isPreview={true} />
@@ -1054,7 +1081,7 @@ function CardsPanel({ isAdmin }: { isAdmin: boolean }) {
                 <div key={card.dbId} className="relative group hover:-translate-y-1 transition-transform p-1.5 bg-white rounded-xl shadow-md border border-slate-200 w-max max-w-full mx-auto sm:mx-0">
                    <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity no-print">
                       <button className="bg-emerald-500 text-white p-1.5 rounded-full shadow hover:bg-emerald-600 active:scale-95 transition-all" onClick={() => downloadCard(card.dbId, card.name)}><Download size={14}/></button>
-                      {isAdmin && (
+                      {canCreateCard && (
                         <>
                           <button className="bg-blue-500 text-white p-1.5 rounded-full shadow hover:bg-blue-600 active:scale-95 transition-all" onClick={() => editCard(card)}><Pencil size={14}/></button>
                           <button className="bg-rose-500 text-white p-1.5 rounded-full shadow hover:bg-rose-600 active:scale-95 transition-all" onClick={() => deleteCard(card.dbId)}><Trash2 size={14}/></button>
