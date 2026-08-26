@@ -39,7 +39,7 @@ function AuthScreen() {
   }
   
   return (
-    <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-cover bg-center p-4 sm:p-5" style={{ backgroundImage: "url('https://images.pexels.com/photos/207692/pexels-photo-207692.jpeg?auto=compress&cs=tinysrgb&w=1600')" }}>
+    <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-cover bg-center p-4 sm:p-5" style={{ backgroundImage: "url('https://i.ibb.co/nqpzhb09/Kc-hacker.png')" }}>
       <div className="absolute inset-0 bg-slate-950/60" />
       <section className="relative z-10 w-full max-w-[400px] rounded-[20px] border border-white/50 bg-white/90 p-5 sm:p-7 text-center shadow-2xl backdrop-blur-md mx-auto">
         <div className="mx-auto mb-5 flex h-24 w-24 sm:h-28 sm:w-28 animate-bot-pulse items-center justify-center rounded-full bg-primary/10 text-primary shadow-inner"><GraduationCap size={64} strokeWidth={1.4} /></div>
@@ -256,7 +256,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         <div className="w-full overflow-x-hidden">
           {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
           {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
-          {tab === 'warehouse_att' && <AttendanceHistory records={attendance} />}
+          {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={refresh} />}          
           {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={refresh} />}
           {tab === 'scores' && <ScoresPanel students={students} isAdmin={isAdmin} />}
           {tab === 'warehouse_score' && <ScoreResults students={students} />}
@@ -276,7 +276,7 @@ function Stat({ title, value, color, icon: Icon }: { title: string; value: numbe
 }
 
 function Banner({ mapUrl, bgUrls }: { mapUrl?: string; bgUrls?: string }) { 
-  const defaults = ["https://images.pexels.com/photos/159844/cellular-education-classroom-159844.jpeg?auto=compress&cs=tinysrgb&w=1200"];
+  const defaults = ["https://i.ibb.co/nqpzhb09/Kc-hacker.png"];
   const images = (bgUrls || "").split(',').map(s => s.trim()).filter(Boolean);
   if (images.length === 0) images.push(...defaults);
 
