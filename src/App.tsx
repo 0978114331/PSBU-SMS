@@ -43,7 +43,7 @@ function AuthScreen() {
       <div className="absolute inset-0 bg-slate-950/60" />
       <section className="relative z-10 w-full max-w-[400px] rounded-[20px] border border-white/50 bg-white/90 p-5 sm:p-7 text-center shadow-2xl backdrop-blur-md mx-auto">
         <div className="mx-auto mb-5 flex h-24 w-24 sm:h-28 sm:w-28 animate-bot-pulse items-center justify-center rounded-full bg-primary/10 text-primary shadow-inner"><GraduationCap size={64} strokeWidth={1.4} /></div>
-        <h1 className="mb-5 text-xl sm:text-2xl font-bold text-primary">School Management</h1>
+        <h1 className="mb-5 text-xl sm:text-2xl font-bold text-primary">School MS</h1>
         <div className="mb-5 flex border-b-2 border-slate-100">
           <button className={`flex-1 border-b-4 p-2 font-bold ${mode === 'login' ? 'border-primary text-primary' : 'border-transparent text-slate-500'}`} onClick={() => setMode('login')}>Login</button>
           <button className={`flex-1 border-b-4 p-2 font-bold ${mode === 'register' ? 'border-primary text-primary' : 'border-transparent text-slate-500'}`} onClick={() => setMode('register')}>Register</button>
@@ -97,31 +97,48 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
     teacher: '', room: '', subject: '', shift: 'វេនព្រឹក', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
     allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false 
   });
+
+  const [tempLogo, setTempLogo] = useState('');
+  const [tempBg, setTempBg] = useState('');
+  const [tempMap, setTempMap] = useState('');
+
   const [initialConfigLoad, setInitialConfigLoad] = useState(true);
+  const [savingConfig, setSavingConfig] = useState(false);
   
   const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;  
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
   useEffect(() => {
     supabase.from('schedules').select('data_json').eq('type', 'school_info').maybeSingle().then(({data}) => {
-      if (data?.data_json) setAdminInfo({ ...adminInfo, ...(data.data_json as any) });
+      if (data?.data_json) {
+        setAdminInfo({ ...adminInfo, ...(data.data_json as any) });
+      }
       setInitialConfigLoad(false);
     });
     void refresh();
   }, []);
 
-  useEffect(() => {
-    if (initialConfigLoad || !isAdmin) return;
-    const timer = setTimeout(async () => {
-      const { data } = await supabase.from('schedules').select('id').eq('type', 'school_info').maybeSingle();
-      if (data?.id) {
-        await supabase.from('schedules').update({ data_json: adminInfo }).eq('id', data.id);
-      } else {
-        await supabase.from('schedules').insert({ type: 'school_info', data_json: adminInfo });
-      }
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [adminInfo, initialConfigLoad, isAdmin]);
+  async function saveAdminConfig() {
+    setSavingConfig(true);
+    
+    const payload = { ...adminInfo };
+    if (tempLogo.trim()) payload.logo = tempLogo.trim();
+    if (tempBg.trim()) payload.bgUrls = tempBg.trim();
+    if (tempMap.trim()) payload.mapUrl = tempMap.trim();
+
+    const { data } = await supabase.from('schedules').select('id').eq('type', 'school_info').maybeSingle();
+    if (data?.id) {
+      await supabase.from('schedules').update({ data_json: payload }).eq('id', data.id);
+    } else {
+      await supabase.from('schedules').insert({ type: 'school_info', data_json: payload });
+    }
+    
+    setAdminInfo(payload);
+    setTempLogo('');
+    setTempBg('');
+    setTempMap('');
+    setSavingConfig(false);
+  }
   
   async function refresh() { 
     const [{ data: st }, { data: att }] = await Promise.all([supabase.from('students').select('*').order('name'), supabase.from('attendance').select('*').order('created_at', { ascending: false })]); 
@@ -213,18 +230,18 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
             <div className="col-span-2 md:col-span-4 grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_1.5fr] gap-2 sm:gap-3 items-start">
                <div className="relative w-full">
                  <MapPin className="absolute left-3 top-2.5 sm:top-3 text-slate-400" size={16} />
-                 <input className="field pl-9" placeholder="Google Maps Embed Link..." value={adminInfo.mapUrl} onChange={e => setAdminInfo({...adminInfo, mapUrl: e.target.value})} />
+                 <input className="field pl-9" placeholder="Google Maps Embed Link..." value={tempMap} onChange={e => setTempMap(e.target.value)} />
                </div>
                <div className="relative w-full">
                  <ImageIcon className="absolute left-3 top-2.5 sm:top-3 text-slate-400" size={16} />
-                 <input className="field pl-9" placeholder="Background Link (ដាក់សញ្ញា , ចន្លោះ)" value={adminInfo.bgUrls} onChange={e => setAdminInfo({...adminInfo, bgUrls: e.target.value})} />
+                 <input className="field pl-9" placeholder="Background Link (,)" value={tempBg} onChange={e => setTempBg(e.target.value)} />
                </div>
                <div className="flex flex-col gap-2 w-full">
                  <div className="flex gap-2 w-full">
-                   <input className="field flex-1" placeholder="Logo Link" value={adminInfo.logo} onChange={e => setAdminInfo({...adminInfo, logo: e.target.value})} />
-                   <label className="btn btn-primary cursor-pointer px-3 sm:px-4 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAdminInfo({...adminInfo, logo: ev.target?.result as string}); r.readAsDataURL(f); } }} /></label>
+                   <input className="field flex-1" placeholder="Logo Link" value={tempLogo} onChange={e => setTempLogo(e.target.value)} />
+                   <label className="btn btn-primary cursor-pointer px-3 sm:px-4 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setTempLogo(ev.target?.result as string); r.readAsDataURL(f); } }} /></label>
                  </div>
-                 <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1">
+                 <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1 items-center">
                    <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
                      <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} />
                      User ចុះវត្តមានដោយដៃ
@@ -241,6 +258,9 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
                      <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} />
                      User បង្កើតកាត
                    </label>
+                   <button className="btn btn-success !py-1 !px-3 text-xs ml-auto shadow-sm" disabled={savingConfig} onClick={saveAdminConfig}>
+                     <Save size={14} /> {savingConfig ? '...' : 'Save Config'}
+                   </button>
                  </div>
                </div>
             </div>
@@ -257,7 +277,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         <div className="w-full overflow-x-hidden">
           {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
           {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
-          {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={refresh} />}          
+          {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={refresh} />}
           {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={refresh} />}
           {tab === 'scores' && <ScoresPanel students={students} isAdmin={isAdmin} />}
           {tab === 'warehouse_score' && <ScoreResults students={students} />}
@@ -467,7 +487,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
                   <tr className="bg-primary text-white text-left">
                     <th className="p-2 sm:p-3 font-bold text-center show-on-print" style={{width: '60px'}}>ល.រ</th>
                     <th className="p-2 sm:p-3 font-bold whitespace-nowrap">ឈ្មោះសិស្ស</th>
-                    <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap show-on-print">ម៉ោង</th>
+                    <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap show-on-print">ម៉ោងស្គេនចូល</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ភេទ</th>
                     <th className="p-2 sm:p-3 font-bold text-center whitespace-nowrap">ស្ថានភាព</th>
                     {isAdmin && <th className="p-2 sm:p-3 font-bold text-center no-print">សកម្មភាព</th>}
@@ -675,12 +695,12 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
             <div className="relative flex justify-center items-start w-full mb-4 pt-2">
               <div className="absolute left-0 top-0 flex flex-col items-center w-max">
                  {adminInfo.logo && <img src={adminInfo.logo} alt="Logo" className="w-12 h-12 sm:w-16 sm:h-16 object-contain mb-1 drop-shadow-sm" />}
-                 <span className="font-moul text-[8px] sm:text-[10px] text-blue-900 text-center leading-tight">ពុទ្ធិកសាកលវិទ្យាល័យ<br/>ព្រះសីហមុនីរាជា</span>
+                 <span className="font-moul text-[8px] sm:text-[10px] text-blue-900 text-center leading-tight">PSB University<br/></span>
               </div>
               
               <div className="flex flex-col items-center text-center">
-                 <span className="font-moul text-[13px] sm:text-[16px] text-blue-900 leading-none">ព្រះរាជាណាចក្រកម្ពុជា</span>
-                 <span className="font-moul text-[13px] sm:text-[16px] mt-2 text-blue-900 leading-none">ជាតិ សាសនា ព្រះមហាក្សត្រ</span>
+                 <span className="font-moul text-[12px] sm:text-[16px] text-blue-900 leading-none">ព្រះរាជាណាចក្រកម្ពុជា</span>
+                 <span className="font-moul text-[12px] sm:text-[16px] mt-2 text-blue-900 leading-none">ជាតិ សាសនា ព្រះមហាក្សត្រ</span>
                  <div className="w-14 sm:w-20 h-[2px] bg-blue-900 mt-2"></div>
               </div>
             </div>
@@ -1038,17 +1058,32 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
 
   async function deleteCard(dbId: string) {
     if(!canCreateCard) return;
-    if(!window.confirm("តើអ្នកពិតជាចង់លុបកាតនេះមែនទេ?")) return;
+    if(!window.confirm("Delete this card?")) return;
     await supabase.from('custom_cards').delete().eq('id', dbId);
     await fetchCards();
   }
 
   const printCards = () => {
-    document.body.classList.add('print-cards');
+    const printArea = document.getElementById('cardsPrintArea');
+    const rootEl = document.getElementById('root') || document.body.firstElementChild as HTMLElement;
+    
+    if (!printArea || !rootEl) {
+      window.print();
+      return;
+    }
+    
+    const printContainer = document.createElement('div');
+    printContainer.id = 'temp-print-container';
+    printContainer.innerHTML = printArea.innerHTML;
+    document.body.appendChild(printContainer);
+    
+    const originalDisplay = rootEl.style.display;
+    rootEl.style.display = 'none';
+    
     window.print();
-    setTimeout(() => {
-      document.body.classList.remove('print-cards');
-    }, 500);
+    
+    rootEl.style.display = originalDisplay;
+    document.body.removeChild(printContainer);
   };
 
   const downloadCard = (dbId: string, cardName: string) => {
@@ -1150,9 +1185,47 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
   };
 
   return (
-    <div className="card-creator-container mx-auto p-0 w-full">
+    <div className="card-creator-container mx-auto p-0 w-full relative">
+      <style>{`
+        @media print {
+          @page { size: A4 portrait; margin: 10mm; }
+          
+          .no-print { display: none !important; }
+          
+          * { 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+            color-adjust: exact !important;
+          }
+          
+          #temp-print-container { 
+            display: flex !important; 
+            flex-wrap: wrap !important;
+            justify-content: space-evenly !important;
+            align-content: flex-start !important;
+            gap: 15px 0 !important;
+            width: 100% !important;
+            background: white !important;
+          }
+          
+          #temp-print-container .print-card-item {
+            width: max-content !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin-bottom: 15px !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: transparent !important;
+          }
+
+          #temp-print-container .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+      
       {canCreateCard && (
-        <div className="card mb-4 w-full">
+        <div className="card mb-4 w-full no-print">
           <h3 className="text-primary font-bold text-base sm:text-lg mb-3 flex items-center gap-2"><FileBadge /> ជ្រើសរើសទម្រង់កាតដែលចង់បង្កើត</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4">
             <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'student' ? 'border-primary bg-blue-50 shadow-md' : 'border-slate-200 hover:border-primary hover:-translate-y-1'}`} onClick={() => {setCardType('student'); setFilterType('student'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
@@ -1178,22 +1251,22 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
           <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 shadow-sm w-full">
              <h3 className="font-bold text-primary mb-3 flex items-center gap-2 text-sm sm:text-base"><GraduationCap size={18} /> បញ្ចូលព័ត៌មានកាត</h3>
              <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1.5fr_1.5fr_auto] gap-2">
-               <input className="field" placeholder="អត្តលេខ (ID)" value={form.id} onChange={e => setForm({...form, id: e.target.value})} />
-               <input className="field" placeholder="ឈ្មោះ" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-               <input className="field" placeholder={cardType==='student'?'ឆ្នាំសិក្សា':cardType==='company'?'ផ្នែក':'តួនាទី'} value={form.f1} onChange={e => setForm({...form, f1: e.target.value})} />
-               <input className="field" placeholder={cardType==='student'?'ជំនាញ':cardType==='library'?'ថ្ងៃចុះឈ្មោះ':'ផ្សេងៗ'} value={form.f2} onChange={e => setForm({...form, f2: e.target.value})} />
-               <label className="btn border border-slate-300 bg-white text-slate-700 cursor-pointer w-full sm:w-auto"><Upload size={16}/> រូបភាព<input type="file" className="hidden" accept="image/*" onChange={(e)=>{const f=e.target.files?.[0]; if(f){const r=new FileReader(); r.onload=(ev)=>setForm({...form, photo: ev.target?.result as string}); r.readAsDataURL(f);}}} /></label>
+               <input className="field" placeholder="អត្តលេខ ID" value={form.id} onChange={e => setForm({...form, id: e.target.value})} />
+               <input className="field" placeholder="គោត្តនាម-នាម" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+               <input className="field" placeholder={cardType==='student'?'ឆ្នាំសិក្សា':cardType==='company'?'Dept':'Role'} value={form.f1} onChange={e => setForm({...form, f1: e.target.value})} />
+               <input className="field" placeholder={cardType==='student'?'ជំនាញ':cardType==='library'?'Date':'Other'} value={form.f2} onChange={e => setForm({...form, f2: e.target.value})} />
+               <label className="btn border border-slate-300 bg-white text-slate-700 cursor-pointer w-full sm:w-auto"><Upload size={16}/>រូបភាព<input type="file" className="hidden" accept="image/*" onChange={(e)=>{const f=e.target.files?.[0]; if(f){const r=new FileReader(); r.onload=(ev)=>setForm({...form, photo: ev.target?.result as string}); r.readAsDataURL(f);}}} /></label>
              </div>
              <div className="flex flex-col sm:flex-row justify-end gap-2 mt-3 w-full">
                <button className="btn bg-slate-200 text-slate-700 w-full sm:w-auto hover:bg-slate-300" onClick={() => { setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null); }}>បោះបង់</button>
-               <button className="btn btn-primary w-full sm:w-auto" onClick={saveCard}>{editingId ? 'រក្សាទុកការកែប្រែ' : 'បង្កើតកាត'}</button>
+               <button className="btn btn-primary w-full sm:w-auto" onClick={saveCard}>{editingId ? 'Save Edit' : 'រក្សាទុកកាត'}</button>
              </div>
           </div>
         </div>
       )}
 
       <div className="card min-h-[400px] w-full">
-         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 pb-3 border-b border-slate-200 gap-3 w-full">
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 pb-3 border-b border-slate-200 gap-3 w-full no-print">
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                <FileBadge className="text-primary shrink-0" size={20} />
                <select className="field w-full sm:w-40 !py-1.5 !px-2 font-bold bg-white text-sm" value={filterType} onChange={e => setFilterType(e.target.value)}>
@@ -1206,20 +1279,20 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
                </select>
                <span className="bg-primary/10 text-primary px-2.5 py-1 rounded-lg text-xs font-bold shrink-0">{savedCards.filter(c => c.template === filterType).length}</span>
             </div>
-            <button className="btn btn-primary w-full sm:w-auto !py-2" onClick={printCards}><Printer size={16} /> បោះពុម្ព (A4)</button>
+            <button className="btn btn-primary w-full sm:w-auto !py-2" onClick={printCards}><Printer size={16} /> បោះពុម្ពកាត (A4)</button>
          </div>
          
-         <div className="w-full overflow-x-auto pb-4">
-           <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-5 justify-items-center min-w-min mx-auto" id="cardsPrintArea">
+         <div className="w-full pb-4">
+           <div className="w-full flex flex-wrap gap-5 justify-center sm:justify-start" id="cardsPrintArea">
               {canCreateCard && (form.id || form.name) && (
-                <div className="relative opacity-60 w-max max-w-full mx-auto sm:mx-0 no-print">
+                <div className="print-card-item relative opacity-60 no-print">
                   <div className="absolute -top-3 -right-3 z-10 bg-warning text-black text-[9px] font-bold px-2 py-1 rounded-full shadow-md">PREVIEW</div>
                   <RenderCard cardData={form} isPreview={true} />
                 </div>
               )}
               
               {savedCards.filter(c => c.template === filterType).map((card) => (
-                <div key={card.dbId} className="relative group hover:-translate-y-1 transition-transform p-1.5 bg-white rounded-xl shadow-md border border-slate-200 w-max max-w-full mx-auto sm:mx-0">
+                <div key={card.dbId} className="print-card-item relative group hover:-translate-y-1 transition-transform p-1.5 bg-white rounded-xl shadow-md border border-slate-200 w-max mx-auto sm:mx-0">
                    <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity no-print">
                       <button className="bg-emerald-500 text-white p-1.5 rounded-full shadow hover:bg-emerald-600 active:scale-95 transition-all" onClick={() => downloadCard(card.dbId, card.name)}><Download size={14}/></button>
                       {canCreateCard && (
@@ -1234,12 +1307,6 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
               ))}
            </div>
          </div>
-         {savedCards.filter(c => c.template === filterType).length === 0 && !form.id && !form.name && (
-            <div className="flex flex-col items-center justify-center py-8 text-slate-400">
-               <FileBadge size={40} className="mb-2 opacity-20" />
-               <p className="text-sm">មិនទាន់មានកាតប្រភេទនេះត្រូវបានបង្កើតទេ</p>
-            </div>
-         )}
       </div>
     </div>
   ); 
