@@ -693,12 +693,12 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
             {/* ខ្លឹមសារលិខិត */}
             <div className="px-1 sm:px-4">
                <div className="mb-4">
-                  <span className="font-extrabold mr-2">សូមគោរពជូន៖</span> លោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលា
+                  <span className="font-extrabold mr-2">សូមគោរពជូន៖</span> លោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលាជាទីគោរព
                </div>
                
                {/* ជួរទី១៖ ឈ្មោះ ភេទ អត្តលេខ (ស្ថិតក្នុង១ជួររហូត) */}
                <div className="mb-4 flex items-end justify-between w-full text-[10px] sm:text-[14px]">
-                 <span className="font-bold whitespace-nowrap">ខ្ញុំបាទ/នាងខ្ញុំឈ្មោះ៖</span> 
+                 <span className="font-bold whitespace-nowrap">ខ្ញុំបាទ/នាងខ្ញុំ៖</span> 
                  <span className="font-moul text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.name}</span>
                  <span className="font-bold whitespace-nowrap">ភេទ៖</span> 
                  <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 text-center whitespace-nowrap">{viewLetter.gender || studentDetail?.gender || '...'}</span>
@@ -717,11 +717,11 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
                </div>
 
                <p className="indent-8 text-justify mb-2 leading-[2] sm:leading-[2.2]">
-                  ត្បិតខ្ញុំបាទ/នាងខ្ញុំ មានធុរៈចាំបាច់ផ្ទាល់ខ្លួន / ឈឺ ពិតប្រាកដមែន ដោយមានមូលហេតុជាក់លាក់ដូចជា៖ 
+                  ខ្ញុំបាទ/នាងខ្ញុំ មានធុរៈចាំបាច់ផ្ទាល់ខ្លួន / ដោយមានមូលហេតុជាក់លាក់ដូចជា៖ 
                   <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-2 mx-1">« {viewLetter.reason} »</span>។
                </p>
                <p className="indent-8 text-justify mb-8 leading-[2] sm:leading-[2.2]">
-                  អាស្រ័យហេតុនេះ សូម លោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលា មេត្តាអនុញ្ញាតច្បាប់ឈប់សម្រាកដល់ខ្ញុំបាទ/នាងខ្ញុំ តាមការស្នើសុំខាងលើ ដោយក្ដីអនុគ្រោះ និងយោគយល់បំផុត។
+                  សេចក្តីដូចបានជម្រាប់ជូនក្នុងកម្មវត្ថុ និងមូលហេតុ សូមលោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលា មេត្តាអនុញ្ញាតច្បាប់ឈប់សម្រាកដល់ខ្ញុំបាទ/នាងខ្ញុំ តាមការស្នើសុំខាងលើ ដោយក្ដីអនុគ្រោះផងចុះ។
                </p>
             </div>
 
