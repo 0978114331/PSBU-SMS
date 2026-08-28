@@ -13,7 +13,14 @@ import { Html5Qrcode } from 'html5-qrcode';
 
 function App() {
   const { user, profile, loading } = useAuth();
-  if (loading) return <div className="flex min-h-screen items-center justify-center bg-light text-primary font-bold">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f8fafc]">
+        <div className="h-12 w-12 animate-spin rounded-full border-[4px] border-blue-600 border-t-transparent mb-4 shadow-sm"></div>
+        <p className="text-sm font-bold text-slate-500 animate-pulse">កំពុងរៀបចំប្រព័ន្ធ...</p>
+      </div>
+    );
+  }
   if (!user) return <AuthScreen />;
   return <Dashboard role={profile?.role ?? 'user'} />;
 }
@@ -164,26 +171,46 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const [tempLogo, setTempLogo] = useState('');
   const [tempBg, setTempBg] = useState('');
   const [tempMap, setTempMap] = useState('');
-
-  const [initialConfigLoad, setInitialConfigLoad] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
   
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
+  const fetchInitialData = async () => {
+    const [{ data: st }, { data: att }] = await Promise.all([
+      supabase.from('students').select('*').order('name'),
+      supabase.from('attendance').select('*').order('created_at', { ascending: false })
+    ]);
+    if (st) setStudents(st as Student[]);
+    if (att) setAttendance(att as Attendance[]);
+  };
+
   useEffect(() => {
     supabase.from('schedules').select('data_json').eq('type', 'school_info').maybeSingle().then(({data}) => {
-      if (data?.data_json) {
-        setAdminInfo({ ...adminInfo, ...(data.data_json as any) });
-      }
-      setInitialConfigLoad(false);
+      if (data?.data_json) setAdminInfo({ ...adminInfo, ...(data.data_json as any) });
     });
-    void refresh();
+    
+    fetchInitialData();
+
+    const globalSub = supabase.channel('dashboard-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, () => {
+        fetchInitialData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+        fetchInitialData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+        if (payload.new && (payload.new as any).type === 'school_info') {
+          setAdminInfo(prev => ({ ...prev, ...((payload.new as any).data_json as any) }));
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(globalSub); };
   }, []);
 
   async function saveAdminConfig() {
     setSavingConfig(true);
-    
     const payload = { ...adminInfo };
     if (tempLogo.trim()) payload.logo = tempLogo.trim();
     if (tempBg.trim()) payload.bgUrls = tempBg.trim();
@@ -203,12 +230,6 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
     setSavingConfig(false);
   }
   
-  async function refresh() { 
-    const [{ data: st }, { data: att }] = await Promise.all([supabase.from('students').select('*').order('name'), supabase.from('attendance').select('*').order('created_at', { ascending: false })]); 
-    setStudents((st ?? []) as Student[]); 
-    setAttendance((att ?? []) as Attendance[]); 
-  }
-  
   const processedToday = useMemo(() => {
     const unique: Attendance[] = [];
     const seen = new Set();
@@ -225,10 +246,10 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
 
   useEffect(() => {
     if (!isAdmin || processedToday.length === 0 || students.length === 0) return;
-    
     const earliest = processedToday.reduce((min, curr) => new Date((curr as any).created_at).getTime() < new Date((min as any).created_at).getTime() ? curr : min);
-    
     const earliestTime = new Date((earliest as any).created_at).getTime();
+    if (isNaN(earliestTime)) return;
+    
     const twoHours = 2 * 60 * 60 * 1000;
     const waitTime = (earliestTime + twoHours) - Date.now();
 
@@ -250,7 +271,6 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
                 subject: adminInfo.subject || ''
             }));
             await supabase.from('attendance').insert(payloads);
-            refresh();
         }
     };
 
@@ -338,10 +358,10 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         )}
 
         <div className="w-full overflow-x-hidden">
-          {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
-          {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
-          {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={refresh} />}
-          {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={refresh} />}
+          {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={fetchInitialData} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
+          {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} refresh={fetchInitialData} adminInfo={adminInfo} today={today} />}
+          {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={fetchInitialData} />}
+          {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={fetchInitialData} />}
           {tab === 'scores' && <ScoresPanel students={students} isAdmin={isAdmin} />}
           {tab === 'warehouse_score' && <ScoreResults students={students} />}
           {tab === 'analytics' && <Analytics counts={counts} totalStudents={students.length} />}
@@ -350,7 +370,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
           {tab === 'cards' && <CardsPanel isAdmin={isAdmin} adminInfo={adminInfo} />}
         </div>
       </div>
-      {scanner && <Scanner onClose={() => setScanner(false)} students={students} refresh={refresh} adminInfo={adminInfo} today={today} />}
+      {scanner && <Scanner onClose={() => setScanner(false)} students={students} refresh={fetchInitialData} adminInfo={adminInfo} today={today} />}
     </div>
   );
 }
@@ -390,7 +410,6 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
   const [name, setName] = useState(''); 
   const [status, setStatus] = useState<string>(statuses[0]); 
   const [saving, setSaving] = useState(false); 
-  const [totalStudents, setTotalStudents] = useState(0);
   
   const [showSharedQR, setShowSharedQR] = useState(false);
   const sharedQRData = `PSB-ATTENDANCE-${today}`;
@@ -409,12 +428,12 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
       setLinkedStuId(found.stu_id);
       setLinkError('');
     } else {
-      setLinkError('រកមិនឃើញអត្តលេខនេះទេ! សូមពិនិត្យម្តងទៀត។');
+      setLinkError('Invalid Student ID');
     }
   }
 
   function handleUnlinkAccount() {
-    if (window.confirm("តើអ្នកចង់ផ្តាច់អត្តលេខចេញពីទូរស័ព្ទនេះមែនទេ?")) {
+    if (window.confirm("Unlink ID from this device?")) {
       localStorage.removeItem('my_stu_id');
       setLinkedStuId('');
       setLinkInput('');
@@ -429,11 +448,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
     const finalId = student ? student.stu_id : "";
     const finalGender = student ? student.gender : "ប្រុស";
 
-    if (student?.id) {
-       await supabase.from('attendance').delete().eq('student_id', student.id).eq('date', today);
-    }
-
-    await supabase.from('attendance').insert({ 
+    const payload = { 
       student_id: student?.id || null, 
       stu_id: finalId, 
       name: finalName, 
@@ -445,8 +460,16 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
       room: adminInfo.room || '',
       teacher: adminInfo.teacher || '',
       subject: adminInfo.subject || ''
-    }); 
-    setName(''); setSaving(false); await refresh(); 
+    };
+
+    setName(''); 
+    setSaving(false);
+
+    if (student?.id) {
+       await supabase.from('attendance').delete().eq('student_id', student.id).eq('date', today);
+    }
+    await supabase.from('attendance').insert(payload); 
+    if(refresh) refresh();
   } 
 
   async function autoMarkAbsent() {
@@ -457,6 +480,8 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
     if (absents.length === 0) {
       setSaving(false); return;
     }
+
+    setTimeout(() => setSaving(false), 300);
     
     const payloads = absents.map((s: any) => ({
       student_id: s.id, 
@@ -473,8 +498,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
     }));
 
     await supabase.from('attendance').insert(payloads);
-    await refresh();
-    setSaving(false);
+    if(refresh) refresh();
   }
 
   async function editRecord(r: any) {
@@ -485,37 +509,44 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
 
     if (newName.trim() !== "") {
       await supabase.from('attendance').update({ name: newName.trim(), status: newStatus }).eq('id', r.id);
-      await refresh();
+      if(refresh) refresh();
     }
   }
 
   async function deleteRecord(id: string) {
-    if(!window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?")) return;
-    await supabase.from('attendance').delete().eq('id', id);
-    await refresh();
+    if(!window.confirm("Delete this record?")) return;
+    supabase.from('attendance').delete().eq('id', id).then(() => {
+        if(refresh) refresh();
+    });
   }
 
   async function deleteAll() {
-    if(!window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យវត្តមានថ្ងៃនេះ ទាំងអស់មែនទេ? ទង្វើនេះមិនអាចត្រឡប់វិញបានទេ។")) return;
-    
+    if(!window.confirm("Delete all records for today?")) return;
     const ids = records.map((r: any) => r.id);
     if (ids.length > 0) {
-       await supabase.from('attendance').delete().in('id', ids);
+       supabase.from('attendance').delete().in('id', ids).then(() => {
+           if(refresh) refresh();
+       });
     }
-    await refresh();
   }
 
   const downloadPDF = () => {
     document.body.classList.add('print-attendance');
     window.print();
-    setTimeout(() => {
-      document.body.classList.remove('print-attendance');
-    }, 500);
+    setTimeout(() => { document.body.classList.remove('print-attendance'); }, 500);
   };
 
   return (
     <div className="grid gap-3 lg:gap-4 lg:grid-cols-[.8fr_1.5fr] w-full">
-      
+      <style>{`
+        @media print {
+          body.print-attendance * { visibility: hidden; background: white; }
+          body.print-attendance #exportArea, body.print-attendance #exportArea * { visibility: visible; }
+          body.print-attendance #exportArea { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; padding: 20px; margin: 0; }
+          body.print-attendance .no-print { display: none !important; }
+        }
+      `}</style>
+
       {showSharedQR && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 sm:p-10 text-center max-w-sm w-full shadow-2xl animate-fade-in relative">
@@ -533,27 +564,13 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
           <div className="card h-fit w-full">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Plus size={20} className="text-primary" /> ចុះវត្តមាន</h2>
             <input list="student-list" className="field mb-3 w-full" placeholder="-- Select or type name --" value={name} onChange={e => setName(e.target.value)} />
-            <datalist id="student-list">
-              {students.map((s: any) => <option key={s.id} value={s.name} />)}
-            </datalist>
-            <select className="field mb-4 w-full" value={status} onChange={e => setStatus(e.target.value as string)}>
-              {statuses.map(s => <option key={s}>{s}</option>)}
-            </select>
+            <datalist id="student-list">{students.map((s: any) => <option key={s.id} value={s.name} />)}</datalist>
+            <select className="field mb-4 w-full" value={status} onChange={e => setStatus(e.target.value as string)}>{statuses.map(s => <option key={s}>{s}</option>)}</select>
             <div className="flex flex-col sm:flex-row gap-2 mt-2">
-              <button className="btn btn-success w-full shadow-md shadow-success/20" disabled={!name || saving} onClick={add}>
-                <CheckCircle2 size={16} /> {saving ? '...' : 'Save'}
-              </button>
-              {isAdmin && (
-                <button className="btn bg-[#ff9f43] text-white w-full shadow-md shadow-[#ff9f43]/20" disabled={saving} onClick={autoMarkAbsent}>
-                  <Users size={16} /> Auto Absent
-                </button>
-              )}
+              <button className="btn btn-success w-full shadow-md shadow-success/20" disabled={!name || saving} onClick={add}><CheckCircle2 size={16} /> {saving ? '...' : 'Save'}</button>
+              {isAdmin && <button className="btn bg-[#ff9f43] text-white w-full shadow-md shadow-[#ff9f43]/20" disabled={saving} onClick={autoMarkAbsent}><Users size={16} /> Auto Absent</button>}
             </div>
-            {isAdmin && (
-              <button className="btn bg-blue-600 text-white w-full mt-3 shadow-lg shadow-blue-600/30 font-bold" onClick={() => setShowSharedQR(true)}>
-                <Camera size={18} /> បង្ហាញ QR ស្កែនរួម (Check-in)
-              </button>
-            )}
+            {isAdmin && <button className="btn bg-blue-600 text-white w-full mt-3 shadow-lg shadow-blue-600/30 font-bold" onClick={() => setShowSharedQR(true)}><Camera size={18} /> បង្ហាញ QR ស្កែនរួម</button>}
           </div>
         )}
 
@@ -574,21 +591,18 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
                   <h3 className="font-bold text-lg text-slate-800 mb-1">ចុះវត្តមានផ្ទាល់ខ្លួន</h3>
                   <p className="text-slate-500 text-[13px] mb-2 leading-relaxed">អត្តលេខភ្ជាប់បច្ចុប្បន្ន៖ <b className="text-primary">{linkedStuId}</b></p>
                   <button className="text-xs text-danger hover:underline mb-5" onClick={handleUnlinkAccount}>ប្តូរអត្តលេខផ្សេង</button>
-                  <button className="btn btn-primary w-full py-3.5 shadow-lg shadow-primary/30 font-bold text-[14px]" onClick={onOpenScanner}>
-                    ចាប់ផ្តើមស្កែន QR 
-                  </button>
+                  <button className="btn btn-primary w-full py-3.5 shadow-lg shadow-primary/30 font-bold text-[14px]" onClick={onOpenScanner}>ចាប់ផ្តើមស្កែន QR</button>
                 </>
              )}
           </div>
         )}
       </div>
 
-      <div className={`w-full ${(!canManualEntry && isAdmin) ? 'lg:col-span-2' : ''}`}>
+      <div className={`w-full ${!canManualEntry ? 'lg:col-span-2' : ''}`}>
         <div className="card p-3 sm:p-5 bg-white w-full overflow-hidden" id="exportArea">
           <div className="text-center border-b-[3px] border-double border-primary pb-3 sm:pb-4 mb-4 sm:mb-5 relative w-full">
             {adminInfo.logo && <img src={adminInfo.logo} className="w-[50px] h-[50px] sm:w-[70px] sm:h-[70px] object-cover mx-auto mb-2 rounded-full shadow-sm border border-primary" alt="Logo" />}
             <h1 className="text-primary text-lg sm:text-2xl font-bold my-1 w-full truncate px-2">របាយការណ៍វត្តមានសិស្សប្រចាំថ្ងៃ</h1>
-            <p className="text-slate-500 text-[10px] sm:text-sm w-full truncate px-2">ប្រព័ន្ធគ្រប់គ្រងវត្តមានស្វ័យប្រវត្តិ</p>
           </div>
           
           <div className="flex flex-row justify-between bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-4 text-[10px] sm:text-sm w-full gap-2 overflow-hidden">
@@ -641,7 +655,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
             </div>
           </div>
           <div className="mt-4 sm:mt-5 flex flex-wrap justify-center gap-2 border-t-2 border-primary pt-3 sm:pt-4 w-full">
-            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-blue-50 text-blue-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ស.សរុប: {totalStudents}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-blue-50 text-blue-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ស.សរុប: {records.length}</div>
             <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-green-50 text-green-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">វត្តមាន: {records.filter((r:any)=>r.status==='វត្តមាន').length}</div>
             <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-yellow-50 text-yellow-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ច្បាប់: {records.filter((r:any)=>r.status==='ច្បាប់').length}</div>
             <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-red-50 text-red-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">អវត្តមាន: {records.filter((r:any)=>r.status==='អវត្តមាន').length}</div>
@@ -651,7 +665,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
         <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 items-center justify-center w-full">
            <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-sm w-full sm:w-auto justify-center">
               <label className="font-bold text-xs sm:text-sm text-slate-700">សិស្សសរុប៖</label>
-              <input type="number" className="field !w-16 !py-1 text-center text-xs" value={totalStudents} onChange={e => setTotalStudents(Number(e.target.value))} disabled={!isAdmin} />
+              <div className="field !w-16 !py-1 text-center text-xs bg-slate-100 font-bold">{records.length}</div>
            </div>
            <div className="flex w-full sm:w-auto gap-2">
              {isAdmin && <button className="btn bg-danger text-white flex-1 sm:flex-none" onClick={deleteAll}><Trash2 size={16} /> លុបទាំងអស់</button>}
@@ -672,7 +686,6 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
   const [saving, setSaving] = useState(false);
   const [viewDate, setViewDate] = useState(today);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
   const [viewLetter, setViewLetter] = useState<any>(null);
 
   const leaveRecords = records.filter((r: any) => r.status === 'ច្បាប់' && r.date === viewDate);
@@ -688,25 +701,13 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
     const finalGender = student ? student.gender : "ប្រុស";
 
     if (editingId) {
-      const { error } = await supabase.from('attendance').update({
-        student_id: student?.id || null,
-        stu_id: finalId,
-        name: finalName,
-        gender: finalGender,
-        date: startDate,
-        reason: reason || 'គ្មានការបញ្ជាក់',
-        photo: photo || ''
+      await supabase.from('attendance').update({
+        student_id: student?.id || null, stu_id: finalId, name: finalName, gender: finalGender,
+        date: startDate, reason: reason || 'គ្មានការបញ្ជាក់', photo: photo || ''
       }).eq('id', editingId);
-
-      if (error) {
-        alert("Error: " + error.message);
-      } else {
-        setEditingId(null);
-        setName(''); setReason(''); setPhoto(''); setStartDate(today); setEndDate(today);
-        await refresh();
-      }
-      setSaving(false);
-      return;
+      if(refresh) refresh();
+      setEditingId(null); setName(''); setReason(''); setPhoto(''); setStartDate(today); setEndDate(today);
+      setSaving(false); return;
     }
 
     const dates = [];
@@ -717,165 +718,105 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
       curr.setDate(curr.getDate() + 1);
     }
 
+    setName(''); setReason(''); setPhoto(''); setStartDate(today); setEndDate(today);
+    setSaving(false);
+
     for (const d of dates) {
-      if (student?.id) {
-         await supabase.from('attendance').delete().eq('student_id', student.id).eq('date', d);
-      }
+      if (student?.id) await supabase.from('attendance').delete().eq('student_id', student.id).eq('date', d);
     }
 
     const dateText = startDate === endDate ? '' : ` (ពី ${startDate} ដល់ ${endDate})`;
     const fullReason = `${reason || 'គ្មានការបញ្ជាក់'}${dateText}`;
 
     const payloads = dates.map(d => ({
-      student_id: student?.id || null,
-      stu_id: finalId,
-      name: finalName,
-      gender: finalGender,
-      status: 'ច្បាប់',
-      date: d,
-      time: new Date().toLocaleTimeString('en-GB'),
-      shift: adminInfo.shift || '',
-      room: adminInfo.room || '',
-      teacher: adminInfo.teacher || '',
-      subject: adminInfo.subject || '',
-      reason: fullReason,
-      photo: photo || ''
+      student_id: student?.id || null, stu_id: finalId, name: finalName, gender: finalGender,
+      status: 'ច្បាប់', date: d, time: new Date().toLocaleTimeString('en-GB'),
+      shift: adminInfo.shift || '', room: adminInfo.room || '', teacher: adminInfo.teacher || '', subject: adminInfo.subject || '',
+      reason: fullReason, photo: photo || ''
     }));
 
-    const { error } = await supabase.from('attendance').insert(payloads);
-
-    if (error) {
-       alert("Error: " + error.message);
-    } else {
-       setName(''); setReason(''); setPhoto(''); setStartDate(today); setEndDate(today);
-       await refresh();
-    }
-    setSaving(false);
+    await supabase.from('attendance').insert(payloads);
+    if(refresh) refresh();
   }
 
   function editLeave(r: any) {
-    setName(r.name);
-    setStartDate(r.date);
-    setEndDate(r.date);
-    setReason(r.reason);
-    setPhoto(r.photo || '');
-    setEditingId(r.id);
+    setName(r.name); setStartDate(r.date); setEndDate(r.date); setReason(r.reason); setPhoto(r.photo || ''); setEditingId(r.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function deleteLeave(id: string) {
-    if(!window.confirm("តើអ្នកពិតជាចង់លុបច្បាប់នេះមែនទេ?")) return;
-    await supabase.from('attendance').delete().eq('id', id);
-    await refresh();
+    if(!window.confirm("Delete?")) return;
+    supabase.from('attendance').delete().eq('id', id).then(() => {
+       if(refresh) refresh();
+    });
   }
 
   const printLetter = () => {
+    document.body.classList.add('print-leave');
     window.print();
+    setTimeout(() => document.body.classList.remove('print-leave'), 500);
   };
-
-  const studentDetail = viewLetter ? students.find((s: any) => s.id === viewLetter.student_id || s.name === viewLetter.name) : null;
   
+  const studentDetail = viewLetter ? students.find((s: any) => s.id === viewLetter.student_id || s.name === viewLetter.name) : null;
   const formatDateKH = (dateStr: string) => {
     if(!dateStr) return { day: '...', month: '...', year: '...' };
     const d = new Date(dateStr);
-    return {
-      day: d.getDate().toString().padStart(2, '0'),
-      month: (d.getMonth() + 1).toString().padStart(2, '0'),
-      year: d.getFullYear().toString()
-    };
+    return { day: d.getDate().toString().padStart(2, '0'), month: (d.getMonth() + 1).toString().padStart(2, '0'), year: d.getFullYear().toString() };
   };
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_2fr] w-full relative">
-      
+      <style>{`
+        @media print {
+          body.print-leave * { visibility: hidden; background: white; }
+          body.print-leave #print-letter-section, body.print-leave #print-letter-section * { visibility: visible; }
+          body.print-leave #print-letter-section { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; padding: 20px; background: white; margin: 0; }
+          body.print-leave .hide-on-print { display: none !important; }
+        }
+      `}</style>
       {viewLetter && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 p-2 sm:p-4 backdrop-blur-sm print:bg-transparent print:p-0">
-          
           <style>{`
             @import url('https://fonts.googleapis.com/css2?family=Moul&family=Siemreap&display=swap');
             .font-moul { font-family: 'Moul', serif; }
             .font-siemreap { font-family: 'Siemreap', sans-serif; }
-            @media print {
-              body * { visibility: hidden; background: white; }
-              #print-letter-section, #print-letter-section * { visibility: visible; }
-              #print-letter-section { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; padding: 20px; background: white; }
-              .hide-on-print { display: none !important; }
-            }
           `}</style>
-
           <div id="print-letter-section" className="bg-white rounded-xl w-full max-w-[700px] max-h-[95vh] overflow-y-auto p-5 sm:p-10 relative shadow-2xl font-siemreap text-slate-800 text-[12px] sm:text-[14px] print:max-h-none print:shadow-none">
-            
             <div className="sticky top-0 right-0 flex justify-end gap-2 mb-2 hide-on-print z-10">
-              <button className="btn btn-primary !py-1.5 !px-3 shadow-md" onClick={printLetter}>
-                <Printer size={16}/> បោះពុម្ព
-              </button>
-              <button className="btn bg-rose-100 text-rose-600 hover:bg-rose-200 !py-1.5 !px-2" onClick={() => setViewLetter(null)}>
-                <X size={18}/>
-              </button>
+              <button className="btn btn-primary !py-1.5 !px-3 shadow-md" onClick={printLetter}><Printer size={16}/> បោះពុម្ព</button>
+              <button className="btn bg-rose-100 text-rose-600 hover:bg-rose-200 !py-1.5 !px-2" onClick={() => setViewLetter(null)}><X size={18}/></button>
             </div>
-
             <div className="relative flex justify-center items-start w-full mb-4 pt-2">
               <div className="absolute left-0 top-0 flex flex-col items-center w-max">
                  {adminInfo.logo && <img src={adminInfo.logo} alt="Logo" className="w-12 h-12 sm:w-16 sm:h-16 object-contain mb-1 drop-shadow-sm" />}
                  <span className="font-moul text-[8px] sm:text-[10px] text-blue-900 text-center leading-tight">PSB University<br/></span>
               </div>
-              
               <div className="flex flex-col items-center text-center">
                  <span className="font-moul text-[12px] sm:text-[16px] text-blue-900 leading-none">ព្រះរាជាណាចក្រកម្ពុជា</span>
                  <span className="font-moul text-[12px] sm:text-[16px] mt-2 text-blue-900 leading-none">ជាតិ សាសនា ព្រះមហាក្សត្រ</span>
                  <div className="w-14 sm:w-20 h-[2px] bg-blue-900 mt-2"></div>
               </div>
             </div>
-
-            <div className="text-center mb-6 mt-10 sm:mt-12">
-               <h1 className="font-moul text-[14px] sm:text-lg text-blue-900 tracking-wide">លិខិតសុំអនុញ្ញាតច្បាប់</h1>
-            </div>
-
+            <div className="text-center mb-6 mt-10 sm:mt-12"><h1 className="font-moul text-[14px] sm:text-lg text-blue-900 tracking-wide">លិខិតសុំអនុញ្ញាតច្បាប់</h1></div>
             <div className="px-1 sm:px-4">
-               <div className="mb-4">
-                  <span className="font-extrabold mr-2">សូមគោរពជូន៖</span> លោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលាជាទីគោរព
-               </div>
-               
+               <div className="mb-4"><span className="font-extrabold mr-2">សូមគោរពជូន៖</span> លោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលាជាទីគោរព</div>
                <div className="mb-4 flex items-end justify-between w-full text-[10px] sm:text-[14px]">
-                 <span className="font-bold whitespace-nowrap">ខ្ញុំបាទ/នាងខ្ញុំ៖</span> 
-                 <span className="font-moul text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.name}</span>
-                 <span className="font-bold whitespace-nowrap">ភេទ៖</span> 
-                 <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 text-center whitespace-nowrap">{viewLetter.gender || studentDetail?.gender || '...'}</span>
-                 <span className="font-bold whitespace-nowrap">អត្តលេខ៖</span> 
-                 <span className="font-bold uppercase text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 ml-1 text-center whitespace-nowrap">{viewLetter.stu_id || studentDetail?.stu_id || '......'}</span>
+                 <span className="font-bold whitespace-nowrap">ខ្ញុំបាទ/នាងខ្ញុំ៖</span> <span className="font-moul text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.name}</span>
+                 <span className="font-bold whitespace-nowrap">ភេទ៖</span> <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 text-center whitespace-nowrap">{viewLetter.gender || studentDetail?.gender || '...'}</span>
+                 <span className="font-bold whitespace-nowrap">អត្តលេខ៖</span> <span className="font-bold uppercase text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 ml-1 text-center whitespace-nowrap">{viewLetter.stu_id || studentDetail?.stu_id || '......'}</span>
                </div>
-
                <div className="mb-5 flex items-end justify-between w-full text-[10px] sm:text-[14px]">
-                 <span className="font-bold whitespace-nowrap">មុខវិជ្ជា៖</span> 
-                 <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.subject || adminInfo.subject || '...................'}</span>
-                 <span className="font-bold whitespace-nowrap">បន្ទប់៖</span> 
-                 <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 text-center whitespace-nowrap">{viewLetter.room || adminInfo.room || '......'}</span>
-                 <span className="font-bold whitespace-nowrap">វេន៖</span> 
-                 <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 ml-1 text-center whitespace-nowrap">{viewLetter.shift || adminInfo.shift || '......'}</span>
+                 <span className="font-bold whitespace-nowrap">មុខវិជ្ជា៖</span> <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.subject || adminInfo.subject || '...................'}</span>
+                 <span className="font-bold whitespace-nowrap">បន្ទប់៖</span> <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 text-center whitespace-nowrap">{viewLetter.room || adminInfo.room || '......'}</span>
+                 <span className="font-bold whitespace-nowrap">វេន៖</span> <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 ml-1 text-center whitespace-nowrap">{viewLetter.shift || adminInfo.shift || '......'}</span>
                </div>
-
-               <p className="indent-8 text-justify mb-2 leading-[2] sm:leading-[2.2]">
-                  ខ្ញុំបាទ/នាងខ្ញុំ មានធុរៈចាំបាច់ផ្ទាល់ខ្លួន / ដោយមានមូលហេតុជាក់លាក់ដូចជា៖ 
-                  <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-2 mx-1">« {viewLetter.reason} »</span>។
-               </p>
-               <p className="indent-8 text-justify mb-8 leading-[2] sm:leading-[2.2]">
-                  សេចក្តីដូចបានជម្រាប់ជូនក្នុងកម្មវត្ថុ និងមូលហេតុ សូមលោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលា មេត្តាអនុញ្ញាតច្បាប់ឈប់សម្រាកដល់ខ្ញុំបាទ/នាងខ្ញុំ តាមការស្នើសុំខាងលើ ដោយក្ដីអនុគ្រោះផងចុះ។
-               </p>
+               <p className="indent-8 text-justify mb-2 leading-[2] sm:leading-[2.2]">ខ្ញុំបាទ/នាងខ្ញុំ មានធុរៈចាំបាច់ផ្ទាល់ខ្លួន / ដោយមានមូលហេតុជាក់លាក់ដូចជា៖ <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-2 mx-1">« {viewLetter.reason} »</span>។</p>
+               <p className="indent-8 text-justify mb-8 leading-[2] sm:leading-[2.2]">សេចក្តីដូចបានជម្រាប់ជូនក្នុងកម្មវត្ថុ និងមូលហេតុ សូមលោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលា មេត្តាអនុញ្ញាតច្បាប់ឈប់សម្រាកដល់ខ្ញុំបាទ/នាងខ្ញុំ តាមការស្នើសុំខាងលើ ដោយក្ដីអនុគ្រោះផងចុះ។</p>
             </div>
-
             <div className="flex flex-row justify-between mt-8 px-1 sm:px-4 text-[9px] sm:text-[12px]">
-               <div className="text-center w-[45%] flex flex-col items-center">
-                  <span className="font-moul text-[9px] sm:text-[11px] text-blue-900 mb-1">បានឃើញ និងឯកភាព</span>
-                  <span className="mb-14">នាយកសាលា / គ្រូបន្ទុកថ្នាក់</span>
-                  <div className="border-t border-slate-400 border-dashed pt-1 w-[80%] text-slate-500">ហត្ថលេខា និងឈ្មោះ</div>
-               </div>
-               <div className="text-center w-[55%] flex flex-col items-center">
-                  <span className="mb-2 italic">រាជធានីភ្នំពេញ, ថ្ងៃទី {formatDateKH(viewLetter.date).day} ខែ {formatDateKH(viewLetter.date).month} ឆ្នាំ {formatDateKH(viewLetter.date).year}</span>
-                  <span className="font-moul text-[9px] sm:text-[11px] text-blue-900 mb-14">ស្នាមមេដៃសាមីខ្លួន</span>
-                  <div className="border-t border-slate-400 border-dashed pt-1 w-[70%] text-slate-500">ឈ្មោះសិស្ស</div>
-               </div>
+               <div className="text-center w-[45%] flex flex-col items-center"><span className="font-moul text-[9px] sm:text-[11px] text-blue-900 mb-1">បានឃើញ និងឯកភាព</span><span className="mb-14">នាយកសាលា / គ្រូបន្ទុកថ្នាក់</span><div className="border-t border-slate-400 border-dashed pt-1 w-[80%] text-slate-500">ហត្ថលេខា និងឈ្មោះ</div></div>
+               <div className="text-center w-[55%] flex flex-col items-center"><span className="mb-2 italic">រាជធានីភ្នំពេញ, ថ្ងៃទី {formatDateKH(viewLetter.date).day} ខែ {formatDateKH(viewLetter.date).month} ឆ្នាំ {formatDateKH(viewLetter.date).year}</span><span className="font-moul text-[9px] sm:text-[11px] text-blue-900 mb-14">ស្នាមមេដៃសាមីខ្លួន</span><div className="border-t border-slate-400 border-dashed pt-1 w-[70%] text-slate-500">ឈ្មោះសិស្ស</div></div>
             </div>
-
          </div>
         </div>
       )}
@@ -885,40 +826,25 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800"><FileText size={20} className="text-warning shrink-0" /> <span className="truncate">{editingId ? 'កែប្រែការសុំច្បាប់' : 'ទម្រង់សុំច្បាប់'}</span></h2>
            {editingId && <button className="text-slate-400 hover:text-danger" onClick={() => {setEditingId(null); setName(''); setReason(''); setPhoto(''); setStartDate(today); setEndDate(today);}}><X size={18}/></button>}
         </div>
-        
         <label className="block mb-3">
           <span className="text-sm font-bold text-slate-700 mb-1.5 block">ឈ្មោះសិស្ស៖</span>
           {canManualName ? (
-            <>
-              <input list="leave-student-list" className="field w-full text-sm" placeholder="ជ្រើសរើស ឬ វាយឈ្មោះ..." value={name} onChange={e => setName(e.target.value)} />
-              <datalist id="leave-student-list">{students.map((s: any) => <option key={s.id} value={s.name} />)}</datalist>
-            </>
+            <><input list="leave-student-list" className="field w-full text-sm" placeholder="ជ្រើសរើស ឬ វាយឈ្មោះ..." value={name} onChange={e => setName(e.target.value)} /><datalist id="leave-student-list">{students.map((s: any) => <option key={s.id} value={s.name} />)}</datalist></>
           ) : (
-            <select className="field w-full text-sm" value={name} onChange={e => setName(e.target.value)}>
-              <option value="">-- ជ្រើសរើសឈ្មោះសិស្ស --</option>
-              {students.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)}
-            </select>
+            <select className="field w-full text-sm" value={name} onChange={e => setName(e.target.value)}><option value="">-- ជ្រើសរើសឈ្មោះសិស្ស --</option>{students.map((s: any) => <option key={s.id} value={s.name}>{s.name}</option>)}</select>
           )}
         </label>
-
         <label className="block mb-3">
           <span className="text-sm font-bold text-slate-700 mb-1.5 block">សុំច្បាប់ (ពីថ្ងៃទី - ដល់ថ្ងៃទី)៖</span>
           <div className="flex items-center gap-2">
              <input type="date" className="field w-full text-sm !px-2" value={startDate} onChange={e => setStartDate(e.target.value)} />
-             {!editingId && (
-               <>
-                 <span className="font-bold text-slate-400">-</span>
-                 <input type="date" className="field w-full text-sm !px-2" value={endDate} onChange={e => setEndDate(e.target.value)} />
-               </>
-             )}
+             {!editingId && <><span className="font-bold text-slate-400">-</span><input type="date" className="field w-full text-sm !px-2" value={endDate} onChange={e => setEndDate(e.target.value)} /></>}
           </div>
         </label>
-
         <label className="block mb-3">
           <span className="text-sm font-bold text-slate-700 mb-1.5 block">មូលហេតុនៃការឈប់៖</span>
           <textarea className="field w-full min-h-[80px] text-sm resize-none" placeholder="..." value={reason} onChange={e => setReason(e.target.value)}></textarea>
         </label>
-
         <label className="block mb-4">
           <span className="text-sm font-bold text-slate-700 mb-1.5 block">ភស្តុតាង (បើមាន)៖</span>
           <div className="flex items-center gap-2 w-full">
@@ -926,18 +852,12 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
           </div>
           {photo && <img src={photo} className="mt-3 w-full max-h-[160px] object-contain rounded-xl border border-slate-200 bg-slate-50 p-1 shadow-sm" alt="Evidence" />}
         </label>
-        
-        <button className="btn btn-warning w-full py-3 text-sm sm:text-base shadow-md" disabled={!name || saving} onClick={submitLeave}>
-          <CheckCircle2 size={18} /> <span className="truncate">{saving ? '...' : (editingId ? 'រក្សាទុកការកែប្រែ' : 'បញ្ជូនពាក្យសុំច្បាប់')}</span>
-        </button>
+        <button className="btn btn-warning w-full py-3 text-sm sm:text-base shadow-md" disabled={!name || saving} onClick={submitLeave}><CheckCircle2 size={18} /> <span className="truncate">{saving ? '...' : (editingId ? 'រក្សាទុកការកែប្រែ' : 'បញ្ជូនពាក្យសុំច្បាប់')}</span></button>
       </div>
 
       <div className="card w-full max-w-full overflow-hidden h-fit">
          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-           <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-800">
-             <ClipboardList size={20} className="text-primary shrink-0" /> 
-             <span className="truncate">បញ្ជីសុំច្បាប់</span>
-           </h2>
+           <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-800"><ClipboardList size={20} className="text-primary shrink-0" /> <span className="truncate">បញ្ជីសុំច្បាប់</span></h2>
            <div className="flex items-center gap-2">
              <input type="date" className="field !py-1.5 !px-2 text-sm w-[130px] font-medium" value={viewDate} onChange={e => setViewDate(e.target.value)} />
              <span className="bg-warning/20 text-yellow-700 px-3 py-1.5 rounded-lg text-xs font-bold shrink-0">{leaveRecords.length} នាក់</span>
@@ -946,13 +866,7 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
          <div className="w-full overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-xs sm:text-sm min-w-[500px]">
             <thead className="bg-slate-50">
-              <tr>
-                <th className="p-3 text-left">ឈ្មោះសិស្ស</th>
-                <th className="p-3 text-center">ម៉ោង</th>
-                <th className="p-3 text-left">មូលហេតុ</th>
-                <th className="p-3 text-center">ភស្តុតាង</th>
-                <th className="p-3 text-center">Action</th>
-              </tr>
+              <tr><th className="p-3 text-left">ឈ្មោះសិស្ស</th><th className="p-3 text-center">ម៉ោង</th><th className="p-3 text-left">មូលហេតុ</th><th className="p-3 text-center">ភស្តុតាង</th><th className="p-3 text-center">Action</th></tr>
             </thead>
             <tbody>
               {leaveRecords.length ? leaveRecords.map((r: any) => (
@@ -960,9 +874,7 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
                   <td className="p-3 font-bold whitespace-nowrap">{r.name}</td>
                   <td className="p-3 text-center text-primary font-medium whitespace-nowrap">{r.time}</td>
                   <td className="p-3 text-slate-600 max-w-[200px] truncate">{r.reason || '---'}</td>
-                  <td className="p-3 text-center">
-                    {r.photo ? <a href={r.photo} target="_blank" rel="noreferrer" className="inline-block"><img src={r.photo} className="w-8 h-8 object-cover rounded shadow-sm border border-slate-200 hover:scale-150 transition-transform" alt="img"/></a> : <span className="text-slate-400">គ្មាន</span>}
-                  </td>
+                  <td className="p-3 text-center">{r.photo ? <a href={r.photo} target="_blank" rel="noreferrer" className="inline-block"><img src={r.photo} className="w-8 h-8 object-cover rounded shadow-sm border border-slate-200 hover:scale-150 transition-transform" alt="img"/></a> : <span className="text-slate-400">គ្មាន</span>}</td>
                   <td className="p-3 text-center whitespace-nowrap">
                      <button className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded active:scale-95 transition-transform mr-1" onClick={() => setViewLetter(r)} title="មើលលិខិតសុំច្បាប់"><Eye size={16} /></button>
                      <button className="text-blue-500 hover:bg-blue-50 p-1.5 rounded active:scale-95 transition-transform mr-1" onClick={() => editLeave(r)}><Pencil size={16} /></button>
@@ -991,6 +903,13 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
       }
     });
     loadScores();
+
+    const scoreSub = supabase.channel('scores-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'scores' }, () => { loadScores(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+        if (payload.new && (payload.new as any).type === 'subjects') setSubjects((payload.new as any).data_json);
+      }).subscribe();
+    return () => { supabase.removeChannel(scoreSub); };
   }, []);
 
   async function loadScores() {
@@ -1004,18 +923,14 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
 
   async function saveSubjectsToDB(updatedSubjects: string[]) {
     const { data } = await supabase.from('schedules').select('id').eq('type', 'subjects').maybeSingle();
-    if (data?.id) {
-      await supabase.from('schedules').update({ data_json: updatedSubjects }).eq('id', data.id);
-    } else {
-      await supabase.from('schedules').insert({ type: 'subjects', data_json: updatedSubjects });
-    }
+    if (data?.id) await supabase.from('schedules').update({ data_json: updatedSubjects }).eq('id', data.id);
+    else await supabase.from('schedules').insert({ type: 'subjects', data_json: updatedSubjects });
   }
 
   const addSub = async () => {
     if(!newSub.trim() || subjects.includes(newSub.trim())) return;
     const updated = [...subjects, newSub.trim()];
-    setSubjects(updated); 
-    setNewSub('');
+    setSubjects(updated); setNewSub('');
     await saveSubjectsToDB(updated);
   };
 
@@ -1032,17 +947,9 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
   const saveScoreRow = async (studentId: string) => {
     setSavingId(studentId);
     const stuScores = scores[studentId] || {};
-    
     await supabase.from('scores').delete().eq('student_id', studentId);
-    
-    const payloads = subjects.map(sub => ({ 
-       student_id: studentId, 
-       subject_name: sub, 
-       score: stuScores[sub] || 0 
-    }));
-    
+    const payloads = subjects.map(sub => ({ student_id: studentId, subject_name: sub, score: stuScores[sub] || 0 }));
     await supabase.from('scores').insert(payloads);
-    
     setSavingId('');
   };
 
@@ -1093,9 +1000,7 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
                   <td className="p-2 sm:p-3 text-center font-bold text-secondary whitespace-nowrap">{avg.toFixed(2)}</td>
                   {isAdmin && (
                     <td className="p-2 sm:p-3 text-center">
-                       <button className="btn btn-success !px-2 !py-1" onClick={() => saveScoreRow(s.id)} disabled={savingId === s.id}>
-                         <Save size={14} />
-                       </button>
+                       <button className="btn btn-success !px-2 !py-1" onClick={() => saveScoreRow(s.id)} disabled={savingId === s.id}><Save size={14} /></button>
                     </td>
                   )}
                 </tr>
@@ -1119,51 +1024,28 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
 
   useEffect(() => {
     fetchCards();
+    const cardSub = supabase.channel('cards-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'custom_cards' }, () => { fetchCards(); })
+      .subscribe();
+    return () => { supabase.removeChannel(cardSub); };
   }, []);
 
   async function fetchCards() {
     const { data } = await supabase.from('custom_cards').select('*').order('created_at', { ascending: false });
-    if (data) {
-      const mapped = data.map(c => ({
-        id: c.card_id,
-        name: c.name,
-        f1: c.field1,
-        f2: c.field2,
-        photo: c.photo,
-        template: c.template,
-        dbId: c.id
-      }));
-      setSavedCards(mapped);
-    }
+    if (data) setSavedCards(data.map(c => ({ id: c.card_id, name: c.name, f1: c.field1, f2: c.field2, photo: c.photo, template: c.template, dbId: c.id })));
   }
 
   async function saveCard() {
     if(!form.id || !form.name) return;
-    const payload = {
-      card_id: form.id,
-      name: form.name,
-      field1: form.f1,
-      field2: form.f2,
-      photo: form.photo,
-      template: cardType
-    };
-
-    if (editingId) {
-      await supabase.from('custom_cards').update(payload).eq('id', editingId);
-      setEditingId(null);
-    } else {
-      await supabase.from('custom_cards').insert(payload);
-    }
-    setForm({ id: '', name: '', f1: '', f2: '', photo: '' });
-    await fetchCards();
+    const payload = { card_id: form.id, name: form.name, field1: form.f1, field2: form.f2, photo: form.photo, template: cardType };
+    if (editingId) await supabase.from('custom_cards').update(payload).eq('id', editingId);
+    else await supabase.from('custom_cards').insert(payload);
+    setForm({ id: '', name: '', f1: '', f2: '', photo: '' }); setEditingId(null);
   }
 
   function editCard(card: any) {
     if(!canCreateCard) return;
-    setCardType(card.template);
-    setFilterType(card.template);
-    setForm({ id: card.id, name: card.name, f1: card.f1, f2: card.f2, photo: card.photo });
-    setEditingId(card.dbId);
+    setCardType(card.template); setFilterType(card.template); setForm({ id: card.id, name: card.name, f1: card.f1, f2: card.f2, photo: card.photo }); setEditingId(card.dbId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1171,40 +1053,25 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
     if(!canCreateCard) return;
     if(!window.confirm("Delete this card?")) return;
     await supabase.from('custom_cards').delete().eq('id', dbId);
-    await fetchCards();
   }
 
   const printCards = () => {
     const printArea = document.getElementById('cardsPrintArea');
     const rootEl = document.getElementById('root') || document.body.firstElementChild as HTMLElement;
-    
-    if (!printArea || !rootEl) {
-      window.print();
-      return;
-    }
-    
+    if (!printArea || !rootEl) { window.print(); return; }
     const printContainer = document.createElement('div');
-    printContainer.id = 'temp-print-container';
-    printContainer.innerHTML = printArea.innerHTML;
+    printContainer.id = 'temp-print-container'; printContainer.innerHTML = printArea.innerHTML;
     document.body.appendChild(printContainer);
-    
-    const originalDisplay = rootEl.style.display;
-    rootEl.style.display = 'none';
-    
+    const originalDisplay = rootEl.style.display; rootEl.style.display = 'none';
     window.print();
-    
-    rootEl.style.display = originalDisplay;
-    document.body.removeChild(printContainer);
+    rootEl.style.display = originalDisplay; document.body.removeChild(printContainer);
   };
 
   const downloadCard = (dbId: string, cardName: string) => {
     const el = document.getElementById(`card-${dbId}`);
     if(!el) return;
     html2canvas(el, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
-      const link = document.createElement('a');
-      link.download = `ID_Card_${cardName}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      const link = document.createElement('a'); link.download = `ID_Card_${cardName}.png`; link.href = canvas.toDataURL('image/png'); link.click();
     });
   }
 
@@ -1216,16 +1083,8 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
       <div className="student-card" id={isPreview ? undefined : `card-${cardData.dbId}`}>
          <div className="card-header">STUDENT IDENTITY CARD</div>
          <div className="card-body">
-            <div className="photo-area">
-               <div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <UserCheck size={30} className="text-slate-300"/>}</div>
-               <p style={{fontSize:'9px', fontWeight:'bold', marginTop:'5px', color:'#0984e3'}}>ID: {cardData.id || '---'}</p>
-            </div>
-            <div className="info-area">
-               <h4>{cardData.name || 'Student Name'}</h4>
-               <p>Year: <b>{cardData.f1 || '---'}</b></p>
-               <p>Major: <b>{cardData.f2 || '---'}</b></p>
-               <div className="qr-right"><img src={qrUrl} alt="QR" className="w-[85px] h-[85px] object-contain" /></div>
-            </div>
+            <div className="photo-area"><div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <UserCheck size={30} className="text-slate-300"/>}</div><p style={{fontSize:'9px', fontWeight:'bold', marginTop:'5px', color:'#0984e3'}}>ID: {cardData.id || '---'}</p></div>
+            <div className="info-area"><h4>{cardData.name || 'Student Name'}</h4><p>Year: <b>{cardData.f1 || '---'}</b></p><p>Major: <b>{cardData.f2 || '---'}</b></p><div className="qr-right"><img src={qrUrl} alt="QR" className="w-[85px] h-[85px] object-contain" /></div></div>
          </div>
          <div className="card-footer"></div>
       </div>
@@ -1235,12 +1094,7 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
          <div className="card-header"><span>CO. IDENTITY CARD</span><span style={{fontSize:'9px', color:'#64748b'}}>VIP MEMBER</span></div>
          <div className="card-body">
             <div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <UserCheck size={30} className="text-slate-300"/>}</div>
-            <div className="info-area">
-               <h4>{cardData.name || 'Employee Name'}</h4>
-               <p>Dept: <b>{cardData.f1 || '---'}</b></p>
-               <p>Role: <b>{cardData.f2 || '---'}</b></p>
-               <p style={{fontSize:'9px', color:'#94a3b8', fontFamily:'monospace', marginTop:'3px'}}>ID: {cardData.id || '---'}</p>
-            </div>
+            <div className="info-area"><h4>{cardData.name || 'Employee Name'}</h4><p>Dept: <b>{cardData.f1 || '---'}</b></p><p>Role: <b>{cardData.f2 || '---'}</b></p><p style={{fontSize:'9px', color:'#94a3b8', fontFamily:'monospace', marginTop:'3px'}}>ID: {cardData.id || '---'}</p></div>
             <div className="qr-right"><img src={qrUrl} alt="QR" className="w-[85px] h-[85px] object-contain" /></div>
          </div>
       </div>
@@ -1249,20 +1103,12 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
       <div className="staff-card-v" id={isPreview ? undefined : `card-${cardData.dbId}`}>
          <div className="card-top"><h5>KINGDOM OF CAMBODIA</h5><p>{cardData.f1 || 'Ministry/Unit'}</p></div>
          <div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <UserCheck size={40} className="text-slate-300"/>}</div>
-         <div className="info-area">
-            <h4>{cardData.name || 'Staff Name'}</h4>
-            <p style={{fontWeight:'bold', color:'#00b894', fontSize:'12px'}}>{cardData.f2 || 'Officer'}</p>
-            <div className="card-id-tag">№: {cardData.id || '---'}</div>
-            <div style={{display:'block', textAlign:'center', marginTop:'5px'}}><div className="qr-bottom"><img src={qrUrl} alt="QR" className="w-[85px] h-[85px] object-contain" /></div></div>
-         </div>
+         <div className="info-area"><h4>{cardData.name || 'Staff Name'}</h4><p style={{fontWeight:'bold', color:'#00b894', fontSize:'12px'}}>{cardData.f2 || 'Officer'}</p><div className="card-id-tag">№: {cardData.id || '---'}</div><div style={{display:'block', textAlign:'center', marginTop:'5px'}}><div className="qr-bottom"><img src={qrUrl} alt="QR" className="w-[85px] h-[85px] object-contain" /></div></div></div>
       </div>
     );
     if (cType === 'business') return (
       <div className="business-card-h" id={isPreview ? undefined : `card-${cardData.dbId}`}>
-         <div className="left-panel">
-            <div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <UserCheck size={30} className="text-slate-500"/>}</div>
-            <span>ID: {cardData.id || '---'}</span>
-         </div>
+         <div className="left-panel"><div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <UserCheck size={30} className="text-slate-500"/>}</div><span>ID: {cardData.id || '---'}</span></div>
          <div className="right-panel">
             <div className="info-header"><h4>{cardData.name || 'Member Name'}</h4><p style={{color:'#f59e0b', fontSize:'9px'}}>{cardData.f1 || 'VIP GOLD MEMBER'}</p></div>
             <div className="info-details"><p style={{color:'#9ca3af', fontSize:'9px', display:'flex', alignItems:'center', gap:'4px', marginBottom:'2px'}}><CalendarDays size={10}/> EXP: {cardData.f2 || '---'}</p><p style={{color:'#6b7280', fontSize:'8px', marginTop:'4px'}}>ACCESS ALL PRESTIGE LOUNGE</p></div>
@@ -1274,22 +1120,14 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
       <div className="press-card-v" id={isPreview ? undefined : `card-${cardData.dbId}`}>
          <div className="card-header">PRESS</div>
          <div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <Camera size={40} className="text-slate-300"/>}</div>
-         <div className="info-area">
-            <h4>{cardData.name || 'Reporter Name'}</h4><p>{cardData.f1 || 'REPORTER'}</p><span>AGENCY: <b>{cardData.f2 || 'News Channel'}</b></span><div style={{fontSize:'10px', marginTop:'5px', color:'#64748b'}}>ID: {cardData.id || '---'}</div>
-         </div>
+         <div className="info-area"><h4>{cardData.name || 'Reporter Name'}</h4><p>{cardData.f1 || 'REPORTER'}</p><span>AGENCY: <b>{cardData.f2 || 'News Channel'}</b></span><div style={{fontSize:'10px', marginTop:'5px', color:'#64748b'}}>ID: {cardData.id || '---'}</div></div>
          <div className="qr-bottom"><img src={qrUrl} alt="QR" className="w-[85px] h-[85px] object-contain" /></div>
       </div>
     );
     if (cType === 'library') return (
       <div className="library-card-h" id={isPreview ? undefined : `card-${cardData.dbId}`}>
-         <div className="left-col">
-            <div><div className="lib-header">LIBRARY CARD</div><div className="info-area"><h4>{cardData.name || 'Reader Name'}</h4><p>TYPE: <b>{cardData.f1 || '---'}</b></p><p>JOINED: <b>{cardData.f2 || '---'}</b></p></div></div>
-            <div className="qr-area"><img src={qrUrl} alt="QR" className="w-[85px] h-[85px] object-contain" /></div>
-         </div>
-         <div className="right-col">
-            <div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <BookOpen size={30} className="text-slate-300"/>}</div>
-            <div className="id-text">ID: {cardData.id || '---'}</div>
-         </div>
+         <div className="left-col"><div><div className="lib-header">LIBRARY CARD</div><div className="info-area"><h4>{cardData.name || 'Reader Name'}</h4><p>TYPE: <b>{cardData.f1 || '---'}</b></p><p>JOINED: <b>{cardData.f2 || '---'}</b></p></div></div><div className="qr-area"><img src={qrUrl} alt="QR" className="w-[85px] h-[85px] object-contain" /></div></div>
+         <div className="right-col"><div className="photo-placeholder">{cardData.photo ? <img src={cardData.photo} alt="Profile" /> : <BookOpen size={30} className="text-slate-300"/>}</div><div className="id-text">ID: {cardData.id || '---'}</div></div>
       </div>
     );
     return null;
@@ -1298,41 +1136,7 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
   return (
     <div className="card-creator-container mx-auto p-0 w-full relative">
       <style>{`
-        @media print {
-          @page { size: A4 portrait; margin: 10mm; }
-          
-          .no-print { display: none !important; }
-          
-          * { 
-            -webkit-print-color-adjust: exact !important; 
-            print-color-adjust: exact !important; 
-            color-adjust: exact !important;
-          }
-          
-          #temp-print-container { 
-            display: flex !important; 
-            flex-wrap: wrap !important;
-            justify-content: space-evenly !important;
-            align-content: flex-start !important;
-            gap: 15px 0 !important;
-            width: 100% !important;
-            background: white !important;
-          }
-          
-          #temp-print-container .print-card-item {
-            width: max-content !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            margin-bottom: 15px !important;
-            box-shadow: none !important;
-            border: none !important;
-            background: transparent !important;
-          }
-
-          #temp-print-container .no-print {
-            display: none !important;
-          }
-        }
+        @media print { @page { size: A4 portrait; margin: 10mm; } .no-print { display: none !important; } * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; } #temp-print-container { display: flex !important; flex-wrap: wrap !important; justify-content: space-evenly !important; align-content: flex-start !important; gap: 15px 0 !important; width: 100% !important; background: white !important; } #temp-print-container .print-card-item { width: max-content !important; page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 15px !important; box-shadow: none !important; border: none !important; background: transparent !important; } #temp-print-container .no-print { display: none !important; } }
       `}</style>
       
       {canCreateCard && (
@@ -1358,7 +1162,6 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
               <div className="w-full h-[50px] sm:h-[60px] rounded-lg mb-2 flex items-center justify-center text-green-800 font-bold text-[9px] sm:text-[10px] border border-green-500 bg-gradient-to-br from-green-50 to-green-100">LIBRARY</div><h4 className="font-bold text-[11px] sm:text-xs">បណ្ណាល័យ</h4>
             </div>
           </div>
-          
           <div className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 shadow-sm w-full">
              <h3 className="font-bold text-primary mb-3 flex items-center gap-2 text-sm sm:text-base"><GraduationCap size={18} /> បញ្ចូលព័ត៌មានកាត</h3>
              <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1.5fr_1.5fr_auto] gap-2">
@@ -1401,7 +1204,6 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
                   <RenderCard cardData={form} isPreview={true} />
                 </div>
               )}
-              
               {savedCards.filter(c => c.template === filterType).map((card) => (
                 <div key={card.dbId} className="print-card-item relative group hover:-translate-y-1 transition-transform p-1.5 bg-white rounded-xl shadow-md border border-slate-200 w-max mx-auto sm:mx-0">
                    <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity no-print">
@@ -1500,7 +1302,7 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: any) {
           return;
        } else {
           await supabase.from('attendance').update({ status: statuses[0], time: new Date().toLocaleTimeString('en-GB') }).eq('id', existing[0].id);
-          await refresh(); 
+          if(refresh) refresh();
           setValue('');
           setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
           setTimeout(() => { onClose(); }, 1500);
@@ -1525,7 +1327,7 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: any) {
       teacher: adminInfo.teacher || '',
       subject: adminInfo.subject || ''
     }); 
-    await refresh(); 
+    if(refresh) refresh();
     setValue('');
     
     setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
@@ -1578,16 +1380,18 @@ function SchedulePanel({ isAdmin }: { isAdmin: boolean }) {
     supabase.from('schedules').select('data_json').eq('type', 'class_schedule').maybeSingle().then(({data}) => {
       if(data?.data_json) setScheduleData(data.data_json as Record<string, string>);
     }); 
+    const schSub = supabase.channel('class-schedule-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+        if (payload.new && (payload.new as any).type === 'class_schedule') setScheduleData((payload.new as any).data_json as Record<string, string>);
+      }).subscribe();
+    return () => { supabase.removeChannel(schSub); };
   }, []);
 
   async function saveSchedule() {
     setSaving(true); 
     const { data } = await supabase.from('schedules').select('id').eq('type', 'class_schedule').maybeSingle();
-    if (data?.id) {
-      await supabase.from('schedules').update({ data_json: scheduleData }).eq('id', data.id);
-    } else {
-      await supabase.from('schedules').insert({ type: 'class_schedule', data_json: scheduleData });
-    }
+    if (data?.id) await supabase.from('schedules').update({ data_json: scheduleData }).eq('id', data.id);
+    else await supabase.from('schedules').insert({ type: 'class_schedule', data_json: scheduleData });
     setSaving(false); 
   }
 
@@ -1643,6 +1447,11 @@ function CleaningSchedule({ isAdmin }: { isAdmin: boolean }) {
     supabase.from('schedules').select('data_json').eq('type', 'cleaning_schedule').maybeSingle().then(({ data: row }) => {
       if (row?.data_json) setData(row.data_json);
     });
+    const cleanSub = supabase.channel('cleaning-schedule-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+        if (payload.new && (payload.new as any).type === 'cleaning_schedule') setData((payload.new as any).data_json);
+      }).subscribe();
+    return () => { supabase.removeChannel(cleanSub); };
   }, []);
 
   function updatePerson(key: string, changes: any) {
