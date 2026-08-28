@@ -338,7 +338,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         )}
 
         <div className="w-full overflow-x-hidden">
-          {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
+          {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
           {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} refresh={refresh} adminInfo={adminInfo} today={today} />}
           {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={refresh} />}
           {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={refresh} />}
@@ -386,13 +386,40 @@ function Banner({ mapUrl, bgUrls }: { mapUrl?: string; bgUrls?: string }) {
   ); 
 }
 
-function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today }: any) { 
+function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today, onOpenScanner }: any) { 
   const [name, setName] = useState(''); 
   const [status, setStatus] = useState<string>(statuses[0]); 
   const [saving, setSaving] = useState(false); 
   const [totalStudents, setTotalStudents] = useState(0);
   
+  const [showSharedQR, setShowSharedQR] = useState(false);
+  const sharedQRData = `PSB-ATTENDANCE-${today}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${sharedQRData}`;
+
+  const [linkedStuId, setLinkedStuId] = useState(localStorage.getItem('my_stu_id') || '');
+  const [linkInput, setLinkInput] = useState('');
+  const [linkError, setLinkError] = useState('');
+
   const canManualEntry = isAdmin || adminInfo.allowManual;
+
+  function handleLinkAccount() {
+    const found = students.find((s: any) => s.stu_id === linkInput.trim());
+    if (found) {
+      localStorage.setItem('my_stu_id', found.stu_id);
+      setLinkedStuId(found.stu_id);
+      setLinkError('');
+    } else {
+      setLinkError('រកមិនឃើញអត្តលេខនេះទេ! សូមពិនិត្យម្តងទៀត។');
+    }
+  }
+
+  function handleUnlinkAccount() {
+    if (window.confirm("តើអ្នកចង់ផ្តាច់អត្តលេខចេញពីទូរស័ព្ទនេះមែនទេ?")) {
+      localStorage.removeItem('my_stu_id');
+      setLinkedStuId('');
+      setLinkInput('');
+    }
+  }
 
   async function add() { 
     if (!name.trim()) return;
@@ -489,39 +516,74 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
   return (
     <div className="grid gap-3 lg:gap-4 lg:grid-cols-[.8fr_1.5fr] w-full">
       
-      {canManualEntry && (
-        <div className="card h-fit w-full">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Plus size={20} className="text-primary" /> ចុះវត្តមាន</h2>
-          
-          <input 
-            list="student-list" 
-            className="field mb-3 w-full" 
-            placeholder="-- Select or type name --" 
-            value={name} 
-            onChange={e => setName(e.target.value)} 
-          />
-          <datalist id="student-list">
-            {students.map((s: any) => <option key={s.id} value={s.name} />)}
-          </datalist>
-
-          <select className="field mb-4 w-full" value={status} onChange={e => setStatus(e.target.value as string)}>
-            {statuses.map(s => <option key={s}>{s}</option>)}
-          </select>
-          
-          <div className="flex flex-col sm:flex-row gap-2 mt-2">
-            <button className="btn btn-success w-full" disabled={!name || saving} onClick={add}>
-              <CheckCircle2 size={16} /> {saving ? '...' : 'Save'}
-            </button>
-            {isAdmin && (
-              <button className="btn bg-[#ff9f43] text-white w-full shadow-md shadow-[#ff9f43]/20" disabled={saving} onClick={autoMarkAbsent}>
-                <Users size={16} /> Auto Absent
-              </button>
-            )}
+      {showSharedQR && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 sm:p-10 text-center max-w-sm w-full shadow-2xl animate-fade-in relative">
+            <button className="absolute top-4 right-4 text-slate-400 hover:text-danger bg-slate-100 p-1.5 rounded-full" onClick={() => setShowSharedQR(false)}><X size={20}/></button>
+            <h2 className="text-xl sm:text-2xl font-bold text-primary mb-2">ស្កែនដើម្បីចុះវត្តមាន</h2>
+            <p className="text-sm text-slate-500 mb-6">សិស្សអាចប្រើទូរស័ព្ទស្កែន QR នេះ ដើម្បីកត់ត្រាវត្តមានដោយខ្លួនឯង</p>
+            <img src={qrUrl} alt="Shared QR" className="w-full h-auto rounded-2xl border-4 border-slate-100 shadow-sm" />
+            <p className="mt-6 text-[10px] text-slate-400 font-bold tracking-widest uppercase">{sharedQRData}</p>
           </div>
         </div>
       )}
 
-      <div className={`w-full ${!canManualEntry ? 'lg:col-span-2' : ''}`}>
+      <div className="flex flex-col gap-3 w-full">
+        {canManualEntry && (
+          <div className="card h-fit w-full">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Plus size={20} className="text-primary" /> ចុះវត្តមាន</h2>
+            <input list="student-list" className="field mb-3 w-full" placeholder="-- Select or type name --" value={name} onChange={e => setName(e.target.value)} />
+            <datalist id="student-list">
+              {students.map((s: any) => <option key={s.id} value={s.name} />)}
+            </datalist>
+            <select className="field mb-4 w-full" value={status} onChange={e => setStatus(e.target.value as string)}>
+              {statuses.map(s => <option key={s}>{s}</option>)}
+            </select>
+            <div className="flex flex-col sm:flex-row gap-2 mt-2">
+              <button className="btn btn-success w-full shadow-md shadow-success/20" disabled={!name || saving} onClick={add}>
+                <CheckCircle2 size={16} /> {saving ? '...' : 'Save'}
+              </button>
+              {isAdmin && (
+                <button className="btn bg-[#ff9f43] text-white w-full shadow-md shadow-[#ff9f43]/20" disabled={saving} onClick={autoMarkAbsent}>
+                  <Users size={16} /> Auto Absent
+                </button>
+              )}
+            </div>
+            {isAdmin && (
+              <button className="btn bg-blue-600 text-white w-full mt-3 shadow-lg shadow-blue-600/30 font-bold" onClick={() => setShowSharedQR(true)}>
+                <Camera size={18} /> បង្ហាញ QR ស្កែនរួម (Check-in)
+              </button>
+            )}
+          </div>
+        )}
+
+        {!isAdmin && (
+          <div className="card w-full border-2 border-primary/20 bg-gradient-to-br from-blue-50 to-indigo-50/50 shadow-sm">
+             {!linkedStuId ? (
+                <>
+                  <div className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm mb-3 text-warning"><FileBadge size={24} /></div>
+                  <h3 className="font-bold text-lg text-slate-800 mb-1">ភ្ជាប់គណនីរបស់អ្នក</h3>
+                  <p className="text-slate-500 text-[13px] mb-4 leading-relaxed">សូមបញ្ចូលអត្តលេខ (Student ID) របស់អ្នក ដើម្បីអាចប្រើមុខងារស្កែនវត្តមានបាន។</p>
+                  <input className="field w-full mb-3" placeholder="វាយបញ្ចូលអត្តលេខ..." value={linkInput} onChange={e => setLinkInput(e.target.value)} />
+                  {linkError && <p className="text-danger text-xs mb-3 font-medium">{linkError}</p>}
+                  <button className="btn btn-primary w-full py-3" onClick={handleLinkAccount}>ភ្ជាប់អត្តលេខ</button>
+                </>
+             ) : (
+                <>
+                  <div className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm mb-3 text-primary"><Camera size={24} /></div>
+                  <h3 className="font-bold text-lg text-slate-800 mb-1">ចុះវត្តមានផ្ទាល់ខ្លួន</h3>
+                  <p className="text-slate-500 text-[13px] mb-2 leading-relaxed">អត្តលេខភ្ជាប់បច្ចុប្បន្ន៖ <b className="text-primary">{linkedStuId}</b></p>
+                  <button className="text-xs text-danger hover:underline mb-5" onClick={handleUnlinkAccount}>ប្តូរអត្តលេខផ្សេង</button>
+                  <button className="btn btn-primary w-full py-3.5 shadow-lg shadow-primary/30 font-bold text-[14px]" onClick={onOpenScanner}>
+                    ចាប់ផ្តើមស្កែន QR 
+                  </button>
+                </>
+             )}
+          </div>
+        )}
+      </div>
+
+      <div className={`w-full ${(!canManualEntry && isAdmin) ? 'lg:col-span-2' : ''}`}>
         <div className="card p-3 sm:p-5 bg-white w-full overflow-hidden" id="exportArea">
           <div className="text-center border-b-[3px] border-double border-primary pb-3 sm:pb-4 mb-4 sm:mb-5 relative w-full">
             {adminInfo.logo && <img src={adminInfo.logo} className="w-[50px] h-[50px] sm:w-[70px] sm:h-[70px] object-cover mx-auto mb-2 rounded-full shadow-sm border border-primary" alt="Logo" />}
@@ -544,7 +606,6 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
 
           <div className="rounded-lg border border-slate-200 w-full overflow-hidden">
             <div id="tableContainer" className="max-h-[350px] sm:max-h-[400px] overflow-y-auto w-full overflow-x-auto">
-              {/* តារាងត្រូវបានបកមកជាទម្រង់ស្តង់ដារ Responsive ១០០% */}
               <table className="w-full text-[11px] sm:text-sm min-w-[300px]">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-primary text-white text-left">
@@ -727,7 +788,6 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_2fr] w-full relative">
       
-      {/* ផ្ទាំង Popup លិខិតសុំច្បាប់ផ្លូវការ */}
       {viewLetter && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 p-2 sm:p-4 backdrop-blur-sm print:bg-transparent print:p-0">
           
@@ -754,7 +814,6 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
               </button>
             </div>
 
-            {/* ក្បាលលិខិត (Logo ឆ្វេង និង ព្រះរាជាណាចក្រកណ្តាល) */}
             <div className="relative flex justify-center items-start w-full mb-4 pt-2">
               <div className="absolute left-0 top-0 flex flex-col items-center w-max">
                  {adminInfo.logo && <img src={adminInfo.logo} alt="Logo" className="w-12 h-12 sm:w-16 sm:h-16 object-contain mb-1 drop-shadow-sm" />}
@@ -768,18 +827,15 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
               </div>
             </div>
 
-            {/* ចំណងជើងលិខិត */}
             <div className="text-center mb-6 mt-10 sm:mt-12">
                <h1 className="font-moul text-[14px] sm:text-lg text-blue-900 tracking-wide">លិខិតសុំអនុញ្ញាតច្បាប់</h1>
             </div>
 
-            {/* ខ្លឹមសារលិខិត */}
             <div className="px-1 sm:px-4">
                <div className="mb-4">
                   <span className="font-extrabold mr-2">សូមគោរពជូន៖</span> លោកគ្រូ អ្នកគ្រូ និងគណៈគ្រប់គ្រងសាលាជាទីគោរព
                </div>
                
-               {/* ជួរទី១៖ ឈ្មោះ ភេទ អត្តលេខ (ស្ថិតក្នុង១ជួររហូត) */}
                <div className="mb-4 flex items-end justify-between w-full text-[10px] sm:text-[14px]">
                  <span className="font-bold whitespace-nowrap">ខ្ញុំបាទ/នាងខ្ញុំ៖</span> 
                  <span className="font-moul text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.name}</span>
@@ -789,7 +845,6 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
                  <span className="font-bold uppercase text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 ml-1 text-center whitespace-nowrap">{viewLetter.stu_id || studentDetail?.stu_id || '......'}</span>
                </div>
 
-               {/* ជួរទី២៖ មុខវិជ្ជា បន្ទប់ វេន (ស្ថិតក្នុង១ជួររហូត) */}
                <div className="mb-5 flex items-end justify-between w-full text-[10px] sm:text-[14px]">
                  <span className="font-bold whitespace-nowrap">មុខវិជ្ជា៖</span> 
                  <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.subject || adminInfo.subject || '...................'}</span>
@@ -808,7 +863,6 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
                </p>
             </div>
 
-            {/* កន្ទុយលិខិត និង ហត្ថលេខា */}
             <div className="flex flex-row justify-between mt-8 px-1 sm:px-4 text-[9px] sm:text-[12px]">
                <div className="text-center w-[45%] flex flex-col items-center">
                   <span className="font-moul text-[9px] sm:text-[11px] text-blue-900 mb-1">បានឃើញ និងឯកភាព</span>
@@ -826,7 +880,6 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
         </div>
       )}
 
-      {/* Form បញ្ចូលទិន្នន័យ */}
       <div className="card w-full max-w-full overflow-hidden h-fit">
         <div className="flex justify-between items-center mb-4">
            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800"><FileText size={20} className="text-warning shrink-0" /> <span className="truncate">{editingId ? 'កែប្រែការសុំច្បាប់' : 'ទម្រង់សុំច្បាប់'}</span></h2>
@@ -879,7 +932,6 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
         </button>
       </div>
 
-      {/* តារាងបញ្ជីអ្នកសុំច្បាប់ */}
       <div className="card w-full max-w-full overflow-hidden h-fit">
          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
            <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold text-slate-800">
@@ -977,22 +1029,18 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
     setScores(prev => ({ ...prev, [studentId]: { ...(prev[studentId] || {}), [sub]: Number(val) } }));
   };
 
-  // ប្តូរទៅជាការ Save លឿនបំផុត (Bulk Upsert/Insert) កាត់បន្ថយការទាក់
   const saveScoreRow = async (studentId: string) => {
     setSavingId(studentId);
     const stuScores = scores[studentId] || {};
     
-    // លុបពិន្ទុចាស់របស់សិស្សនេះចោលមុនសិន (១ Request គត់)
     await supabase.from('scores').delete().eq('student_id', studentId);
     
-    // បង្កើតទម្រង់ទិន្នន័យដើម្បីបញ្ចូលថ្មី
     const payloads = subjects.map(sub => ({ 
        student_id: studentId, 
        subject_name: sub, 
        score: stuScores[sub] || 0 
     }));
     
-    // បញ្ចូលពិន្ទុថ្មីទាំងអស់ក្នុងពេលតែមួយ (១ Request គត់)
     await supabase.from('scores').insert(payloads);
     
     setSavingId('');
@@ -1375,7 +1423,7 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
   ); 
 }
 
-function Scanner({ onClose, students, refresh, adminInfo, today }: { onClose: () => void; students: Student[]; refresh: () => Promise<void>; adminInfo: any; today: string }) { 
+function Scanner({ onClose, students, refresh, adminInfo, today }: any) { 
   const [value, setValue] = useState(''); 
   const [message, setMessage] = useState<{text: string, type: 'success'|'error'} | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -1413,11 +1461,28 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: { onClose: ()
     if (processingRef.current) return;
     processingRef.current = true;
     
-    const student = students.find(s => s.stu_id === val.trim()); 
-    if (!student) {
-      setMessage({ text: "មិនស្គាល់អត្តលេខនេះទេ", type: 'error' });
-      setTimeout(() => { setMessage(null); processingRef.current = false; }, 2500);
-      return;
+    let student = null;
+    
+    if (val.trim() === `PSB-ATTENDANCE-${today}`) {
+       const linkedId = localStorage.getItem('my_stu_id');
+       if (!linkedId) {
+         setMessage({ text: "សូមភ្ជាប់អត្តលេខរបស់អ្នកសិន មុននឹងស្កែន!", type: 'error' });
+         setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
+         return;
+       }
+       student = students.find((s:any) => s.stu_id === linkedId);
+       if (!student) {
+         setMessage({ text: "រកមិនឃើញគណនីរបស់អ្នកក្នុងប្រព័ន្ធទេ!", type: 'error' });
+         setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
+         return;
+       }
+    } else {
+       student = students.find((s:any) => s.stu_id === val.trim()); 
+       if (!student) {
+         setMessage({ text: "មិនស្គាល់អត្តលេខនេះទេ", type: 'error' });
+         setTimeout(() => { setMessage(null); processingRef.current = false; }, 2500);
+         return;
+       }
     }
 
     const { data: existing } = await supabase.from('attendance')
@@ -1453,7 +1518,7 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: { onClose: ()
       name: student.name, 
       gender: student.gender, 
       status: statuses[0], 
-      date: today, 
+      date: today,
       time: new Date().toLocaleTimeString('en-GB'),
       shift: adminInfo.shift || '',
       room: adminInfo.room || '',
