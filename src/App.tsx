@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin, Image as ImageIcon, FileText } from 'lucide-react';
+import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin, Image as ImageIcon, FileText, Database } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Navbar } from '@/components/Navbar';
@@ -11,16 +11,13 @@ import { statuses } from '@/types';
 import html2canvas from 'html2canvas';
 import { Html5Qrcode } from 'html5-qrcode';
 
+import { HomeFeed } from '@/components/HomeFeed';
+import { AdminPostDashboard } from '@/components/AdminPostDashboard';
+import { AboutUs } from '@/components/AboutUs';
+
 function App() {
   const { user, profile, loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f8fafc]">
-        <div className="h-12 w-12 animate-spin rounded-full border-[4px] border-blue-600 border-t-transparent mb-4 shadow-sm"></div>
-        <p className="text-sm font-bold text-slate-500 animate-pulse">Loading...</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen bg-[#f8fafc]"></div>;
   if (!user) return <AuthScreen />;
   return <Dashboard role={profile?.role ?? 'user'} />;
 }
@@ -156,7 +153,7 @@ function LiveClock() {
 function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const { user, profile, signOut } = useAuth(); 
   const isAdmin = role === 'admin';
-  const [tab, setTab] = useState<Tab | 'leaves'>('attendance'); 
+  const [tab, setTab] = useState<string>('home'); 
   const [menu, setMenu] = useState(false); 
   const [scanner, setScanner] = useState(false);
   const [students, setStudents] = useState<Student[]>([]); 
@@ -164,8 +161,9 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const [search, setSearch] = useState('');
   
   const [adminInfo, setAdminInfo] = useState({ 
-    teacher: '', room: '', subject: '', shift: 'Mornig', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
-    allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false 
+    teacher: '', room: '', subject: '', shift: 'Morning', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
+    allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false,
+    devPhoto: '', devName: '', devTitle: '', devDescription: '', contactEmail: '', contactGithub: '', contactFacebook: '', contactPhone: '', contactPortfolio: ''
   });
 
   const [tempLogo, setTempLogo] = useState('');
@@ -309,90 +307,106 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
 
   const counts = { present: processedToday.filter(a => a.status === statuses[0]).length, leave: processedToday.filter(a => a.status === statuses[1]).length, absent: processedToday.filter(a => a.status === statuses[2]).length };
   
+  // លាក់ Banner ម៉ោង ស្ថិតិ និងផែនទី ពេលចូលផ្ទាំង Home, About, ងបង្ហោះ ឬផ្ទាំង Settings
+  const isDashboardView = !['home', 'about', 'admin_posts', 'settings'].includes(tab);
+
   return (
     <div className="min-h-screen w-full bg-light pb-24 lg:pb-5 overflow-x-hidden">
-      <Navbar activeTab={tab} isAdmin={isAdmin} userLabel={profile?.full_name || user?.email || ''} role={role} mobileOpen={menu} logoUrl={adminInfo.logo} onTabChange={(nextTab) => { setTab(nextTab); setMenu(false); }} onScanner={() => setScanner(true)} onSignOut={() => void signOut()} onMobileToggle={() => setMenu(!menu)} />
+      <Navbar activeTab={tab as any} isAdmin={isAdmin} userLabel={profile?.full_name || user?.email || ''} role={role} mobileOpen={menu} logoUrl={adminInfo.logo} onTabChange={(nextTab) => { setTab(nextTab); setMenu(false); }} onScanner={() => setScanner(true)} onSignOut={() => void signOut()} onMobileToggle={() => setMenu(!menu)} />
+      
       <div className="mx-auto max-w-[1200px] w-full px-2 sm:px-3 pt-20 sm:pt-24 overflow-x-hidden">
         
-        <Banner mapUrl={adminInfo.mapUrl} bgUrls={adminInfo.bgUrls} />
-        
-        <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 w-full">
-          <div className="col-span-2 md:col-span-1 rounded-xl bg-gradient-to-br from-primary to-secondary p-3 sm:p-4 text-center text-white shadow-sm flex flex-col justify-center min-h-[100px]">
-            <LiveClock />
-          </div>
-          <div className="col-span-2 md:col-span-3 grid grid-cols-3 gap-2 sm:gap-3">
-            <Stat title="វត្តមាន" value={counts.present} color="bg-success" icon={CheckCircle2} />
-            <Stat title="ច្បាប់" value={counts.leave} color="bg-warning" icon={ClipboardList} />
-            <Stat title="អវត្តមាន" value={counts.absent} color="bg-danger" icon={X} />
-          </div>
-        </div>
-
-        {isAdmin && (
-          <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 rounded-xl bg-white p-3 sm:p-4 shadow-sm border border-slate-200 w-full">
-            <input className="field" placeholder="Teacher Name..." value={adminInfo.teacher} onChange={e => setAdminInfo({...adminInfo, teacher: e.target.value})} />
-            <input className="field" placeholder="Room" value={adminInfo.room} onChange={e => setAdminInfo({...adminInfo, room: e.target.value})} />
-            <input className="field" placeholder="Subject..." value={adminInfo.subject} onChange={e => setAdminInfo({...adminInfo, subject: e.target.value})} />
-            <select className="field" value={adminInfo.shift} onChange={e => setAdminInfo({...adminInfo, shift: e.target.value})}>
-              <option>វេនព្រឹក</option><option>វេនរសៀល</option><option>វេនយប់</option>
-            </select>
-            <div className="col-span-2 md:col-span-4 grid grid-cols-1 md:grid-cols-[1.5fr_1.5fr_1.5fr] gap-2 sm:gap-3 items-start">
-               <div className="relative w-full">
-                 <MapPin className="absolute left-3 top-2.5 sm:top-3 text-slate-400" size={16} />
-                 <input className="field pl-9" placeholder="Google Maps Embed Link..." value={tempMap} onChange={e => setTempMap(e.target.value)} />
-               </div>
-               <div className="relative w-full">
-                 <ImageIcon className="absolute left-3 top-2.5 sm:top-3 text-slate-400" size={16} />
-                 <input className="field pl-9" placeholder="Background Link (,)" value={tempBg} onChange={e => setTempBg(e.target.value)} />
-               </div>
-               <div className="flex flex-col gap-2 w-full">
-                 <div className="flex gap-2 w-full">
-                   <input className="field flex-1" placeholder="Logo Link" value={tempLogo} onChange={e => setTempLogo(e.target.value)} />
-                   <label className="btn btn-primary cursor-pointer px-3 sm:px-4 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setTempLogo(ev.target?.result as string); r.readAsDataURL(f); } }} /></label>
-                 </div>
-                 <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1 items-center">
-                   <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
-                     <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} />
-                     User ចុះវត្តមានដោយដៃ
-                   </label>
-                   <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
-                     <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowStudentEdit || false} onChange={e => setAdminInfo({...adminInfo, allowStudentEdit: e.target.checked})} />
-                     User កែបញ្ចីសិស្ស
-                   </label>
-                   <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
-                     <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowLeaveManualName || false} onChange={e => setAdminInfo({...adminInfo, allowLeaveManualName: e.target.checked})} />
-                     វាយឈ្មោះច្បាប់
-                   </label>
-                   <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
-                     <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} />
-                     User Cards
-                   </label>
-                   <button className="btn btn-success !py-1 !px-3 text-xs ml-auto shadow-sm" disabled={savingConfig} onClick={saveAdminConfig}>
-                     <Save size={14} /> {savingConfig ? '...' : 'Save Config'}
-                   </button>
-                 </div>
-               </div>
+        {isDashboardView && (
+          <>
+            <Banner mapUrl={adminInfo.mapUrl} bgUrls={adminInfo.bgUrls} />
+            
+            <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 w-full">
+              <div className="col-span-2 md:col-span-1 rounded-xl bg-gradient-to-br from-primary to-secondary p-3 sm:p-4 text-center text-white shadow-sm flex flex-col justify-center min-h-[100px]">
+                <LiveClock />
+              </div>
+              <div className="col-span-2 md:col-span-3 grid grid-cols-3 gap-2 sm:gap-3">
+                <Stat title="វត្តមាន" value={counts.present} color="bg-success" icon={CheckCircle2} />
+                <Stat title="ច្បាប់" value={counts.leave} color="bg-warning" icon={ClipboardList} />
+                <Stat title="អវត្តមាន" value={counts.absent} color="bg-danger" icon={X} />
+              </div>
             </div>
-          </div>
-        )}
 
-        {!tab.startsWith('warehouse') && tab !== 'students' && tab !== 'cards' && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl bg-white p-2 sm:p-2.5 shadow-sm border border-slate-200 w-full">
-            <Search size={18} className="text-slate-400 shrink-0 ml-2" />
-            <input className="w-full bg-transparent outline-none text-sm sm:text-[0.95rem] px-2 py-1" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
-          </div>
+            {!tab.startsWith('warehouse') && tab !== 'students' && tab !== 'cards' && (
+              <div className="mb-4 flex items-center gap-2 rounded-xl bg-white p-2 sm:p-2.5 shadow-sm border border-slate-200 w-full">
+                <Search size={18} className="text-slate-400 shrink-0 ml-2" />
+                <input className="w-full bg-transparent outline-none text-sm sm:text-[0.95rem] px-2 py-1" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+              </div>
+            )}
+          </>
         )}
 
         <div className="w-full overflow-x-hidden">
-          {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => { const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()); if (!showAllStatus && a.status !== statuses[0]) return false; return matchSearch; })} isAdmin={isAdmin} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
-          {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} adminInfo={adminInfo} today={today} />}
-          {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={fetchInitialData} />}
-          {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={fetchInitialData} />}
-          {tab === 'scores' && <ScoresPanel students={students} isAdmin={isAdmin} />}
-          {tab === 'warehouse_score' && <ScoreResults students={students} />}
-          {tab === 'analytics' && <Analytics counts={counts} totalStudents={students.length} />}
-          {tab === 'schedule' && <SchedulePanel isAdmin={isAdmin} />}
-          {tab === 'cleaning' && <CleaningSchedule isAdmin={isAdmin} />}
-          {tab === 'cards' && <CardsPanel isAdmin={isAdmin} adminInfo={adminInfo} />}
+          {tab === 'home' && <HomeFeed />}
+          {tab === 'admin_posts' && isAdmin && <AdminPostDashboard />}
+          {tab === 'about' && <AboutUs adminInfo={adminInfo} />}
+          
+          {tab === 'settings' && isAdmin && (
+            <div className="bg-white p-4 sm:p-6 rounded-[24px] shadow-sm border border-slate-200 w-full animate-fade-in mb-[80px]">
+              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><Database className="text-primary"/> ការកំណត់ទូទៅ (System Settings)</h2>
+              
+              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">១. ព័ត៌មានទូទៅ (ថ្នាក់រៀន និង Logo)</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+                <input className="field bg-slate-50" placeholder="Teacher Name..." value={adminInfo.teacher} onChange={e => setAdminInfo({...adminInfo, teacher: e.target.value})} />
+                <input className="field bg-slate-50" placeholder="Room" value={adminInfo.room} onChange={e => setAdminInfo({...adminInfo, room: e.target.value})} />
+                <input className="field bg-slate-50" placeholder="Subject..." value={adminInfo.subject} onChange={e => setAdminInfo({...adminInfo, subject: e.target.value})} />
+                <select className="field bg-slate-50" value={adminInfo.shift} onChange={e => setAdminInfo({...adminInfo, shift: e.target.value})}>
+                  <option>Morning</option><option>Afternoon</option><option>Evening</option>
+                </select>
+                
+                <div className="col-span-2 md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="relative w-full"><MapPin className="absolute left-3 top-3 text-slate-400" size={18} /><input className="field bg-slate-50 pl-10" placeholder="Google Maps Embed Link..." value={tempMap} onChange={e => setTempMap(e.target.value)} /></div>
+                  <div className="relative w-full"><ImageIcon className="absolute left-3 top-3 text-slate-400" size={18} /><input className="field bg-slate-50 pl-10" placeholder="Background Link (,)" value={tempBg} onChange={e => setTempBg(e.target.value)} /></div>
+                  <div className="flex gap-2 w-full"><input className="field bg-slate-50 flex-1" placeholder="Logo Link" value={tempLogo} onChange={e => setTempLogo(e.target.value)} /><label className="btn btn-primary cursor-pointer px-4 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setTempLogo(ev.target?.result as string); r.readAsDataURL(f); } }} /></label></div>
+                </div>
+              </div>
+
+              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">២. កំណត់ប្រវត្តិអ្នកអភិវឌ្ឍន៍ និង ទំនាក់ទំនង (ផ្ទាំង About Us)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <input className="field bg-white" placeholder="ឈ្មោះអ្នកអភិវឌ្ឍន៍ (Dev Name)" value={adminInfo.devName} onChange={e => setAdminInfo({...adminInfo, devName: e.target.value})} />
+                <input className="field bg-white" placeholder="តួនាទី (Dev Title)" value={adminInfo.devTitle} onChange={e => setAdminInfo({...adminInfo, devTitle: e.target.value})} />
+                <input className="field bg-white" placeholder="Link រូបថត (Dev Photo URL)" value={adminInfo.devPhoto} onChange={e => setAdminInfo({...adminInfo, devPhoto: e.target.value})} />
+                <textarea className="field bg-white md:col-span-2 min-h-[100px] resize-none" placeholder="សរសេររៀបរាប់ពីប្រវត្តិទីនេះ..." value={adminInfo.devDescription} onChange={e => setAdminInfo({...adminInfo, devDescription: e.target.value})}></textarea>
+                
+                <input className="field bg-white" placeholder="លេខទូរស័ព្ទ (Phone)" value={adminInfo.contactPhone} onChange={e => setAdminInfo({...adminInfo, contactPhone: e.target.value})} />
+                <input className="field bg-white" placeholder="អ៊ីមែល (Email)" value={adminInfo.contactEmail} onChange={e => setAdminInfo({...adminInfo, contactEmail: e.target.value})} />
+                <input className="field bg-white" placeholder="Facebook Link" value={adminInfo.contactFacebook} onChange={e => setAdminInfo({...adminInfo, contactFacebook: e.target.value})} />
+                <input className="field bg-white" placeholder="Github Link" value={adminInfo.contactGithub} onChange={e => setAdminInfo({...adminInfo, contactGithub: e.target.value})} />
+                <input className="field bg-white md:col-span-2" placeholder="Portfolio / Website Link" value={adminInfo.contactPortfolio} onChange={e => setAdminInfo({...adminInfo, contactPortfolio: e.target.value})} />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-y-4 pt-4 border-t border-slate-100">
+                <div className="flex flex-wrap gap-x-5 gap-y-3">
+                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} /> Manual Check-in</label>
+                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowStudentEdit || false} onChange={e => setAdminInfo({...adminInfo, allowStudentEdit: e.target.checked})} /> Edit Students</label>
+                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowLeaveManualName || false} onChange={e => setAdminInfo({...adminInfo, allowLeaveManualName: e.target.checked})} /> Leave Input</label>
+                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} /> Create Cards</label>
+                </div>
+                <button className="btn btn-success w-full md:w-auto py-3 px-8 text-base font-bold shadow-md shadow-success/20" disabled={savingConfig} onClick={saveAdminConfig}>
+                   <Save size={18} /> {savingConfig ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកការកំណត់ (Save All)'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isDashboardView && (
+            <>
+              {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => { const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()); if (!showAllStatus && a.status !== statuses[0]) return false; return matchSearch; })} isAdmin={isAdmin} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
+              {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} adminInfo={adminInfo} today={today} />}
+              {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={fetchInitialData} />}
+              {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={fetchInitialData} />}
+              {tab === 'scores' && <ScoresPanel students={students} isAdmin={isAdmin} />}
+              {tab === 'warehouse_score' && <ScoreResults students={students} />}
+              {tab === 'analytics' && <Analytics counts={counts} totalStudents={students.length} />}
+              {tab === 'schedule' && <SchedulePanel isAdmin={isAdmin} />}
+              {tab === 'cleaning' && <CleaningSchedule isAdmin={isAdmin} />}
+              {tab === 'cards' && <CardsPanel isAdmin={isAdmin} adminInfo={adminInfo} />}
+            </>
+          )}
         </div>
       </div>
       {scanner && <Scanner onClose={() => setScanner(false)} students={students} adminInfo={adminInfo} today={today} />}
@@ -586,7 +600,7 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
         {canManualEntry && (
           <div className="card h-fit w-full">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Plus size={20} className="text-primary" /> ចុះវត្តមាន</h2>
-            <input list="student-list" className="field mb-3 w-full" placeholder="ជ្រើសរើសឈ្មោះរបស់អ្នក..." value={name} onChange={e => setName(e.target.value)} />
+            <input list="student-list" className="field mb-3 w-full" placeholder="-- Select or type name --" value={name} onChange={e => setName(e.target.value)} />
             <datalist id="student-list">{students.map((s: any) => <option key={s.id} value={s.name} />)}</datalist>
             <select className="field mb-4 w-full" value={status} onChange={e => setStatus(e.target.value as string)}>{statuses.map(s => <option key={s}>{s}</option>)}</select>
             <div className="flex flex-col sm:flex-row gap-2 mt-2">
@@ -612,7 +626,7 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
                 <>
                   <div className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm mb-3 text-primary"><UserCheck size={24} /></div>
                   <h3 className="font-bold text-lg text-slate-800 mb-1">គណនីបានភ្ជាប់ជោគជ័យ</h3>
-                  <p className="text-slate-500 text-[13px] mb-4 leading-relaxed">អត្តលេខភ្ជាប់បច្ចុប្បន្ន៖ <b className="text-primary">{linkedStuId}</b></p>
+                  <p className="text-slate-500 text-[13px] mb-2 leading-relaxed">អត្តលេខភ្ជាប់បច្ចុប្បន្ន៖ <b className="text-primary">{linkedStuId}</b></p>
                   <div className="bg-primary/10 text-primary p-4 rounded-xl border border-primary/20 text-center font-bold text-sm shadow-inner mb-4 flex flex-col items-center gap-2">
                      <QrCode size={24} />
                      សូមប្រើប៊ូតុង "ស្កែនវត្តមាន" (QR) នៅរបារផ្នែកខាងលើ ដើម្បីស្កែន
@@ -628,8 +642,7 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
         <div className="card p-3 sm:p-5 bg-white w-full overflow-hidden" id="exportArea">
           <div className="text-center border-b-[3px] border-double border-primary pb-3 sm:pb-4 mb-4 sm:mb-5 relative w-full">
             {adminInfo.logo && <img src={adminInfo.logo} className="w-[50px] h-[50px] sm:w-[70px] sm:h-[70px] object-cover mx-auto mb-2 rounded-full shadow-sm border border-primary" alt="Logo" />}
-            <h1 className="text-primary text-lg sm:text-2xl font-bold my-1 w-full truncate px-2">របាយការណ៍វត្តមានសិស្សប្រចាំថ្ងៃ</h1> 
-            <p >គ្រប់គ្រងវត្តមានស្វ័យប្រវត្តិ</p>
+            <h1 className="text-primary text-lg sm:text-2xl font-bold my-1 w-full truncate px-2">របាយការណ៍វត្តមានសិស្សប្រចាំថ្ងៃ</h1>
           </div>
           
           <div className="flex flex-row justify-between bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-4 text-[10px] sm:text-sm w-full gap-2 overflow-hidden">
@@ -1248,7 +1261,7 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
   ); 
 }
 
-function Scanner({ onClose, students, adminInfo, today }: any) { 
+function Scanner({ onClose, students, refresh, adminInfo, today }: any) { 
   const [value, setValue] = useState(''); 
   const [message, setMessage] = useState<{text: string, type: 'success'|'error'} | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -1325,6 +1338,7 @@ function Scanner({ onClose, students, adminInfo, today }: any) {
           return;
        } else {
           await supabase.from('attendance').update({ status: statuses[0], time: new Date().toLocaleTimeString('en-GB') }).eq('id', existing[0].id);
+          if(refresh) refresh();
           setValue('');
           setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
           setTimeout(() => { onClose(); }, 1500);
@@ -1349,6 +1363,7 @@ function Scanner({ onClose, students, adminInfo, today }: any) {
       teacher: adminInfo.teacher || '',
       subject: adminInfo.subject || ''
     }); 
+    if(refresh) refresh();
     setValue('');
     
     setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
