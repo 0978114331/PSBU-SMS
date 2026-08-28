@@ -17,7 +17,7 @@ function App() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#f8fafc]">
         <div className="h-12 w-12 animate-spin rounded-full border-[4px] border-blue-600 border-t-transparent mb-4 shadow-sm"></div>
-        <p className="text-sm font-bold text-slate-500 animate-pulse">កំពុងរៀបចំប្រព័ន្ធ...</p>
+        <p className="text-sm font-bold text-slate-500 animate-pulse">Loading...</p>
       </div>
     );
   }
@@ -77,22 +77,22 @@ function AuthScreen() {
         </h1>
         
         <div className="mb-6 flex rounded-xl bg-slate-200/50 p-1.5 shadow-inner">
-          <button className={`flex-1 rounded-lg py-2.5 text-[13px] sm:text-sm font-bold transition-all duration-300 ${mode === 'login' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setMode('login')}>ចូលប្រើប្រាស់</button>
-          <button className={`flex-1 rounded-lg py-2.5 text-[13px] sm:text-sm font-bold transition-all duration-300 ${mode === 'register' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setMode('register')}>ចុះឈ្មោះ</button>
+          <button className={`flex-1 rounded-lg py-2.5 text-[13px] sm:text-sm font-bold transition-all duration-300 ${mode === 'login' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setMode('login')}>Login</button>
+          <button className={`flex-1 rounded-lg py-2.5 text-[13px] sm:text-sm font-bold transition-all duration-300 ${mode === 'register' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setMode('register')}>Register</button>
         </div>
 
         {mode === 'register' && (
           <div className="relative mb-4">
-            <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" placeholder="ឈ្មោះពេញ (Full Name)" value={name} onChange={e => setName(e.target.value)} />
+            <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} />
           </div>
         )}
         
         <div className="relative mb-4">
-          <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type="email" placeholder="អ៊ីមែល (Email)" value={email} onChange={e => setEmail(e.target.value)} />
+          <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
         </div>
         
         <div className="relative mb-4">
-          <input className="field w-full pr-12 !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type={show ? 'text' : 'password'} placeholder="ពាក្យសម្ងាត់ (Password)" value={password} onChange={e => setPassword(e.target.value)} />
+          <input className="field w-full pr-12 !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type={show ? 'text' : 'password'} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
           <button className="absolute right-4 top-3.5 text-slate-400 hover:text-blue-600 transition-colors" onClick={() => setShow(!show)}>{show ? <EyeOff size={18} /> : <Eye size={18} />}</button>
         </div>
 
@@ -100,13 +100,13 @@ function AuthScreen() {
           <>
             <div className="relative mb-4">
               <select className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none text-slate-600 font-medium" value={role} onChange={e => setRole(e.target.value as 'user' | 'admin')}>
-                <option value="user">អ្នកប្រើប្រាស់ទូទៅ (User)</option>
-                <option value="admin">អ្នកគ្រប់គ្រង (Admin)</option>
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
             {role === 'admin' && (
               <div className="relative mb-4 animate-fade-in">
-                <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type="password" placeholder="លេខកូដសម្ងាត់ (Admin Code)" value={code} onChange={e => setCode(e.target.value)} />
+                <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type="password" placeholder="Admin Code" value={code} onChange={e => setCode(e.target.value)} />
               </div>
             )}
           </>
@@ -115,12 +115,12 @@ function AuthScreen() {
         {error && <p className="mb-4 rounded-xl bg-rose-50/80 border border-rose-100 p-3 text-[12px] sm:text-[13px] text-rose-600 font-medium">{error}</p>}
         
         <button className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3.5 mb-5 shadow-[0_8px_20px_-6px_rgba(37,99,235,0.5)] hover:shadow-[0_12px_25px_-6px_rgba(37,99,235,0.6)] hover:-translate-y-0.5 transition-all duration-300 active:scale-[0.98] text-[14px]" disabled={busy} onClick={submit}>
-          {busy ? 'កំពុងដំណើរការ...' : mode === 'login' ? 'ចូលប្រើប្រាស់ (Login)' : 'ចុះឈ្មោះ (Register)'}
+          {busy ? 'Processing...' : mode === 'login' ? 'Login' : 'Register'}
         </button>
 
         <div className="relative flex items-center py-2 mb-5 opacity-70">
           <div className="flex-grow border-t border-slate-300"></div>
-          <span className="flex-shrink-0 mx-4 text-slate-500 text-[11px] sm:text-xs font-bold uppercase tracking-wider">ឬបន្តជាមួយ</span>
+          <span className="flex-shrink-0 mx-4 text-slate-500 text-[11px] sm:text-xs font-bold uppercase tracking-wider">OR</span>
           <div className="flex-grow border-t border-slate-300"></div>
         </div>
 
@@ -164,7 +164,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const [search, setSearch] = useState('');
   
   const [adminInfo, setAdminInfo] = useState({ 
-    teacher: '', room: '', subject: '', shift: 'វេនព្រឹក', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
+    teacher: '', room: '', subject: '', shift: 'Mornig', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
     allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false 
   });
 
@@ -193,11 +193,29 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
     fetchInitialData();
 
     const globalSub = supabase.channel('dashboard-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, () => {
-        fetchInitialData();
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'attendance' }, payload => {
+        setAttendance(prev => {
+          if (prev.some(item => item.id === payload.new.id)) return prev;
+          return [payload.new as Attendance, ...prev];
+        });
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
-        fetchInitialData();
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'attendance' }, payload => {
+        setAttendance(prev => prev.map(item => item.id === payload.new.id ? { ...item, ...payload.new } as Attendance : item));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'attendance' }, payload => {
+        setAttendance(prev => prev.filter(item => item.id !== payload.old.id));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'students' }, payload => {
+        setStudents(prev => {
+          if (prev.some(item => item.id === payload.new.id)) return prev;
+          return [...prev, payload.new as Student].sort((a, b) => a.name.localeCompare(b.name));
+        });
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'students' }, payload => {
+        setStudents(prev => prev.map(item => item.id === payload.new.id ? { ...item, ...payload.new } as Student : item));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'students' }, payload => {
+        setStudents(prev => prev.filter(item => item.id !== payload.old.id));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
         if (payload.new && (payload.new as any).type === 'school_info') {
@@ -244,10 +262,17 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
     return unique;
   }, [attendance, today]);
 
+  const presentRecords = processedToday.filter(r => r.status === statuses[0]);
+  const earliestPresent = presentRecords.length > 0 ? presentRecords.reduce((min, curr) => new Date((curr as any).created_at).getTime() < new Date((min as any).created_at).getTime() ? curr : min) : null;
+  const twoHoursPassed = earliestPresent ? (Date.now() - new Date((earliestPresent as any).created_at).getTime() >= 2 * 60 * 60 * 1000) : false;
+  const hasAbsent = processedToday.some(r => r.status === statuses[2]);
+  const showAllStatus = twoHoursPassed || hasAbsent;
+
   useEffect(() => {
     if (!isAdmin || processedToday.length === 0 || students.length === 0) return;
-    const earliest = processedToday.reduce((min, curr) => new Date((curr as any).created_at).getTime() < new Date((min as any).created_at).getTime() ? curr : min);
-    const earliestTime = new Date((earliest as any).created_at).getTime();
+    if (!earliestPresent) return;
+    
+    const earliestTime = new Date((earliestPresent as any).created_at).getTime();
     if (isNaN(earliestTime)) return;
     
     const twoHours = 2 * 60 * 60 * 1000;
@@ -274,13 +299,13 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         }
     };
 
-    if (waitTime <= 0) {
+    if (waitTime <= 0 && !hasAbsent) {
         triggerAutoAbsent();
-    } else {
+    } else if (waitTime > 0) {
         const t = setTimeout(triggerAutoAbsent, waitTime);
         return () => clearTimeout(t);
     }
-  }, [processedToday.length, students.length, isAdmin, adminInfo, today]);
+  }, [processedToday.length, students.length, isAdmin, adminInfo, today, earliestPresent, hasAbsent]);
 
   const counts = { present: processedToday.filter(a => a.status === statuses[0]).length, leave: processedToday.filter(a => a.status === statuses[1]).length, absent: processedToday.filter(a => a.status === statuses[2]).length };
   
@@ -331,15 +356,15 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
                    </label>
                    <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
                      <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowStudentEdit || false} onChange={e => setAdminInfo({...adminInfo, allowStudentEdit: e.target.checked})} />
-                     User កែបញ្ជីសិស្ស
+                     User កែបញ្ចីសិស្ស
                    </label>
                    <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
                      <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowLeaveManualName || false} onChange={e => setAdminInfo({...adminInfo, allowLeaveManualName: e.target.checked})} />
-                     User វាយឈ្មោះសុំច្បាប់
+                     វាយឈ្មោះច្បាប់
                    </label>
                    <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-slate-700 cursor-pointer w-max pl-1">
                      <input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} />
-                     User បង្កើតកាត
+                     User Cards
                    </label>
                    <button className="btn btn-success !py-1 !px-3 text-xs ml-auto shadow-sm" disabled={savingConfig} onClick={saveAdminConfig}>
                      <Save size={14} /> {savingConfig ? '...' : 'Save Config'}
@@ -358,8 +383,8 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         )}
 
         <div className="w-full overflow-x-hidden">
-          {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()))} isAdmin={isAdmin} refresh={fetchInitialData} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
-          {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} refresh={fetchInitialData} adminInfo={adminInfo} today={today} />}
+          {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => { const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()); if (!showAllStatus && a.status !== statuses[0]) return false; return matchSearch; })} isAdmin={isAdmin} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
+          {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} adminInfo={adminInfo} today={today} />}
           {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={fetchInitialData} />}
           {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={fetchInitialData} />}
           {tab === 'scores' && <ScoresPanel students={students} isAdmin={isAdmin} />}
@@ -370,7 +395,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
           {tab === 'cards' && <CardsPanel isAdmin={isAdmin} adminInfo={adminInfo} />}
         </div>
       </div>
-      {scanner && <Scanner onClose={() => setScanner(false)} students={students} refresh={fetchInitialData} adminInfo={adminInfo} today={today} />}
+      {scanner && <Scanner onClose={() => setScanner(false)} students={students} adminInfo={adminInfo} today={today} />}
     </div>
   );
 }
@@ -406,7 +431,7 @@ function Banner({ mapUrl, bgUrls }: { mapUrl?: string; bgUrls?: string }) {
   ); 
 }
 
-function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today, onOpenScanner }: any) { 
+function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenScanner }: any) { 
   const [name, setName] = useState(''); 
   const [status, setStatus] = useState<string>(statuses[0]); 
   const [saving, setSaving] = useState(false); 
@@ -446,7 +471,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
     const student = students.find((s: any) => s.name === name.trim()); 
     const finalName = student ? student.name : name.trim();
     const finalId = student ? student.stu_id : "";
-    const finalGender = student ? student.gender : "ប្រុស";
+    const finalGender = student ? student.gender : "Male";
 
     const payload = { 
       student_id: student?.id || null, 
@@ -469,7 +494,6 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
        await supabase.from('attendance').delete().eq('student_id', student.id).eq('date', today);
     }
     await supabase.from('attendance').insert(payload); 
-    if(refresh) refresh();
   } 
 
   async function autoMarkAbsent() {
@@ -498,7 +522,6 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
     }));
 
     await supabase.from('attendance').insert(payloads);
-    if(refresh) refresh();
   }
 
   async function editRecord(r: any) {
@@ -509,24 +532,19 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
 
     if (newName.trim() !== "") {
       await supabase.from('attendance').update({ name: newName.trim(), status: newStatus }).eq('id', r.id);
-      if(refresh) refresh();
     }
   }
 
   async function deleteRecord(id: string) {
     if(!window.confirm("Delete this record?")) return;
-    supabase.from('attendance').delete().eq('id', id).then(() => {
-        if(refresh) refresh();
-    });
+    supabase.from('attendance').delete().eq('id', id).then();
   }
 
   async function deleteAll() {
     if(!window.confirm("Delete all records for today?")) return;
     const ids = records.map((r: any) => r.id);
     if (ids.length > 0) {
-       supabase.from('attendance').delete().in('id', ids).then(() => {
-           if(refresh) refresh();
-       });
+       supabase.from('attendance').delete().in('id', ids).then();
     }
   }
 
@@ -549,12 +567,17 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
 
       {showSharedQR && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-6 sm:p-10 text-center max-w-sm w-full shadow-2xl animate-fade-in relative">
+          <div className="bg-white rounded-3xl p-6 sm:p-10 text-center max-w-sm w-full shadow-2xl animate-fade-in relative flex flex-col items-center">
             <button className="absolute top-4 right-4 text-slate-400 hover:text-danger bg-slate-100 p-1.5 rounded-full" onClick={() => setShowSharedQR(false)}><X size={20}/></button>
             <h2 className="text-xl sm:text-2xl font-bold text-primary mb-2">ស្កែនដើម្បីចុះវត្តមាន</h2>
             <p className="text-sm text-slate-500 mb-6">សិស្សអាចប្រើទូរស័ព្ទស្កែន QR នេះ ដើម្បីកត់ត្រាវត្តមានដោយខ្លួនឯង</p>
-            <img src={qrUrl} alt="Shared QR" className="w-full h-auto rounded-2xl border-4 border-slate-100 shadow-sm" />
-            <p className="mt-6 text-[10px] text-slate-400 font-bold tracking-widest uppercase">{sharedQRData}</p>
+            <div className="p-2 border-4 border-slate-100 rounded-2xl shadow-sm bg-white">
+              <img src={qrUrl} alt="Shared QR" className="w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] object-contain" />
+            </div>
+            <p className="mt-4 text-[10px] text-slate-400 font-bold tracking-widest uppercase">{sharedQRData}</p>
+            <a href={qrUrl} download={`Shared_QR_${today}.png`} className="btn btn-success w-full mt-6 shadow-md shadow-success/30 py-3 font-bold flex justify-center items-center gap-2">
+              <Download size={18} /> រក្សាទុក QR Code
+            </a>
           </div>
         </div>
       )}
@@ -563,7 +586,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
         {canManualEntry && (
           <div className="card h-fit w-full">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Plus size={20} className="text-primary" /> ចុះវត្តមាន</h2>
-            <input list="student-list" className="field mb-3 w-full" placeholder="-- Select or type name --" value={name} onChange={e => setName(e.target.value)} />
+            <input list="student-list" className="field mb-3 w-full" placeholder="ជ្រើសរើសឈ្មោះរបស់អ្នក..." value={name} onChange={e => setName(e.target.value)} />
             <datalist id="student-list">{students.map((s: any) => <option key={s.id} value={s.name} />)}</datalist>
             <select className="field mb-4 w-full" value={status} onChange={e => setStatus(e.target.value as string)}>{statuses.map(s => <option key={s}>{s}</option>)}</select>
             <div className="flex flex-col sm:flex-row gap-2 mt-2">
@@ -587,11 +610,14 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
                 </>
              ) : (
                 <>
-                  <div className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm mb-3 text-primary"><Camera size={24} /></div>
-                  <h3 className="font-bold text-lg text-slate-800 mb-1">ចុះវត្តមានផ្ទាល់ខ្លួន</h3>
-                  <p className="text-slate-500 text-[13px] mb-2 leading-relaxed">អត្តលេខភ្ជាប់បច្ចុប្បន្ន៖ <b className="text-primary">{linkedStuId}</b></p>
-                  <button className="text-xs text-danger hover:underline mb-5" onClick={handleUnlinkAccount}>ប្តូរអត្តលេខផ្សេង</button>
-                  <button className="btn btn-primary w-full py-3.5 shadow-lg shadow-primary/30 font-bold text-[14px]" onClick={onOpenScanner}>ចាប់ផ្តើមស្កែន QR</button>
+                  <div className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm mb-3 text-primary"><UserCheck size={24} /></div>
+                  <h3 className="font-bold text-lg text-slate-800 mb-1">គណនីបានភ្ជាប់ជោគជ័យ</h3>
+                  <p className="text-slate-500 text-[13px] mb-4 leading-relaxed">អត្តលេខភ្ជាប់បច្ចុប្បន្ន៖ <b className="text-primary">{linkedStuId}</b></p>
+                  <div className="bg-primary/10 text-primary p-4 rounded-xl border border-primary/20 text-center font-bold text-sm shadow-inner mb-4 flex flex-col items-center gap-2">
+                     <QrCode size={24} />
+                     សូមប្រើប៊ូតុង "ស្កែនវត្តមាន" (QR) នៅរបារផ្នែកខាងលើ ដើម្បីស្កែន
+                  </div>
+                  <button className="text-xs text-danger hover:underline w-full text-center" onClick={handleUnlinkAccount}>ផ្តាច់អត្តលេខចេញពីទូរស័ព្ទនេះ</button>
                 </>
              )}
           </div>
@@ -602,7 +628,8 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
         <div className="card p-3 sm:p-5 bg-white w-full overflow-hidden" id="exportArea">
           <div className="text-center border-b-[3px] border-double border-primary pb-3 sm:pb-4 mb-4 sm:mb-5 relative w-full">
             {adminInfo.logo && <img src={adminInfo.logo} className="w-[50px] h-[50px] sm:w-[70px] sm:h-[70px] object-cover mx-auto mb-2 rounded-full shadow-sm border border-primary" alt="Logo" />}
-            <h1 className="text-primary text-lg sm:text-2xl font-bold my-1 w-full truncate px-2">របាយការណ៍វត្តមានសិស្សប្រចាំថ្ងៃ</h1>
+            <h1 className="text-primary text-lg sm:text-2xl font-bold my-1 w-full truncate px-2">របាយការណ៍វត្តមានសិស្សប្រចាំថ្ងៃ</h1> 
+            <p >គ្រប់គ្រងវត្តមានស្វ័យប្រវត្តិ</p>
           </div>
           
           <div className="flex flex-row justify-between bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-4 text-[10px] sm:text-sm w-full gap-2 overflow-hidden">
@@ -677,7 +704,7 @@ function AttendancePanel({ students, records, isAdmin, refresh, adminInfo, today
   ); 
 }
 
-function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, today }: any) {
+function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today }: any) {
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -698,14 +725,13 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
     const student = students.find((s: any) => s.name === name.trim());
     const finalName = student ? student.name : name.trim();
     const finalId = student ? student.stu_id : "";
-    const finalGender = student ? student.gender : "ប្រុស";
+    const finalGender = student ? student.gender : "Male";
 
     if (editingId) {
       await supabase.from('attendance').update({
         student_id: student?.id || null, stu_id: finalId, name: finalName, gender: finalGender,
         date: startDate, reason: reason || 'គ្មានការបញ្ជាក់', photo: photo || ''
       }).eq('id', editingId);
-      if(refresh) refresh();
       setEditingId(null); setName(''); setReason(''); setPhoto(''); setStartDate(today); setEndDate(today);
       setSaving(false); return;
     }
@@ -736,7 +762,6 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
     }));
 
     await supabase.from('attendance').insert(payloads);
-    if(refresh) refresh();
   }
 
   function editLeave(r: any) {
@@ -746,9 +771,7 @@ function LeaveRequestPanel({ students, records, isAdmin, refresh, adminInfo, tod
 
   async function deleteLeave(id: string) {
     if(!window.confirm("Delete?")) return;
-    supabase.from('attendance').delete().eq('id', id).then(() => {
-       if(refresh) refresh();
-    });
+    supabase.from('attendance').delete().eq('id', id).then();
   }
 
   const printLetter = () => {
@@ -1225,7 +1248,7 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
   ); 
 }
 
-function Scanner({ onClose, students, refresh, adminInfo, today }: any) { 
+function Scanner({ onClose, students, adminInfo, today }: any) { 
   const [value, setValue] = useState(''); 
   const [message, setMessage] = useState<{text: string, type: 'success'|'error'} | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -1302,7 +1325,6 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: any) {
           return;
        } else {
           await supabase.from('attendance').update({ status: statuses[0], time: new Date().toLocaleTimeString('en-GB') }).eq('id', existing[0].id);
-          if(refresh) refresh();
           setValue('');
           setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
           setTimeout(() => { onClose(); }, 1500);
@@ -1327,7 +1349,6 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: any) {
       teacher: adminInfo.teacher || '',
       subject: adminInfo.subject || ''
     }); 
-    if(refresh) refresh();
     setValue('');
     
     setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
