@@ -1,16 +1,14 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin, Image as ImageIcon, FileText, Database } from 'lucide-react';
+import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin, Image as ImageIcon, FileText, Database, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Navbar } from '@/components/Navbar';
 import { AttendanceHistory } from '@/components/data/AttendanceHistory';
-import { MasterStudentList } from '@/components/data/MasterStudentList';
 import { ScoreResults } from '@/components/data/ScoreResults';
 import type { Attendance, Student, Tab } from '@/types';
 import { statuses } from '@/types';
 import html2canvas from 'html2canvas';
 import { Html5Qrcode } from 'html5-qrcode';
-
 import { HomeFeed } from '@/components/HomeFeed';
 import { AdminPostDashboard } from '@/components/AdminPostDashboard';
 import { AboutUs } from '@/components/AboutUs';
@@ -48,10 +46,7 @@ function AuthScreen() {
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+        queryParams: { access_type: 'offline', prompt: 'consent' },
       }
     });
     if (error) setError(error.message);
@@ -109,12 +104,7 @@ function AuthScreen() {
           <div className="flex-grow border-t border-slate-300"></div>
         </div>
         <button className="w-full rounded-xl py-3 flex items-center justify-center gap-3 border border-slate-200 bg-white/90 text-slate-700 hover:bg-white hover:shadow-[0_8px_15px_-5px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 active:scale-[0.98]" disabled={busy} onClick={handleGoogleLogin}>
-          <svg className="w-5 h-5 drop-shadow-sm" viewBox="0 0 24 24">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-          </svg>
+          <svg className="w-5 h-5 drop-shadow-sm" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
           <span className="font-bold text-[13px] sm:text-[14px] tracking-wide">បន្តជាមួយ Google</span>
         </button>
       </section>
@@ -124,15 +114,140 @@ function AuthScreen() {
 
 function LiveClock() {
   const [time, setTime] = useState(new Date());
-  useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  useEffect(() => { const timer = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(timer); }, []);
   return (
     <>
       <div className="text-[1.8rem] sm:text-[2rem] md:text-3xl font-bold leading-tight">{time.toLocaleTimeString('en-GB')}</div>
       <div className="text-xs sm:text-sm font-medium opacity-90">{time.toLocaleDateString('en-CA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
     </>
+  );
+}
+
+export function MasterStudentList({ students, isAdmin, allowEdit, refresh, adminInfo, setAdminInfo }: any) {
+  const [search, setSearch] = useState('');
+  const [form, setForm] = useState<{ id: string; stu_id: string; name: string; gender: string; dob: string; phone: string }>({ id: '', stu_id: '', name: '', gender: 'Male', dob: '', phone: '' });
+  const [saving, setSaving] = useState(false);
+
+  const canEdit = isAdmin || allowEdit;
+  const filtered = students.filter((s: Student) => (s.name || '').toLowerCase().includes(search.toLowerCase()) || (s.stu_id || '').toLowerCase().includes(search.toLowerCase()));
+
+  async function saveStudent() {
+    if (!form.name.trim() || !form.stu_id.trim()) return;
+    setSaving(true);
+    if (form.id) await supabase.from('students').update({ stu_id: form.stu_id, name: form.name, gender: form.gender, dob: form.dob, phone: form.phone }).eq('id', form.id);
+    else await supabase.from('students').insert([{ stu_id: form.stu_id, name: form.name, gender: form.gender, dob: form.dob, phone: form.phone }]);
+    setForm({ id: '', stu_id: '', name: '', gender: 'Male', dob: '', phone: '' });
+    if(refresh) refresh();
+    setSaving(false);
+  }
+
+  function edit(s: Student) {
+    setForm({ id: s.id || '', stu_id: s.stu_id || '', name: s.name || '', gender: s.gender || 'Male', dob: s.dob || '', phone: s.phone || '' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function deleteStudent(id: string | null | undefined) {
+    if(!id || !window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?")) return;
+    await supabase.from('students').delete().eq('id', id);
+    if(refresh) refresh();
+  }
+
+  async function toggleQRBlock(stu_id: string | null | undefined) {
+    if (!isAdmin || !stu_id) return;
+    const currentBlocked = adminInfo?.blockedQRStudents || [];
+    const isBlocked = currentBlocked.includes(stu_id);
+    let newBlocked = isBlocked ? currentBlocked.filter((id: string) => id !== stu_id) : [...currentBlocked, stu_id];
+    const newAdminInfo = { ...adminInfo, blockedQRStudents: newBlocked };
+    if(setAdminInfo) setAdminInfo(newAdminInfo);
+    const { data } = await supabase.from('schedules').select('id').eq('type', 'school_info').maybeSingle();
+    if (data?.id) await supabase.from('schedules').update({ data_json: newAdminInfo }).eq('id', data.id);
+  }
+
+  const printList = () => {
+    document.body.classList.add('print-students');
+    window.print();
+    setTimeout(() => document.body.classList.remove('print-students'), 500);
+  };
+
+  return (
+    <div className="card w-full relative" id="studentListArea">
+      <style>{`
+        @media print { body.print-students * { visibility: hidden; background: white; } body.print-students #studentListArea, body.print-students #studentListArea * { visibility: visible; } body.print-students #studentListArea { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; padding: 20px; margin: 0; } body.print-students .no-print { display: none !important; } }
+      `}</style>
+      
+      <div className="flex flex-wrap items-center justify-between mb-5 gap-3 no-print">
+        <h2 className="flex items-center gap-2 text-lg sm:text-xl font-bold text-slate-800"><GraduationCap className="text-primary" /> បញ្ជីឈ្មោះសិស្ស ({students.length})</h2>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+           <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl w-full sm:w-[250px]"><Search size={16} className="text-slate-400" /><input className="bg-transparent outline-none w-full text-sm" placeholder="ស្វែងរកអត្តលេខ ឬឈ្មោះ..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+           <button className="btn bg-[#2c3e50] text-white p-2 sm:px-3 sm:py-1.5 rounded-xl shadow-md transition hover:-translate-y-0.5" onClick={printList} title="បោះពុម្ព PDF"><Printer size={18}/></button>
+        </div>
+      </div>
+
+      <div className="hidden print:block mb-4 text-center">
+         <h1 className="text-xl font-bold text-slate-800 mb-1">បញ្ជីឈ្មោះសិស្សសរុប</h1>
+         <p className="text-sm text-slate-500">ចំនួនសរុប៖ {students.length} នាក់ | កាលបរិច្ឆេទ៖ {new Date().toLocaleDateString('en-GB')}</p>
+      </div>
+
+      {canEdit && (
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-[1fr_1.5fr_1fr_1fr_1.5fr_auto] gap-3 no-print">
+          <input className="field bg-white" placeholder="អត្តលេខ (ID)" value={form.stu_id} onChange={e => setForm({...form, stu_id: e.target.value})} />
+          <input className="field bg-white" placeholder="ឈ្មោះសិស្ស" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+          <select className="field bg-white" value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}><option value="Male">ប្រុស (Male)</option><option value="Female">ស្រី (Female)</option></select>
+          <input type="date" className="field bg-white" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} title="ថ្ងៃខែឆ្នាំកំណើត" />
+          <input className="field bg-white" placeholder="លេខទូរស័ព្ទ" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+          <div className="flex gap-2">
+            {form.id && <button className="btn bg-slate-200 text-slate-700 hover:bg-slate-300" onClick={() => setForm({ id: '', stu_id: '', name: '', gender: 'Male', dob: '', phone: '' })}><X size={16}/></button>}
+            <button className="btn btn-primary" disabled={saving || !form.name || !form.stu_id} onClick={saveStudent}>{saving ? '...' : (form.id ? 'រក្សាទុក' : 'បន្ថែម')}</button>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-slate-200 overflow-hidden w-full">
+        <div className="max-h-[500px] overflow-y-auto w-full print:max-h-none print:overflow-visible">
+          <table className="w-full min-w-[800px] text-xs sm:text-sm">
+            <thead className="sticky top-0 z-10 bg-slate-100 shadow-sm print:shadow-none">
+              <tr>
+                <th className="p-3 text-center w-[60px]">ល.រ</th>
+                <th className="p-3 text-left">អត្តលេខ</th>
+                <th className="p-3 text-left">ឈ្មោះសិស្ស</th>
+                <th className="p-3 text-center">ភេទ</th>
+                <th className="p-3 text-center">ថ្ងៃខែឆ្នាំកំណើត</th>
+                <th className="p-3 text-center">លេខទូរស័ព្ទ</th>
+                {isAdmin && <th className="p-3 text-center no-print">សិទ្ធិស្កែន QR</th>}
+                {canEdit && <th className="p-3 text-center no-print">សកម្មភាព</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length ? filtered.map((s: Student, index: number) => {
+                const isBlocked = s.stu_id ? adminInfo?.blockedQRStudents?.includes(s.stu_id) : false;
+                return (
+                <tr className="border-t hover:bg-slate-50 transition print:break-inside-avoid" key={s.id || index}>
+                  <td className="p-3 text-center font-bold text-slate-400">{index + 1}</td>
+                  <td className="p-3 font-bold text-slate-600">{s.stu_id || '---'}</td>
+                  <td className="p-3 font-bold text-primary">{s.name || '---'}</td>
+                  <td className="p-3 text-center">{s.gender === 'Female' ? 'ស្រី' : 'ប្រុស'}</td>
+                  <td className="p-3 text-center text-slate-600">{s.dob || '---'}</td>
+                  <td className="p-3 text-center text-slate-600">{s.phone || '---'}</td>
+                  {isAdmin && (
+                    <td className="p-3 text-center no-print">
+                       <button onClick={() => toggleQRBlock(s.stu_id)} className={`flex items-center justify-center gap-1.5 mx-auto px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isBlocked ? 'bg-rose-100 text-rose-600 border border-rose-200' : 'bg-emerald-100 text-emerald-600 border border-emerald-200'}`}>
+                         {isBlocked ? <><ShieldAlert size={14} /> បានបិទ</> : <><ShieldCheck size={14} /> អនុញ្ញាត</>}
+                       </button>
+                    </td>
+                  )}
+                  {canEdit && (
+                    <td className="p-3 text-center no-print">
+                      <button className="text-blue-500 hover:bg-blue-100 p-1.5 rounded mr-1" onClick={() => edit(s)}><Pencil size={14}/></button>
+                      <button className="text-danger hover:bg-rose-100 p-1.5 rounded" onClick={() => deleteStudent(s.id)}><Trash2 size={14}/></button>
+                    </td>
+                  )}
+                </tr>
+              ) }) : <tr><td colSpan={isAdmin ? 8 : 7} className="p-8 text-center text-slate-400">មិនមានទិន្នន័យសិស្សទេ</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -171,18 +286,44 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   };
 
   useEffect(() => {
-    supabase.from('schedules').select('data_json').eq('type', 'school_info').maybeSingle().then(({data}) => {
-      if (data?.data_json) setAdminInfo({ ...adminInfo, ...(data.data_json as any) });
+    supabase.from('schedules').select('*').then(({data}) => {
+      if (data) {
+        const sInfo = data.find(d => d.type === 'school_info')?.data_json || {};
+        const cSch = data.find(d => d.type === 'class_schedule')?.data_json || {};
+        let autoSub = sInfo.subject || '';
+        let autoTeach = sInfo.teacher || '';
+
+        const dt = new Date();
+        const dayIdx = dt.getDay() - 1; 
+        if (dayIdx >= 0 && dayIdx <= 4) {
+           const hm = dt.getHours() * 60 + dt.getMinutes();
+           const defaultTimes = ['07:30 - 09:00', '09:30 - 11:00', '13:00 - 14:30', '14:45 - 16:15'];
+           for(let r=0; r<4; r++) {
+              const tStr = cSch[`rowTime_${r}`] || defaultTimes[r];
+              const match = tStr.match(/(\d+):(\d+)\s*-\s*(\d+):(\d+)/);
+              if (match) {
+                 const start = parseInt(match[1])*60 + parseInt(match[2]);
+                 const end = parseInt(match[3])*60 + parseInt(match[4]);
+                 if (hm >= start && hm <= end) {
+                    const cell = cSch[`sch_${r}_${dayIdx}`];
+                    if (cell) {
+                       const lines = cell.split('\n');
+                       if (lines[0]) autoSub = lines[0].trim();
+                       if (lines[1]) autoTeach = lines[1].trim();
+                    }
+                 }
+              }
+           }
+        }
+        setAdminInfo(prev => ({ ...prev, ...sInfo, subject: autoSub, teacher: autoTeach }));
+      }
     });
     
     fetchInitialData();
 
     const globalSub = supabase.channel('dashboard-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'attendance' }, payload => {
-        setAttendance(prev => {
-          if (prev.some(item => item.id === payload.new.id)) return prev;
-          return [payload.new as Attendance, ...prev];
-        });
+        setAttendance(prev => { if (prev.some(item => item.id === payload.new.id)) return prev; return [payload.new as Attendance, ...prev]; });
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'attendance' }, payload => {
         setAttendance(prev => prev.map(item => item.id === payload.new.id ? { ...item, ...payload.new } as Attendance : item));
@@ -191,10 +332,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         setAttendance(prev => prev.filter(item => item.id !== payload.old.id));
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'students' }, payload => {
-        setStudents(prev => {
-          if (prev.some(item => item.id === payload.new.id)) return prev;
-          return [...prev, payload.new as Student].sort((a, b) => a.name.localeCompare(b.name));
-        });
+        setStudents(prev => { if (prev.some(item => item.id === payload.new.id)) return prev; return [...prev, payload.new as Student].sort((a, b) => a.name.localeCompare(b.name)); });
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'students' }, payload => {
         setStudents(prev => prev.map(item => item.id === payload.new.id ? { ...item, ...payload.new } as Student : item));
@@ -203,9 +341,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
         setStudents(prev => prev.filter(item => item.id !== payload.old.id));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
-        if (payload.new && (payload.new as any).type === 'school_info') {
-          setAdminInfo(prev => ({ ...prev, ...((payload.new as any).data_json as any) }));
-        }
+        if (payload.new && (payload.new as any).type === 'school_info') setAdminInfo(prev => ({ ...prev, ...((payload.new as any).data_json as any) }));
       })
       .subscribe();
 
@@ -220,17 +356,10 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
     if (tempMap.trim()) payload.mapUrl = tempMap.trim();
 
     const { data } = await supabase.from('schedules').select('id').eq('type', 'school_info').maybeSingle();
-    if (data?.id) {
-      await supabase.from('schedules').update({ data_json: payload }).eq('id', data.id);
-    } else {
-      await supabase.from('schedules').insert({ type: 'school_info', data_json: payload });
-    }
+    if (data?.id) await supabase.from('schedules').update({ data_json: payload }).eq('id', data.id);
+    else await supabase.from('schedules').insert({ type: 'school_info', data_json: payload });
     
-    setAdminInfo(payload);
-    setTempLogo('');
-    setTempBg('');
-    setTempMap('');
-    setSavingConfig(false);
+    setAdminInfo(payload); setTempLogo(''); setTempBg(''); setTempMap(''); setSavingConfig(false);
   }
   
   const processedToday = useMemo(() => {
@@ -239,18 +368,15 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
     const todayAtt = attendance.filter(a => a.date === today).sort((a,b) => new Date((b as any).created_at).getTime() - new Date((a as any).created_at).getTime());
     for (const r of todayAtt) {
         const key = r.student_id || r.name;
-        if (!seen.has(key)) {
-            seen.add(key);
-            unique.push(r);
-        }
+        if (!seen.has(key)) { seen.add(key); unique.push(r); }
     }
     return unique;
   }, [attendance, today]);
 
-  const presentRecords = processedToday.filter(r => r.status === statuses[0]);
+  const presentRecords = processedToday.filter(r => r.status === statuses[0] || r.status === 'វត្តមាន');
   const earliestPresent = presentRecords.length > 0 ? presentRecords.reduce((min, curr) => new Date((curr as any).created_at).getTime() < new Date((min as any).created_at).getTime() ? curr : min) : null;
   const twoHoursPassed = earliestPresent ? (Date.now() - new Date((earliestPresent as any).created_at).getTime() >= 2 * 60 * 60 * 1000) : false;
-  const hasAbsent = processedToday.some(r => r.status === statuses[2]);
+  const hasAbsent = processedToday.some(r => r.status === statuses[2] || r.status === 'អវត្តមាន');
   const showAllStatus = twoHoursPassed || hasAbsent;
 
   useEffect(() => {
@@ -264,36 +390,25 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
     const waitTime = (earliestTime + twoHours) - Date.now();
 
     const triggerAutoAbsent = async () => {
-        const scannedIds = processedToday.map(r => r.student_id).filter(Boolean);
-        const absents = students.filter(s => !scannedIds.includes(s.id));
+        const recordedIds = processedToday.map(r => r.student_id).filter(Boolean);
+        const absents = students.filter(s => !recordedIds.includes(s.id));
         if (absents.length > 0) {
             const payloads = absents.map(s => ({
-                student_id: s.id,
-                stu_id: s.stu_id,
-                name: s.name,
-                gender: s.gender,
-                status: 'អវត្តមាន',
-                date: today,
-                time: new Date().toLocaleTimeString('en-GB'),
-                shift: adminInfo.shift || '',
-                room: adminInfo.room || '',
-                teacher: adminInfo.teacher || '',
-                subject: adminInfo.subject || ''
+                student_id: s.id, stu_id: s.stu_id, name: s.name, gender: s.gender, status: 'អវត្តមាន', date: today,
+                time: new Date().toLocaleTimeString('en-GB'), shift: adminInfo.shift || '', room: adminInfo.room || '', teacher: adminInfo.teacher || '', subject: adminInfo.subject || ''
             }));
             await supabase.from('attendance').insert(payloads);
         }
     };
 
-    if (waitTime <= 0 && !hasAbsent) {
-        triggerAutoAbsent();
-    } else if (waitTime > 0) {
+    if (waitTime <= 0 && !hasAbsent) triggerAutoAbsent();
+    else if (waitTime > 0) {
         const t = setTimeout(triggerAutoAbsent, waitTime);
         return () => clearTimeout(t);
     }
   }, [processedToday.length, students.length, isAdmin, adminInfo, today, earliestPresent, hasAbsent]);
 
-  const counts = { present: processedToday.filter(a => a.status === statuses[0]).length, leave: processedToday.filter(a => a.status === statuses[1]).length, absent: processedToday.filter(a => a.status === statuses[2]).length };
-  
+  const counts = { present: processedToday.filter(a => a.status === statuses[0] || a.status === 'វត្តមាន').length, leave: processedToday.filter(a => a.status === statuses[1] || a.status === 'ច្បាប់').length, absent: processedToday.filter(a => a.status === statuses[2] || a.status === 'អវត្តមាន').length };
   const isDashboardView = !['home', 'about', 'admin_posts', 'settings'].includes(tab);
 
   return (
@@ -301,22 +416,17 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
       <Navbar activeTab={tab as any} isAdmin={isAdmin} userLabel={profile?.full_name || user?.email || ''} role={role} mobileOpen={menu} logoUrl={adminInfo.logo} onTabChange={(nextTab) => { setTab(nextTab); setMenu(false); }} onScanner={() => setScanner(true)} onSignOut={() => void signOut()} onMobileToggle={() => setMenu(!menu)} />
       
       <div className="mx-auto max-w-[1200px] w-full px-2 sm:px-3 pt-20 sm:pt-24 overflow-x-hidden">
-        
         {isDashboardView && (
           <>
             <Banner mapUrl={adminInfo.mapUrl} bgUrls={adminInfo.bgUrls} />
-            
             <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 w-full">
-              <div className="col-span-2 md:col-span-1 rounded-xl bg-gradient-to-br from-primary to-secondary p-3 sm:p-4 text-center text-white shadow-sm flex flex-col justify-center min-h-[100px]">
-                <LiveClock />
-              </div>
+              <div className="col-span-2 md:col-span-1 rounded-xl bg-gradient-to-br from-primary to-secondary p-3 sm:p-4 text-center text-white shadow-sm flex flex-col justify-center min-h-[100px]"><LiveClock /></div>
               <div className="col-span-2 md:col-span-3 grid grid-cols-3 gap-2 sm:gap-3">
                 <Stat title="វត្តមាន" value={counts.present} color="bg-success" icon={CheckCircle2} />
                 <Stat title="ច្បាប់" value={counts.leave} color="bg-warning" icon={ClipboardList} />
                 <Stat title="អវត្តមាន" value={counts.absent} color="bg-danger" icon={X} />
               </div>
             </div>
-
             {!tab.startsWith('warehouse') && tab !== 'students' && tab !== 'cards' && (
               <div className="mb-4 flex items-center gap-2 rounded-xl bg-white p-2 sm:p-2.5 shadow-sm border border-slate-200 w-full">
                 <Search size={18} className="text-slate-400 shrink-0 ml-2" />
@@ -330,41 +440,33 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
           {tab === 'home' && <HomeFeed />}
           {tab === 'admin_posts' && isAdmin && <AdminPostDashboard />}
           {tab === 'about' && <AboutUs adminInfo={adminInfo} />}
-          
           {tab === 'settings' && isAdmin && (
             <div className="bg-white p-4 sm:p-6 rounded-[24px] shadow-sm border border-slate-200 w-full animate-fade-in mb-[80px]">
               <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><Database className="text-primary"/> ការកំណត់ទូទៅ (System Settings)</h2>
-              
               <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">១. ព័ត៌មានទូទៅ (ថ្នាក់រៀន និង Logo)</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
                 <input className="field bg-slate-50" placeholder="ឈ្មោះគ្រូ..." value={adminInfo.teacher} onChange={e => setAdminInfo({...adminInfo, teacher: e.target.value})} />
                 <input className="field bg-slate-50" placeholder="បន្ទប់រៀន" value={adminInfo.room} onChange={e => setAdminInfo({...adminInfo, room: e.target.value})} />
                 <input className="field bg-slate-50" placeholder="មុខវិជ្ជា..." value={adminInfo.subject} onChange={e => setAdminInfo({...adminInfo, subject: e.target.value})} />
-                <select className="field bg-slate-50" value={adminInfo.shift} onChange={e => setAdminInfo({...adminInfo, shift: e.target.value})}>
-                  <option>ព្រឹក</option><option>រសៀល</option><option>យប់</option>
-                </select>
-                
+                <select className="field bg-slate-50" value={adminInfo.shift} onChange={e => setAdminInfo({...adminInfo, shift: e.target.value})}><option>ព្រឹក</option><option>រសៀល</option><option>យប់</option></select>
                 <div className="col-span-2 md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
                   <div className="relative w-full"><MapPin className="absolute left-3 top-3 text-slate-400" size={18} /><input className="field bg-slate-50 pl-10" placeholder="Google Maps Embed Link..." value={tempMap} onChange={e => setTempMap(e.target.value)} /></div>
                   <div className="relative w-full"><ImageIcon className="absolute left-3 top-3 text-slate-400" size={18} /><input className="field bg-slate-50 pl-10" placeholder="Background Link (,)" value={tempBg} onChange={e => setTempBg(e.target.value)} /></div>
                   <div className="flex gap-2 w-full"><input className="field bg-slate-50 flex-1" placeholder="Logo Link" value={tempLogo} onChange={e => setTempLogo(e.target.value)} /><label className="btn btn-primary cursor-pointer px-4 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setTempLogo(ev.target?.result as string); r.readAsDataURL(f); } }} /></label></div>
                 </div>
               </div>
-
               <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">២. កំណត់ប្រវត្តិអ្នកអភិវឌ្ឍន៍ និង ទំនាក់ទំនង</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-100">
                 <input className="field bg-white" placeholder="ឈ្មោះអ្នកអភិវឌ្ឍន៍" value={adminInfo.devName} onChange={e => setAdminInfo({...adminInfo, devName: e.target.value})} />
                 <input className="field bg-white" placeholder="តួនាទី" value={adminInfo.devTitle} onChange={e => setAdminInfo({...adminInfo, devTitle: e.target.value})} />
                 <input className="field bg-white" placeholder="Link រូបថត" value={adminInfo.devPhoto} onChange={e => setAdminInfo({...adminInfo, devPhoto: e.target.value})} />
                 <textarea className="field bg-white md:col-span-2 min-h-[100px] resize-none" placeholder="សរសេររៀបរាប់ពីប្រវត្តិទីនេះ..." value={adminInfo.devDescription} onChange={e => setAdminInfo({...adminInfo, devDescription: e.target.value})}></textarea>
-                
                 <input className="field bg-white" placeholder="លេខទូរស័ព្ទ" value={adminInfo.contactPhone} onChange={e => setAdminInfo({...adminInfo, contactPhone: e.target.value})} />
                 <input className="field bg-white" placeholder="អ៊ីមែល" value={adminInfo.contactEmail} onChange={e => setAdminInfo({...adminInfo, contactEmail: e.target.value})} />
                 <input className="field bg-white" placeholder="Facebook Link" value={adminInfo.contactFacebook} onChange={e => setAdminInfo({...adminInfo, contactFacebook: e.target.value})} />
                 <input className="field bg-white" placeholder="Github Link" value={adminInfo.contactGithub} onChange={e => setAdminInfo({...adminInfo, contactGithub: e.target.value})} />
                 <input className="field bg-white md:col-span-2" placeholder="Portfolio / Website Link" value={adminInfo.contactPortfolio} onChange={e => setAdminInfo({...adminInfo, contactPortfolio: e.target.value})} />
               </div>
-
               <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">៣. ការអនុញ្ញាតមុខងារផ្សេងៗ (Permissions)</h3>
               <div className="flex flex-wrap items-center justify-between gap-y-4 pt-2">
                 <div className="flex flex-col gap-3 w-full md:w-auto">
@@ -372,7 +474,6 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
                      <input type="checkbox" className="w-5 h-5 accent-primary" checked={adminInfo.allowUniversalQR !== false} onChange={e => setAdminInfo({...adminInfo, allowUniversalQR: e.target.checked})} /> 
                      បើកដំណើរការមុខងារស្កែន QR រួម (Universal QR)
                    </label>
-                   
                    <div className="flex flex-wrap gap-x-5 gap-y-3 mt-2">
                      <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} /> ចុះវត្តមានដោយដៃ</label>
                      <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowStudentEdit || false} onChange={e => setAdminInfo({...adminInfo, allowStudentEdit: e.target.checked})} /> កែប្រែបញ្ជីសិស្ស</label>
@@ -380,16 +481,13 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
                      <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} /> បង្កើតកាតសិស្ស</label>
                    </div>
                 </div>
-                <button className="btn btn-success w-full md:w-auto py-3 px-8 text-base font-bold shadow-md shadow-success/20 mt-4 md:mt-0" disabled={savingConfig} onClick={saveAdminConfig}>
-                   <Save size={18} /> {savingConfig ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកការកំណត់'}
-                </button>
+                <button className="btn btn-success w-full md:w-auto py-3 px-8 text-base font-bold shadow-md shadow-success/20 mt-4 md:mt-0" disabled={savingConfig} onClick={saveAdminConfig}><Save size={18} /> {savingConfig ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកការកំណត់'}</button>
               </div>
             </div>
           )}
-
           {isDashboardView && (
             <>
-              {tab === 'attendance' && <AttendancePanel students={students} records={processedToday} showAllStatus={showAllStatus} searchQuery={search} isAdmin={isAdmin} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
+              {tab === 'attendance' && <AttendancePanel students={students} allRecords={processedToday} showAllStatus={showAllStatus} searchQuery={search} isAdmin={isAdmin} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
               {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} adminInfo={adminInfo} today={today} />}
               {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={fetchInitialData} />}
               {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={fetchInitialData} adminInfo={adminInfo} setAdminInfo={setAdminInfo} />}
@@ -426,20 +524,14 @@ function Banner({ mapUrl, bgUrls }: { mapUrl?: string; bgUrls?: string }) {
       </div>
       <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-0">
         <div className="pointer-events-auto w-[90%] sm:w-[80%] md:w-[60%] lg:w-[55%] h-full flex justify-center items-center">
-          <iframe 
-            src={mapUrl || "https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed"} 
-            className="w-full h-full max-w-[500px] max-h-[120px] sm:max-h-[180px] rounded-xl border-2 border-white/20 shadow-lg bg-white" 
-            allowFullScreen 
-            loading="lazy" 
-            referrerPolicy="no-referrer-when-downgrade"
-          />
+          <iframe src={mapUrl || "https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed"} className="w-full h-full max-w-[500px] max-h-[120px] sm:max-h-[180px] rounded-xl border-2 border-white/20 shadow-lg bg-white" allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
         </div>
       </div>
     </div>
   ); 
 }
 
-function AttendancePanel({ students, records, showAllStatus, searchQuery, isAdmin, adminInfo, today, onOpenScanner }: any) { 
+function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isAdmin, adminInfo, today, onOpenScanner }: any) { 
   const [name, setName] = useState(''); 
   const [status, setStatus] = useState<string>(statuses[0]); 
   const [saving, setSaving] = useState(false); 
@@ -454,7 +546,7 @@ function AttendancePanel({ students, records, showAllStatus, searchQuery, isAdmi
 
   const canManualEntry = isAdmin || adminInfo.allowManual;
 
-  const displayRecords = records.filter((a: any) => {
+  const displayRecords = allRecords.filter((a: any) => {
     const matchSearch = a.name.toLowerCase().includes((searchQuery || '').toLowerCase()) || String(a.stu_id || '').toLowerCase().includes((searchQuery || '').toLowerCase());
     if (!showAllStatus && a.status !== statuses[0] && a.status !== 'វត្តមាន') return false;
     return matchSearch;
@@ -488,51 +580,26 @@ function AttendancePanel({ students, records, showAllStatus, searchQuery, isAdmi
     const finalGender = student ? student.gender : "Male";
 
     const payload = { 
-      student_id: student?.id || null, 
-      stu_id: finalId, 
-      name: finalName, 
-      gender: finalGender, 
-      status, 
-      date: today, 
-      time: new Date().toLocaleTimeString('en-GB'),
-      shift: adminInfo.shift || '',
-      room: adminInfo.room || '',
-      teacher: adminInfo.teacher || '',
-      subject: adminInfo.subject || ''
+      student_id: student?.id || null, stu_id: finalId, name: finalName, gender: finalGender, status, date: today, 
+      time: new Date().toLocaleTimeString('en-GB'), shift: adminInfo.shift || '', room: adminInfo.room || '', teacher: adminInfo.teacher || '', subject: adminInfo.subject || ''
     };
 
-    setName(''); 
-    setSaving(false);
-
-    if (student?.id) {
-       await supabase.from('attendance').delete().eq('student_id', student.id).eq('date', today);
-    }
+    setName(''); setSaving(false);
+    if (student?.id) await supabase.from('attendance').delete().eq('student_id', student.id).eq('date', today);
     await supabase.from('attendance').insert(payload); 
   } 
 
   async function autoMarkAbsent() {
     setSaving(true);
-    const scannedIds = records.map((r: any) => r.student_id).filter(Boolean);
-    const absents = students.filter((s: any) => !scannedIds.includes(s.id));
+    const recordedIds = allRecords.map((r: any) => r.student_id).filter(Boolean);
+    const absents = students.filter((s: any) => !recordedIds.includes(s.id));
     
-    if (absents.length === 0) {
-      setSaving(false); return;
-    }
-
+    if (absents.length === 0) { setSaving(false); return; }
     setTimeout(() => setSaving(false), 300);
     
     const payloads = absents.map((s: any) => ({
-      student_id: s.id, 
-      stu_id: s.stu_id, 
-      name: s.name, 
-      gender: s.gender, 
-      status: 'អវត្តមាន', 
-      date: today, 
-      time: new Date().toLocaleTimeString('en-GB'),
-      shift: adminInfo.shift || '',
-      room: adminInfo.room || '',
-      teacher: adminInfo.teacher || '',
-      subject: adminInfo.subject || ''
+      student_id: s.id, stu_id: s.stu_id, name: s.name, gender: s.gender, status: 'អវត្តមាន', date: today, 
+      time: new Date().toLocaleTimeString('en-GB'), shift: adminInfo.shift || '', room: adminInfo.room || '', teacher: adminInfo.teacher || '', subject: adminInfo.subject || ''
     }));
 
     await supabase.from('attendance').insert(payloads);
@@ -543,10 +610,7 @@ function AttendancePanel({ students, records, showAllStatus, searchQuery, isAdmi
     if (newName === null) return;
     const newStatus = window.prompt(`កែប្រែស្ថានភាព (${statuses.join(', ')}):`, r.status);
     if (newStatus === null) return;
-
-    if (newName.trim() !== "") {
-      await supabase.from('attendance').update({ name: newName.trim(), status: newStatus }).eq('id', r.id);
-    }
+    if (newName.trim() !== "") await supabase.from('attendance').update({ name: newName.trim(), status: newStatus }).eq('id', r.id);
   }
 
   async function deleteRecord(id: string) {
@@ -557,9 +621,7 @@ function AttendancePanel({ students, records, showAllStatus, searchQuery, isAdmi
   async function deleteAll() {
     if(!window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យទាំងអស់សម្រាប់ថ្ងៃនេះមែនទេ?")) return;
     const ids = displayRecords.map((r: any) => r.id);
-    if (ids.length > 0) {
-       supabase.from('attendance').delete().in('id', ids).then();
-    }
+    if (ids.length > 0) supabase.from('attendance').delete().in('id', ids).then();
   }
 
   const downloadPDF = () => {
@@ -571,12 +633,7 @@ function AttendancePanel({ students, records, showAllStatus, searchQuery, isAdmi
   return (
     <div className="grid gap-3 lg:gap-4 lg:grid-cols-[.8fr_1.5fr] w-full">
       <style>{`
-        @media print {
-          body.print-attendance * { visibility: hidden; background: white; }
-          body.print-attendance #exportArea, body.print-attendance #exportArea * { visibility: visible; }
-          body.print-attendance #exportArea { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; padding: 20px; margin: 0; }
-          body.print-attendance .no-print { display: none !important; }
-        }
+        @media print { body.print-attendance * { visibility: hidden; background: white; } body.print-attendance #exportArea, body.print-attendance #exportArea * { visibility: visible; } body.print-attendance #exportArea { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; padding: 20px; margin: 0; } body.print-attendance .no-print { display: none !important; } }
       `}</style>
 
       {showSharedQR && (
@@ -681,7 +738,7 @@ function AttendancePanel({ students, records, showAllStatus, searchQuery, isAdmi
                       </td>
                       <td className="p-2 sm:p-3 text-center font-medium show-on-print">{r.time || '---'}</td>
                       <td className="p-2 sm:p-3 text-center whitespace-nowrap">{r.gender || '---'}</td>
-                      <td className="p-2 sm:p-3 text-center whitespace-nowrap"><span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[11px] font-bold inline-block ${r.status === statuses[0] ? 'bg-green-100 text-green-700' : r.status === statuses[1] ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{r.status}</span></td>
+                      <td className="p-2 sm:p-3 text-center whitespace-nowrap"><span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[11px] font-bold inline-block ${r.status === statuses[0] || r.status === 'វត្តមាន' ? 'bg-green-100 text-green-700' : r.status === statuses[1] || r.status === 'ច្បាប់' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{r.status}</span></td>
                       {isAdmin && (
                         <td className="p-2 sm:p-3 text-center no-print whitespace-nowrap">
                           <button className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 mr-1" onClick={() => editRecord(r)}><Pencil size={14} /></button>
@@ -689,16 +746,16 @@ function AttendancePanel({ students, records, showAllStatus, searchQuery, isAdmi
                         </td>
                       )}
                     </tr>
-                  )) : <tr><td colSpan={isAdmin ? 5 : 4} className="p-6 text-center text-slate-400">មិនមានទិន្នន័យសម្រាប់ថ្ងៃនេះទេ</td></tr>}
+                  )) : <tr><td colSpan={isAdmin ? 6 : 5} className="p-6 text-center text-slate-400">មិនមានទិន្នន័យសម្រាប់ថ្ងៃនេះទេ</td></tr>}
                 </tbody>
               </table>
             </div>
           </div>
           <div className="mt-4 sm:mt-5 flex flex-wrap justify-center gap-2 border-t-2 border-primary pt-3 sm:pt-4 w-full">
             <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-blue-50 text-blue-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ស.សរុប: {displayRecords.length}</div>
-            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-green-50 text-green-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">វត្តមាន: {displayRecords.filter((r:any)=>r.status===statuses[0]).length}</div>
-            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-yellow-50 text-yellow-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ច្បាប់: {displayRecords.filter((r:any)=>r.status===statuses[1]).length}</div>
-            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-red-50 text-red-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">អវត្តមាន: {displayRecords.filter((r:any)=>r.status===statuses[2]).length}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-green-50 text-green-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">វត្តមាន: {displayRecords.filter((r:any)=>r.status===statuses[0] || r.status==='វត្តមាន').length}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-yellow-50 text-yellow-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ច្បាប់: {displayRecords.filter((r:any)=>r.status===statuses[1] || r.status==='ច្បាប់').length}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-red-50 text-red-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">អវត្តមាន: {displayRecords.filter((r:any)=>r.status===statuses[2] || r.status==='អវត្តមាន').length}</div>
           </div>
         </div>
         
@@ -728,7 +785,7 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today }: any
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewLetter, setViewLetter] = useState<any>(null);
 
-  const leaveRecords = records.filter((r: any) => r.status === statuses[1] && r.date === viewDate);
+  const leaveRecords = records.filter((r: any) => (r.status === statuses[1] || r.status === 'ច្បាប់') && r.date === viewDate);
   const canManualName = isAdmin || adminInfo.allowLeaveManualName;
 
   async function submitLeave() {
@@ -769,7 +826,7 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today }: any
 
     const payloads = dates.map(d => ({
       student_id: student?.id || null, stu_id: finalId, name: finalName, gender: finalGender,
-      status: statuses[1], date: d, time: new Date().toLocaleTimeString('en-GB'),
+      status: 'ច្បាប់', date: d, time: new Date().toLocaleTimeString('en-GB'),
       shift: adminInfo.shift || '', room: adminInfo.room || '', teacher: adminInfo.teacher || '', subject: adminInfo.subject || '',
       reason: fullReason, photo: photo || ''
     }));
@@ -1311,42 +1368,42 @@ function Scanner({ onClose, refresh, today }: any) {
 
     const { data: schData } = await supabase.from('schedules').select('data_json').eq('type', 'school_info').maybeSingle();
     const liveAdminInfo = schData?.data_json || {};
+    const { data: stData } = await supabase.from('students').select('*');
+    const allStudents = stData || [];
     
     if (isSharedQR) {
        if (liveAdminInfo.allowUniversalQR === false) {
-         setMessage({ text: "មុខងារស្កែន QR រួម ត្រូវបានបិទបណ្តោះអាសន្ន!", type: 'error' });
+         setMessage({ text: "មុខងារស្កែនត្រូវបានបិទ!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
 
        const linkedId = localStorage.getItem('my_stu_id');
        if (!linkedId) {
-         setMessage({ text: "សូមភ្ជាប់គណនីជាមុនសិនទើបអាចស្កែនបាន!", type: 'error' });
+         setMessage({ text: "អ្នកមិនទាន់បានភ្ជាប់អត្តលេខទេ!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
        
-       const { data: stuData } = await supabase.from('students').select('*').ilike('stu_id', String(linkedId).trim()).maybeSingle();
-       student = stuData;
+       student = allStudents.find((s:any) => String(s.stu_id).trim().toLowerCase() === String(linkedId).trim().toLowerCase());
        
        if (!student) {
-         setMessage({ text: "រកមិនឃើញគណនីរបស់អ្នកក្នុងប្រព័ន្ធទេ!", type: 'error' });
-         setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
+         setMessage({ text: `អត្តលេខ [${linkedId}] គ្មានក្នុងបញ្ជីទេ!`, type: 'error' });
+         setTimeout(() => { setMessage(null); processingRef.current = false; }, 4000);
          return;
        }
 
        if (student.stu_id && liveAdminInfo.blockedQRStudents?.includes(String(student.stu_id))) {
-         setMessage({ text: "អ្នកត្រូវបានបិទសិទ្ធិស្កែនពីចម្ងាយ!", type: 'error' });
+         setMessage({ text: "ទីតាំងមិនត្រឹមត្រូវ សូមស្កែនផ្ទាល់នៅសាលា!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 4000);
          return;
        }
 
     } else {
-       const { data: stuData } = await supabase.from('students').select('*').ilike('stu_id', rawVal).maybeSingle();
-       student = stuData;
-
+       const cleanVal = rawVal.trim().toLowerCase();
+       student = allStudents.find((s:any) => String(s.stu_id).trim().toLowerCase() === cleanVal); 
        if (!student) {
-         setMessage({ text: `មិនស្គាល់អត្តលេខ៖ [${rawVal}]`, type: 'error' });
+         setMessage({ text: `ខុសអត្តលេខ៖ [${rawVal}]`, type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
@@ -1360,19 +1417,19 @@ function Scanner({ onClose, refresh, today }: any) {
       .limit(1);
 
     if (existing && existing.length > 0) {
-       if (existing[0].status === statuses[0]) {
+       const curStat = existing[0].status;
+       if (curStat === statuses[0] || curStat === 'វត្តមាន') {
           setMessage({ text: "ស្កែនរួចរាល់ហើយ", type: 'error' });
-          setValue('');
-          setTimeout(() => { setMessage(null); processingRef.current = false; }, 2500);
-          return;
+       } else if (curStat === statuses[2] || curStat === 'អវត្តមាន') {
+          setMessage({ text: "អ្នកផុតម៉ោងកំណត់ស្កែន ឬអវត្តមានហើយ!", type: 'error' });
+       } else if (curStat === statuses[1] || curStat === 'ច្បាប់') {
+          setMessage({ text: "អ្នកបានសុំច្បាប់រួចហើយ!", type: 'error' });
        } else {
-          await supabase.from('attendance').update({ status: statuses[0], time: scanTime }).eq('id', existing[0].id);
-          if(refresh) refresh();
-          setValue('');
-          setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
-          setTimeout(() => { onClose(); }, 1500);
-          return;
+          setMessage({ text: "អ្នកមិនអាចស្កែនបានទេ!", type: 'error' });
        }
+       setValue('');
+       setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
+       return;
     }
     
     if (scannerRef.current && scannerRef.current.isScanning) {
