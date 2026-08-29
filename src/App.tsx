@@ -1308,7 +1308,7 @@ function Scanner({ onClose, refresh, today }: any) {
     
     if (isSharedQR) {
        if (liveAdminInfo.allowUniversalQR === false) {
-         setMessage({ text: "មុខងារស្កែន QR រួម ត្រូវបានបិទ!", type: 'error' });
+         setMessage({ text: "មុខងារស្កែន QR ត្រូវបានបិទ!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
@@ -1330,7 +1330,7 @@ function Scanner({ onClose, refresh, today }: any) {
        }
 
        if (student.stu_id && liveAdminInfo.blockedQRStudents?.includes(String(student.stu_id))) {
-         setMessage({ text: "អ្នកត្រូវបានបិទសិទ្ធិស្កែនពីចម្ងាយ!", type: 'error' });
+         setMessage({ text: "រកមិនឃើញទីតាំងរបស់អ្នក!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 4000);
          return;
        }
