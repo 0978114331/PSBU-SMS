@@ -389,7 +389,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
 
           {isDashboardView && (
             <>
-              {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => { const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()); if (!showAllStatus && a.status !== statuses[0]) return false; return matchSearch; })} isAdmin={isAdmin} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
+              {tab === 'attendance' && <AttendancePanel students={students} records={processedToday} showAllStatus={showAllStatus} searchQuery={search} isAdmin={isAdmin} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
               {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} adminInfo={adminInfo} today={today} />}
               {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={fetchInitialData} />}
               {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={fetchInitialData} adminInfo={adminInfo} setAdminInfo={setAdminInfo} />}
@@ -439,7 +439,7 @@ function Banner({ mapUrl, bgUrls }: { mapUrl?: string; bgUrls?: string }) {
   ); 
 }
 
-function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenScanner }: any) { 
+function AttendancePanel({ students, records, showAllStatus, searchQuery, isAdmin, adminInfo, today, onOpenScanner }: any) { 
   const [name, setName] = useState(''); 
   const [status, setStatus] = useState<string>(statuses[0]); 
   const [saving, setSaving] = useState(false); 
@@ -453,6 +453,12 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
   const [linkError, setLinkError] = useState('');
 
   const canManualEntry = isAdmin || adminInfo.allowManual;
+
+  const displayRecords = records.filter((a: any) => {
+    const matchSearch = a.name.toLowerCase().includes((searchQuery || '').toLowerCase()) || String(a.stu_id || '').toLowerCase().includes((searchQuery || '').toLowerCase());
+    if (!showAllStatus && a.status !== statuses[0] && a.status !== 'វត្តមាន') return false;
+    return matchSearch;
+  });
 
   function handleLinkAccount() {
     const found = students.find((s: any) => String(s.stu_id).trim().toLowerCase() === String(linkInput).trim().toLowerCase());
@@ -550,7 +556,7 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
 
   async function deleteAll() {
     if(!window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យទាំងអស់សម្រាប់ថ្ងៃនេះមែនទេ?")) return;
-    const ids = records.map((r: any) => r.id);
+    const ids = displayRecords.map((r: any) => r.id);
     if (ids.length > 0) {
        supabase.from('attendance').delete().in('id', ids).then();
     }
@@ -666,7 +672,7 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
                   </tr>
                 </thead>
                 <tbody>
-                  {records.length ? records.map((r: any, index: number) => (
+                  {displayRecords.length ? displayRecords.map((r: any, index: number) => (
                     <tr key={r.id} className="border-b hover:bg-slate-50 transition">
                       <td className="p-2 sm:p-3 font-bold text-slate-500 text-center show-on-print">{index + 1}</td>
                       <td className="p-2 sm:p-3 font-medium whitespace-nowrap">
@@ -689,17 +695,17 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
             </div>
           </div>
           <div className="mt-4 sm:mt-5 flex flex-wrap justify-center gap-2 border-t-2 border-primary pt-3 sm:pt-4 w-full">
-            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-blue-50 text-blue-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ស.សរុប: {records.length}</div>
-            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-green-50 text-green-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">វត្តមាន: {records.filter((r:any)=>r.status==='វត្តមាន').length}</div>
-            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-yellow-50 text-yellow-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ច្បាប់: {records.filter((r:any)=>r.status==='ច្បាប់').length}</div>
-            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-red-50 text-red-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">អវត្តមាន: {records.filter((r:any)=>r.status==='អវត្តមាន').length}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-blue-50 text-blue-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ស.សរុប: {displayRecords.length}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-green-50 text-green-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">វត្តមាន: {displayRecords.filter((r:any)=>r.status===statuses[0]).length}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-yellow-50 text-yellow-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ច្បាប់: {displayRecords.filter((r:any)=>r.status===statuses[1]).length}</div>
+            <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-red-50 text-red-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">អវត្តមាន: {displayRecords.filter((r:any)=>r.status===statuses[2]).length}</div>
           </div>
         </div>
         
         <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 items-center justify-center w-full">
            <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-sm w-full sm:w-auto justify-center">
               <label className="font-bold text-xs sm:text-sm text-slate-700">សិស្សសរុប៖</label>
-              <div className="field !w-16 !py-1 text-center text-xs bg-slate-100 font-bold">{records.length}</div>
+              <div className="field !w-16 !py-1 text-center text-xs bg-slate-100 font-bold">{displayRecords.length}</div>
            </div>
            <div className="flex w-full sm:w-auto gap-2">
              {isAdmin && <button className="btn bg-danger text-white flex-1 sm:flex-none" onClick={deleteAll}><Trash2 size={16} /> លុបទាំងអស់</button>}
@@ -722,7 +728,7 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today }: any
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewLetter, setViewLetter] = useState<any>(null);
 
-  const leaveRecords = records.filter((r: any) => r.status === 'ច្បាប់' && r.date === viewDate);
+  const leaveRecords = records.filter((r: any) => r.status === statuses[1] && r.date === viewDate);
   const canManualName = isAdmin || adminInfo.allowLeaveManualName;
 
   async function submitLeave() {
@@ -763,7 +769,7 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today }: any
 
     const payloads = dates.map(d => ({
       student_id: student?.id || null, stu_id: finalId, name: finalName, gender: finalGender,
-      status: 'ច្បាប់', date: d, time: new Date().toLocaleTimeString('en-GB'),
+      status: statuses[1], date: d, time: new Date().toLocaleTimeString('en-GB'),
       shift: adminInfo.shift || '', room: adminInfo.room || '', teacher: adminInfo.teacher || '', subject: adminInfo.subject || '',
       reason: fullReason, photo: photo || ''
     }));
@@ -1179,7 +1185,7 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
             <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'company' ? 'border-orange-500 bg-orange-50 shadow-md' : 'border-slate-200 hover:border-orange-500 hover:-translate-y-1'}`} onClick={() => {setCardType('company'); setFilterType('company'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
               <div className="w-full h-[50px] sm:h-[60px] rounded-lg mb-2 flex items-center justify-center text-orange-500 font-bold text-[9px] sm:text-[10px] border-b-4 border-orange-500 bg-slate-800">COMPANY</div><h4 className="font-bold text-[11px] sm:text-xs">ក្រុមហ៊ុន</h4>
             </div>
-            <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'staff' ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-slate-200 hover:border-emerald-500 hover:-translate-y-1'}`} onClick={() => {setCardType('staff'); setFilterType('staff'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
+            <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'staff' ? 'border-emerald-500 bg-emerald-50 shadow-md' : 'border-slate-200 hover:border-emerald-50 hover:-translate-y-1'}`} onClick={() => {setCardType('staff'); setFilterType('staff'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
               <div className="w-full h-[50px] sm:h-[60px] rounded-lg mb-2 flex items-center justify-center text-emerald-500 font-bold text-[9px] sm:text-[10px] border-2 border-emerald-500 bg-white">STAFF</div><h4 className="font-bold text-[11px] sm:text-xs">បុគ្គលិក</h4>
             </div>
             <div className={`cursor-pointer border-2 rounded-xl p-2 sm:p-3 text-center transition ${cardType === 'business' ? 'border-amber-500 bg-amber-50 shadow-md' : 'border-slate-200 hover:border-amber-500 hover:-translate-y-1'}`} onClick={() => {setCardType('business'); setFilterType('business'); setForm({id:'',name:'',f1:'',f2:'',photo:''}); setEditingId(null);}}>
@@ -1308,14 +1314,14 @@ function Scanner({ onClose, refresh, today }: any) {
     
     if (isSharedQR) {
        if (liveAdminInfo.allowUniversalQR === false) {
-         setMessage({ text: "មុខងារស្កែន QR ត្រូវបានបិទ!", type: 'error' });
+         setMessage({ text: "មុខងារស្កែន QR រួម ត្រូវបានបិទបណ្តោះអាសន្ន!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
 
        const linkedId = localStorage.getItem('my_stu_id');
        if (!linkedId) {
-         setMessage({ text: "សូមភ្ជាប់គណនីជាមុនសិន!", type: 'error' });
+         setMessage({ text: "សូមភ្ជាប់គណនីជាមុនសិនទើបអាចស្កែនបាន!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
@@ -1324,13 +1330,13 @@ function Scanner({ onClose, refresh, today }: any) {
        student = stuData;
        
        if (!student) {
-         setMessage({ text: "រកមិនឃើញអត្តលេខក្នុងប្រព័ន្ធទេ!", type: 'error' });
+         setMessage({ text: "រកមិនឃើញគណនីរបស់អ្នកក្នុងប្រព័ន្ធទេ!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
 
        if (student.stu_id && liveAdminInfo.blockedQRStudents?.includes(String(student.stu_id))) {
-         setMessage({ text: "រកមិនឃើញទីតាំងរបស់អ្នក!", type: 'error' });
+         setMessage({ text: "អ្នកត្រូវបានបិទសិទ្ធិស្កែនពីចម្ងាយ!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 4000);
          return;
        }

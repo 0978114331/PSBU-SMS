@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Trash2, Pencil, CheckCircle2, X, GraduationCap, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Search, Plus, Trash2, Pencil, CheckCircle2, X, GraduationCap, ShieldAlert, ShieldCheck, Printer } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Student } from '@/types';
 
@@ -67,18 +67,41 @@ export function MasterStudentList({ students, isAdmin, allowEdit, refresh, admin
     }
   }
 
+  const printList = () => {
+    document.body.classList.add('print-students');
+    window.print();
+    setTimeout(() => document.body.classList.remove('print-students'), 500);
+  };
+
   return (
-    <div className="card w-full">
-      <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+    <div className="card w-full relative" id="studentListArea">
+      <style>{`
+        @media print {
+          body.print-students * { visibility: hidden; background: white; }
+          body.print-students #studentListArea, body.print-students #studentListArea * { visibility: visible; }
+          body.print-students #studentListArea { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; padding: 20px; margin: 0; }
+          body.print-students .no-print { display: none !important; }
+        }
+      `}</style>
+      
+      <div className="flex flex-wrap items-center justify-between mb-5 gap-3 no-print">
         <h2 className="flex items-center gap-2 text-lg sm:text-xl font-bold text-slate-800"><GraduationCap className="text-primary" /> បញ្ជីឈ្មោះសិស្ស ({students.length})</h2>
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl w-full sm:w-[250px]">
-           <Search size={16} className="text-slate-400" />
-           <input className="bg-transparent outline-none w-full text-sm" placeholder="ស្វែងរកអត្តលេខ ឬឈ្មោះ..." value={search} onChange={e => setSearch(e.target.value)} />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+           <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl w-full sm:w-[250px]">
+              <Search size={16} className="text-slate-400" />
+              <input className="bg-transparent outline-none w-full text-sm" placeholder="ស្វែងរកអត្តលេខ ឬឈ្មោះ..." value={search} onChange={e => setSearch(e.target.value)} />
+           </div>
+           <button className="btn bg-[#2c3e50] text-white p-2 sm:px-3 sm:py-1.5 rounded-xl shadow-md transition hover:-translate-y-0.5" onClick={printList} title="បោះពុម្ពបញ្ជីឈ្មោះ"><Printer size={18}/></button>
         </div>
       </div>
 
+      <div className="hidden print:block mb-4 text-center">
+         <h1 className="text-xl font-bold text-slate-800 mb-1">បញ្ជីឈ្មោះសិស្សសរុប</h1>
+         <p className="text-sm text-slate-500">ចំនួនសរុប៖ {students.length} នាក់ | កាលបរិច្ឆេទ៖ {new Date().toLocaleDateString('en-GB')}</p>
+      </div>
+
       {canEdit && (
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5 grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1fr_auto] gap-3">
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5 grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1fr_auto] gap-3 no-print">
           <input className="field bg-white" placeholder="អត្តលេខ (ID)" value={form.stu_id} onChange={e => setForm({...form, stu_id: e.target.value})} />
           <input className="field bg-white" placeholder="ឈ្មោះសិស្ស" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
           <select className="field bg-white" value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}>
@@ -95,30 +118,30 @@ export function MasterStudentList({ students, isAdmin, allowEdit, refresh, admin
       )}
 
       <div className="rounded-xl border border-slate-200 overflow-hidden w-full">
-        <div className="max-h-[500px] overflow-y-auto w-full">
+        <div className="max-h-[500px] overflow-y-auto w-full print:max-h-none print:overflow-visible">
           <table className="w-full min-w-[600px] text-xs sm:text-sm">
-            <thead className="sticky top-0 z-10 bg-slate-100 shadow-sm">
+            <thead className="sticky top-0 z-10 bg-slate-100 shadow-sm print:shadow-none">
               <tr>
                 <th className="p-3 text-center w-[60px]">ល.រ</th>
                 <th className="p-3 text-left">អត្តលេខ</th>
                 <th className="p-3 text-left">ឈ្មោះសិស្ស</th>
                 <th className="p-3 text-center">ភេទ</th>
-                {isAdmin && <th className="p-3 text-center">សិទ្ធិស្កែន QR</th>}
-                {canEdit && <th className="p-3 text-center">សកម្មភាព</th>}
+                {isAdmin && <th className="p-3 text-center no-print">សិទ្ធិស្កែន QR</th>}
+                {canEdit && <th className="p-3 text-center no-print">សកម្មភាព</th>}
               </tr>
             </thead>
             <tbody>
               {filtered.length ? filtered.map((s: Student, index: number) => {
                 const isBlocked = s.stu_id ? adminInfo?.blockedQRStudents?.includes(s.stu_id) : false;
                 return (
-                <tr className="border-t hover:bg-slate-50 transition" key={s.id || index}>
+                <tr className="border-t hover:bg-slate-50 transition print:break-inside-avoid" key={s.id || index}>
                   <td className="p-3 text-center font-bold text-slate-400">{index + 1}</td>
                   <td className="p-3 font-bold text-slate-600">{s.stu_id || '---'}</td>
                   <td className="p-3 font-bold text-primary">{s.name || '---'}</td>
                   <td className="p-3 text-center">{s.gender === 'Female' ? 'ស្រី' : 'ប្រុស'}</td>
                   
                   {isAdmin && (
-                    <td className="p-3 text-center">
+                    <td className="p-3 text-center no-print">
                        <button 
                          onClick={() => toggleQRBlock(s.stu_id)}
                          className={`flex items-center justify-center gap-1.5 mx-auto px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isBlocked ? 'bg-rose-100 text-rose-600 border border-rose-200' : 'bg-emerald-100 text-emerald-600 border border-emerald-200'}`}
@@ -129,7 +152,7 @@ export function MasterStudentList({ students, isAdmin, allowEdit, refresh, admin
                   )}
 
                   {canEdit && (
-                    <td className="p-3 text-center">
+                    <td className="p-3 text-center no-print">
                       <button className="text-blue-500 hover:bg-blue-100 p-1.5 rounded mr-1" onClick={() => edit(s)}><Pencil size={14}/></button>
                       <button className="text-danger hover:bg-rose-100 p-1.5 rounded" onClick={() => deleteStudent(s.id)}><Trash2 size={14}/></button>
                     </td>
