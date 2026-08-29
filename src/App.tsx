@@ -60,67 +60,54 @@ function AuthScreen() {
   
   return (
     <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-cover bg-center p-4 sm:p-5 font-sans antialiased" style={{ backgroundImage: "url('https://i.ibb.co/nqpzhb09/Kc-hacker.png')" }}>
-      
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-800/85 to-blue-900/80 backdrop-blur-[2px]" />
-      
       <section className="relative z-10 w-full max-w-[420px] rounded-[24px] border border-white/30 bg-white/80 p-6 sm:p-8 text-center shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] backdrop-blur-xl mx-auto transition-all duration-300">
-        
         <div className="mx-auto mb-6 flex h-20 w-20 sm:h-24 sm:w-24 animate-bot-pulse items-center justify-center rounded-full bg-gradient-to-tr from-blue-600/10 to-indigo-500/20 text-blue-600 shadow-[inset_0_4px_20px_rgba(0,0,0,0.05)] border border-white/60">
           <GraduationCap size={48} strokeWidth={1.5} className="drop-shadow-sm" />
         </div>
-        
         <h1 className="mb-6 text-2xl sm:text-[28px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700 tracking-tight">
           School MS
         </h1>
-        
         <div className="mb-6 flex rounded-xl bg-slate-200/50 p-1.5 shadow-inner">
-          <button className={`flex-1 rounded-lg py-2.5 text-[13px] sm:text-sm font-bold transition-all duration-300 ${mode === 'login' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setMode('login')}>Login</button>
-          <button className={`flex-1 rounded-lg py-2.5 text-[13px] sm:text-sm font-bold transition-all duration-300 ${mode === 'register' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setMode('register')}>Register</button>
+          <button className={`flex-1 rounded-lg py-2.5 text-[13px] sm:text-sm font-bold transition-all duration-300 ${mode === 'login' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setMode('login')}>ចូលប្រើ (Login)</button>
+          <button className={`flex-1 rounded-lg py-2.5 text-[13px] sm:text-sm font-bold transition-all duration-300 ${mode === 'register' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setMode('register')}>ចុះឈ្មោះ (Register)</button>
         </div>
-
         {mode === 'register' && (
           <div className="relative mb-4">
-            <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} />
+            <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" placeholder="ឈ្មោះពេញ" value={name} onChange={e => setName(e.target.value)} />
           </div>
         )}
-        
         <div className="relative mb-4">
-          <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+          <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type="email" placeholder="អ៊ីមែល" value={email} onChange={e => setEmail(e.target.value)} />
         </div>
-        
         <div className="relative mb-4">
-          <input className="field w-full pr-12 !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type={show ? 'text' : 'password'} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
+          <input className="field w-full pr-12 !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type={show ? 'text' : 'password'} placeholder="ពាក្យសម្ងាត់" value={password} onChange={e => setPassword(e.target.value)} />
           <button className="absolute right-4 top-3.5 text-slate-400 hover:text-blue-600 transition-colors" onClick={() => setShow(!show)}>{show ? <EyeOff size={18} /> : <Eye size={18} />}</button>
         </div>
-
         {mode === 'register' && (
           <>
             <div className="relative mb-4">
               <select className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none text-slate-600 font-medium" value={role} onChange={e => setRole(e.target.value as 'user' | 'admin')}>
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
+                <option value="user">អ្នកប្រើប្រាស់ (User)</option>
+                <option value="admin">អ្នកគ្រប់គ្រង (Admin)</option>
               </select>
             </div>
             {role === 'admin' && (
               <div className="relative mb-4 animate-fade-in">
-                <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type="password" placeholder="Admin Code" value={code} onChange={e => setCode(e.target.value)} />
+                <input className="field w-full !bg-white/70 !border-white/50 focus:!bg-white focus:!border-blue-400 focus:!ring-4 focus:!ring-blue-500/10 transition-all shadow-sm text-[13px] sm:text-sm py-3 px-4 rounded-xl outline-none" type="password" placeholder="លេខកូដ Admin" value={code} onChange={e => setCode(e.target.value)} />
               </div>
             )}
           </>
         )}
-
         {error && <p className="mb-4 rounded-xl bg-rose-50/80 border border-rose-100 p-3 text-[12px] sm:text-[13px] text-rose-600 font-medium">{error}</p>}
-        
         <button className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-3.5 mb-5 shadow-[0_8px_20px_-6px_rgba(37,99,235,0.5)] hover:shadow-[0_12px_25px_-6px_rgba(37,99,235,0.6)] hover:-translate-y-0.5 transition-all duration-300 active:scale-[0.98] text-[14px]" disabled={busy} onClick={submit}>
-          {busy ? 'Processing...' : mode === 'login' ? 'Login' : 'Register'}
+          {busy ? 'កំពុងដំណើរការ...' : mode === 'login' ? 'ចូលប្រើកម្មវិធី' : 'បង្កើតគណនី'}
         </button>
-
         <div className="relative flex items-center py-2 mb-5 opacity-70">
           <div className="flex-grow border-t border-slate-300"></div>
-          <span className="flex-shrink-0 mx-4 text-slate-500 text-[11px] sm:text-xs font-bold uppercase tracking-wider">OR</span>
+          <span className="flex-shrink-0 mx-4 text-slate-500 text-[11px] sm:text-xs font-bold uppercase tracking-wider">ឬ</span>
           <div className="flex-grow border-t border-slate-300"></div>
         </div>
-
         <button className="w-full rounded-xl py-3 flex items-center justify-center gap-3 border border-slate-200 bg-white/90 text-slate-700 hover:bg-white hover:shadow-[0_8px_15px_-5px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300 active:scale-[0.98]" disabled={busy} onClick={handleGoogleLogin}>
           <svg className="w-5 h-5 drop-shadow-sm" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -128,9 +115,8 @@ function AuthScreen() {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
           </svg>
-          <span className="font-bold text-[13px] sm:text-[14px] tracking-wide">Continue with Google</span>
+          <span className="font-bold text-[13px] sm:text-[14px] tracking-wide">បន្តជាមួយ Google</span>
         </button>
-
       </section>
     </main>
   );
@@ -163,7 +149,8 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const [adminInfo, setAdminInfo] = useState({ 
     teacher: '', room: '', subject: '', shift: 'Morning', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
     allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false,
-    devPhoto: '', devName: '', devTitle: '', devDescription: '', contactEmail: '', contactGithub: '', contactFacebook: '', contactPhone: '', contactPortfolio: ''
+    devPhoto: '', devName: '', devTitle: '', devDescription: '', contactEmail: '', contactGithub: '', contactFacebook: '', contactPhone: '', contactPortfolio: '',
+    allowUniversalQR: true, blockedQRStudents: [] as string[] 
   });
 
   const [tempLogo, setTempLogo] = useState('');
@@ -307,7 +294,6 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
 
   const counts = { present: processedToday.filter(a => a.status === statuses[0]).length, leave: processedToday.filter(a => a.status === statuses[1]).length, absent: processedToday.filter(a => a.status === statuses[2]).length };
   
-  // លាក់ Banner ម៉ោង ស្ថិតិ និងផែនទី ពេលចូលផ្ទាំង Home, About, ងបង្ហោះ ឬផ្ទាំង Settings
   const isDashboardView = !['home', 'about', 'admin_posts', 'settings'].includes(tab);
 
   return (
@@ -334,7 +320,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
             {!tab.startsWith('warehouse') && tab !== 'students' && tab !== 'cards' && (
               <div className="mb-4 flex items-center gap-2 rounded-xl bg-white p-2 sm:p-2.5 shadow-sm border border-slate-200 w-full">
                 <Search size={18} className="text-slate-400 shrink-0 ml-2" />
-                <input className="w-full bg-transparent outline-none text-sm sm:text-[0.95rem] px-2 py-1" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+                <input className="w-full bg-transparent outline-none text-sm sm:text-[0.95rem] px-2 py-1" placeholder="ស្វែងរក..." value={search} onChange={e => setSearch(e.target.value)} />
               </div>
             )}
           </>
@@ -351,11 +337,11 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
               
               <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">១. ព័ត៌មានទូទៅ (ថ្នាក់រៀន និង Logo)</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
-                <input className="field bg-slate-50" placeholder="Teacher Name..." value={adminInfo.teacher} onChange={e => setAdminInfo({...adminInfo, teacher: e.target.value})} />
-                <input className="field bg-slate-50" placeholder="Room" value={adminInfo.room} onChange={e => setAdminInfo({...adminInfo, room: e.target.value})} />
-                <input className="field bg-slate-50" placeholder="Subject..." value={adminInfo.subject} onChange={e => setAdminInfo({...adminInfo, subject: e.target.value})} />
+                <input className="field bg-slate-50" placeholder="ឈ្មោះគ្រូ..." value={adminInfo.teacher} onChange={e => setAdminInfo({...adminInfo, teacher: e.target.value})} />
+                <input className="field bg-slate-50" placeholder="បន្ទប់រៀន" value={adminInfo.room} onChange={e => setAdminInfo({...adminInfo, room: e.target.value})} />
+                <input className="field bg-slate-50" placeholder="មុខវិជ្ជា..." value={adminInfo.subject} onChange={e => setAdminInfo({...adminInfo, subject: e.target.value})} />
                 <select className="field bg-slate-50" value={adminInfo.shift} onChange={e => setAdminInfo({...adminInfo, shift: e.target.value})}>
-                  <option>Morning</option><option>Afternoon</option><option>Evening</option>
+                  <option>ព្រឹក</option><option>រសៀល</option><option>យប់</option>
                 </select>
                 
                 <div className="col-span-2 md:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
@@ -365,29 +351,37 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
                 </div>
               </div>
 
-              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">២. កំណត់ប្រវត្តិអ្នកអភិវឌ្ឍន៍ និង ទំនាក់ទំនង (ផ្ទាំង About Us)</h3>
+              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">២. កំណត់ប្រវត្តិអ្នកអភិវឌ្ឍន៍ និង ទំនាក់ទំនង</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                <input className="field bg-white" placeholder="ឈ្មោះអ្នកអភិវឌ្ឍន៍ (Dev Name)" value={adminInfo.devName} onChange={e => setAdminInfo({...adminInfo, devName: e.target.value})} />
-                <input className="field bg-white" placeholder="តួនាទី (Dev Title)" value={adminInfo.devTitle} onChange={e => setAdminInfo({...adminInfo, devTitle: e.target.value})} />
-                <input className="field bg-white" placeholder="Link រូបថត (Dev Photo URL)" value={adminInfo.devPhoto} onChange={e => setAdminInfo({...adminInfo, devPhoto: e.target.value})} />
+                <input className="field bg-white" placeholder="ឈ្មោះអ្នកអភិវឌ្ឍន៍" value={adminInfo.devName} onChange={e => setAdminInfo({...adminInfo, devName: e.target.value})} />
+                <input className="field bg-white" placeholder="តួនាទី" value={adminInfo.devTitle} onChange={e => setAdminInfo({...adminInfo, devTitle: e.target.value})} />
+                <input className="field bg-white" placeholder="Link រូបថត" value={adminInfo.devPhoto} onChange={e => setAdminInfo({...adminInfo, devPhoto: e.target.value})} />
                 <textarea className="field bg-white md:col-span-2 min-h-[100px] resize-none" placeholder="សរសេររៀបរាប់ពីប្រវត្តិទីនេះ..." value={adminInfo.devDescription} onChange={e => setAdminInfo({...adminInfo, devDescription: e.target.value})}></textarea>
                 
-                <input className="field bg-white" placeholder="លេខទូរស័ព្ទ (Phone)" value={adminInfo.contactPhone} onChange={e => setAdminInfo({...adminInfo, contactPhone: e.target.value})} />
-                <input className="field bg-white" placeholder="អ៊ីមែល (Email)" value={adminInfo.contactEmail} onChange={e => setAdminInfo({...adminInfo, contactEmail: e.target.value})} />
+                <input className="field bg-white" placeholder="លេខទូរស័ព្ទ" value={adminInfo.contactPhone} onChange={e => setAdminInfo({...adminInfo, contactPhone: e.target.value})} />
+                <input className="field bg-white" placeholder="អ៊ីមែល" value={adminInfo.contactEmail} onChange={e => setAdminInfo({...adminInfo, contactEmail: e.target.value})} />
                 <input className="field bg-white" placeholder="Facebook Link" value={adminInfo.contactFacebook} onChange={e => setAdminInfo({...adminInfo, contactFacebook: e.target.value})} />
                 <input className="field bg-white" placeholder="Github Link" value={adminInfo.contactGithub} onChange={e => setAdminInfo({...adminInfo, contactGithub: e.target.value})} />
                 <input className="field bg-white md:col-span-2" placeholder="Portfolio / Website Link" value={adminInfo.contactPortfolio} onChange={e => setAdminInfo({...adminInfo, contactPortfolio: e.target.value})} />
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-y-4 pt-4 border-t border-slate-100">
-                <div className="flex flex-wrap gap-x-5 gap-y-3">
-                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} /> Manual Check-in</label>
-                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowStudentEdit || false} onChange={e => setAdminInfo({...adminInfo, allowStudentEdit: e.target.checked})} /> Edit Students</label>
-                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowLeaveManualName || false} onChange={e => setAdminInfo({...adminInfo, allowLeaveManualName: e.target.checked})} /> Leave Input</label>
-                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} /> Create Cards</label>
+              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">៣. ការអនុញ្ញាតមុខងារផ្សេងៗ (Permissions)</h3>
+              <div className="flex flex-wrap items-center justify-between gap-y-4 pt-2">
+                <div className="flex flex-col gap-3 w-full md:w-auto">
+                   <label className="flex items-center gap-2 text-[13px] sm:text-sm font-bold text-slate-700 cursor-pointer bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                     <input type="checkbox" className="w-5 h-5 accent-primary" checked={adminInfo.allowUniversalQR !== false} onChange={e => setAdminInfo({...adminInfo, allowUniversalQR: e.target.checked})} /> 
+                     បើកដំណើរការមុខងារស្កែន QR រួម (Universal QR)
+                   </label>
+                   
+                   <div className="flex flex-wrap gap-x-5 gap-y-3 mt-2">
+                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} /> ចុះវត្តមានដោយដៃ</label>
+                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowStudentEdit || false} onChange={e => setAdminInfo({...adminInfo, allowStudentEdit: e.target.checked})} /> កែប្រែបញ្ជីសិស្ស</label>
+                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowLeaveManualName || false} onChange={e => setAdminInfo({...adminInfo, allowLeaveManualName: e.target.checked})} /> បញ្ចូលការសុំច្បាប់</label>
+                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} /> បង្កើតកាតសិស្ស</label>
+                   </div>
                 </div>
-                <button className="btn btn-success w-full md:w-auto py-3 px-8 text-base font-bold shadow-md shadow-success/20" disabled={savingConfig} onClick={saveAdminConfig}>
-                   <Save size={18} /> {savingConfig ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកការកំណត់ (Save All)'}
+                <button className="btn btn-success w-full md:w-auto py-3 px-8 text-base font-bold shadow-md shadow-success/20 mt-4 md:mt-0" disabled={savingConfig} onClick={saveAdminConfig}>
+                   <Save size={18} /> {savingConfig ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកការកំណត់'}
                 </button>
               </div>
             </div>
@@ -398,7 +392,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
               {tab === 'attendance' && <AttendancePanel students={students} records={processedToday.filter(a => { const matchSearch = a.name.toLowerCase().includes(search.toLowerCase()) || (a.stu_id ?? '').toLowerCase().includes(search.toLowerCase()); if (!showAllStatus && a.status !== statuses[0]) return false; return matchSearch; })} isAdmin={isAdmin} adminInfo={adminInfo} today={today} onOpenScanner={() => setScanner(true)} />}
               {tab === 'leaves' && <LeaveRequestPanel students={students} records={attendance} isAdmin={isAdmin} adminInfo={adminInfo} today={today} />}
               {tab === 'warehouse_att' && <AttendanceHistory records={attendance} isAdmin={isAdmin} refresh={fetchInitialData} />}
-              {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={fetchInitialData} />}
+              {tab === 'students' && <MasterStudentList students={students} isAdmin={isAdmin} allowEdit={adminInfo.allowStudentEdit} refresh={fetchInitialData} adminInfo={adminInfo} setAdminInfo={setAdminInfo} />}
               {tab === 'scores' && <ScoresPanel students={students} isAdmin={isAdmin} />}
               {tab === 'warehouse_score' && <ScoreResults students={students} />}
               {tab === 'analytics' && <Analytics counts={counts} totalStudents={students.length} />}
@@ -409,7 +403,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
           )}
         </div>
       </div>
-      {scanner && <Scanner onClose={() => setScanner(false)} students={students} adminInfo={adminInfo} today={today} />}
+      {scanner && <Scanner onClose={() => setScanner(false)} refresh={fetchInitialData} today={today} />}
     </div>
   );
 }
@@ -451,7 +445,7 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
   const [saving, setSaving] = useState(false); 
   
   const [showSharedQR, setShowSharedQR] = useState(false);
-  const sharedQRData = `PSB-ATTENDANCE-${today}`;
+  const sharedQRData = `CHECK-IN-NOW`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${sharedQRData}`;
 
   const [linkedStuId, setLinkedStuId] = useState(localStorage.getItem('my_stu_id') || '');
@@ -461,18 +455,18 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
   const canManualEntry = isAdmin || adminInfo.allowManual;
 
   function handleLinkAccount() {
-    const found = students.find((s: any) => s.stu_id === linkInput.trim());
+    const found = students.find((s: any) => String(s.stu_id).trim().toLowerCase() === String(linkInput).trim().toLowerCase());
     if (found) {
-      localStorage.setItem('my_stu_id', found.stu_id);
-      setLinkedStuId(found.stu_id);
+      localStorage.setItem('my_stu_id', String(found.stu_id));
+      setLinkedStuId(String(found.stu_id));
       setLinkError('');
     } else {
-      setLinkError('Invalid Student ID');
+      setLinkError('មិនមានអត្តលេខនេះក្នុងប្រព័ន្ធទេ');
     }
   }
 
   function handleUnlinkAccount() {
-    if (window.confirm("Unlink ID from this device?")) {
+    if (window.confirm("ផ្តាច់អត្តលេខចេញពីឧបករណ៍នេះ?")) {
       localStorage.removeItem('my_stu_id');
       setLinkedStuId('');
       setLinkInput('');
@@ -539,9 +533,9 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
   }
 
   async function editRecord(r: any) {
-    const newName = window.prompt("Edit Name:", r.name);
+    const newName = window.prompt("កែប្រែឈ្មោះ:", r.name);
     if (newName === null) return;
-    const newStatus = window.prompt(`Edit Status (${statuses.join(', ')}):`, r.status);
+    const newStatus = window.prompt(`កែប្រែស្ថានភាព (${statuses.join(', ')}):`, r.status);
     if (newStatus === null) return;
 
     if (newName.trim() !== "") {
@@ -550,12 +544,12 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
   }
 
   async function deleteRecord(id: string) {
-    if(!window.confirm("Delete this record?")) return;
+    if(!window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?")) return;
     supabase.from('attendance').delete().eq('id', id).then();
   }
 
   async function deleteAll() {
-    if(!window.confirm("Delete all records for today?")) return;
+    if(!window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យទាំងអស់សម្រាប់ថ្ងៃនេះមែនទេ?")) return;
     const ids = records.map((r: any) => r.id);
     if (ids.length > 0) {
        supabase.from('attendance').delete().in('id', ids).then();
@@ -584,13 +578,13 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
           <div className="bg-white rounded-3xl p-6 sm:p-10 text-center max-w-sm w-full shadow-2xl animate-fade-in relative flex flex-col items-center">
             <button className="absolute top-4 right-4 text-slate-400 hover:text-danger bg-slate-100 p-1.5 rounded-full" onClick={() => setShowSharedQR(false)}><X size={20}/></button>
             <h2 className="text-xl sm:text-2xl font-bold text-primary mb-2">ស្កែនដើម្បីចុះវត្តមាន</h2>
-            <p className="text-sm text-slate-500 mb-6">សិស្សអាចប្រើទូរស័ព្ទស្កែន QR នេះ ដើម្បីកត់ត្រាវត្តមានដោយខ្លួនឯង</p>
+            <p className="text-sm text-slate-500 mb-6">QR Code នេះអាច Print ទុកប្រើបានរហូត (Permanent QR)</p>
             <div className="p-2 border-4 border-slate-100 rounded-2xl shadow-sm bg-white">
               <img src={qrUrl} alt="Shared QR" className="w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] object-contain" />
             </div>
-            <p className="mt-4 text-[10px] text-slate-400 font-bold tracking-widest uppercase">{sharedQRData}</p>
-            <a href={qrUrl} download={`Shared_QR_${today}.png`} className="btn btn-success w-full mt-6 shadow-md shadow-success/30 py-3 font-bold flex justify-center items-center gap-2">
-              <Download size={18} /> រក្សាទុក QR Code
+            <p className="mt-4 text-[10px] text-slate-400 font-bold tracking-widest uppercase">UNIVERSAL SCANNER</p>
+            <a href={qrUrl} download={`Permanent_QR_Scanner.png`} className="btn btn-success w-full mt-6 shadow-md shadow-success/30 py-3 font-bold flex justify-center items-center gap-2">
+              <Download size={18} /> រក្សាទុក QR Code នេះ
             </a>
           </div>
         </div>
@@ -599,13 +593,13 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
       <div className="flex flex-col gap-3 w-full">
         {canManualEntry && (
           <div className="card h-fit w-full">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Plus size={20} className="text-primary" /> ចុះវត្តមាន</h2>
-            <input list="student-list" className="field mb-3 w-full" placeholder="-- Select or type name --" value={name} onChange={e => setName(e.target.value)} />
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-bold"><Plus size={20} className="text-primary" /> ចុះវត្តមានដោយដៃ</h2>
+            <input list="student-list" className="field mb-3 w-full" placeholder="-- ជ្រើសរើស ឬ វាយឈ្មោះ --" value={name} onChange={e => setName(e.target.value)} />
             <datalist id="student-list">{students.map((s: any) => <option key={s.id} value={s.name} />)}</datalist>
             <select className="field mb-4 w-full" value={status} onChange={e => setStatus(e.target.value as string)}>{statuses.map(s => <option key={s}>{s}</option>)}</select>
             <div className="flex flex-col sm:flex-row gap-2 mt-2">
-              <button className="btn btn-success w-full shadow-md shadow-success/20" disabled={!name || saving} onClick={add}><CheckCircle2 size={16} /> {saving ? '...' : 'Save'}</button>
-              {isAdmin && <button className="btn bg-[#ff9f43] text-white w-full shadow-md shadow-[#ff9f43]/20" disabled={saving} onClick={autoMarkAbsent}><Users size={16} /> Auto Absent</button>}
+              <button className="btn btn-success w-full shadow-md shadow-success/20" disabled={!name || saving} onClick={add}><CheckCircle2 size={16} /> {saving ? '...' : 'រក្សាទុក'}</button>
+              {isAdmin && <button className="btn bg-[#ff9f43] text-white w-full shadow-md shadow-[#ff9f43]/20" disabled={saving} onClick={autoMarkAbsent}><Users size={16} /> ដាក់អវត្តមានអ្នកអត់មក</button>}
             </div>
             {isAdmin && <button className="btn bg-blue-600 text-white w-full mt-3 shadow-lg shadow-blue-600/30 font-bold" onClick={() => setShowSharedQR(true)}><Camera size={18} /> បង្ហាញ QR ស្កែនរួម</button>}
           </div>
@@ -709,7 +703,7 @@ function AttendancePanel({ students, records, isAdmin, adminInfo, today, onOpenS
            </div>
            <div className="flex w-full sm:w-auto gap-2">
              {isAdmin && <button className="btn bg-danger text-white flex-1 sm:flex-none" onClick={deleteAll}><Trash2 size={16} /> លុបទាំងអស់</button>}
-             <button className="btn bg-[#2c3e50] text-white flex-1 sm:flex-none shadow-md shadow-[#2c3e50]/20" onClick={downloadPDF}><Printer size={16} /> Print PDF</button>
+             <button className="btn bg-[#2c3e50] text-white flex-1 sm:flex-none shadow-md shadow-[#2c3e50]/20" onClick={downloadPDF}><Printer size={16} /> បោះពុម្ព PDF</button>
            </div>
         </div>
       </div>
@@ -783,7 +777,7 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today }: any
   }
 
   async function deleteLeave(id: string) {
-    if(!window.confirm("Delete?")) return;
+    if(!window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?")) return;
     supabase.from('attendance').delete().eq('id', id).then();
   }
 
@@ -793,7 +787,7 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today }: any
     setTimeout(() => document.body.classList.remove('print-leave'), 500);
   };
   
-  const studentDetail = viewLetter ? students.find((s: any) => s.id === viewLetter.student_id || s.name === viewLetter.name) : null;
+  const studentDetail = viewLetter ? students.find((s: any) => String(s.id) === String(viewLetter.student_id) || s.name === viewLetter.name) : null;
   const formatDateKH = (dateStr: string) => {
     if(!dateStr) return { day: '...', month: '...', year: '...' };
     const d = new Date(dateStr);
@@ -902,7 +896,7 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today }: any
          <div className="w-full overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-xs sm:text-sm min-w-[500px]">
             <thead className="bg-slate-50">
-              <tr><th className="p-3 text-left">ឈ្មោះសិស្ស</th><th className="p-3 text-center">ម៉ោង</th><th className="p-3 text-left">មូលហេតុ</th><th className="p-3 text-center">ភស្តុតាង</th><th className="p-3 text-center">Action</th></tr>
+              <tr><th className="p-3 text-left">ឈ្មោះសិស្ស</th><th className="p-3 text-center">ម៉ោង</th><th className="p-3 text-left">មូលហេតុ</th><th className="p-3 text-center">ភស្តុតាង</th><th className="p-3 text-center">សកម្មភាព</th></tr>
             </thead>
             <tbody>
               {leaveRecords.length ? leaveRecords.map((r: any) => (
@@ -997,7 +991,7 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
 
       {isAdmin && (
         <div className="mb-4 flex flex-wrap items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
-          <input className="field w-full sm:w-40" placeholder="បញ្ចូលមុខវិជ្ជាថ្មី..." value={newSub} onChange={e => setNewSub(e.target.value)} />
+          <input className="field w-full sm:w-40" placeholder="មុខវិជ្ជាថ្មី..." value={newSub} onChange={e => setNewSub(e.target.value)} />
           <button className="btn btn-primary w-full sm:w-auto" onClick={addSub}><Plus size={16}/> បន្ថែម</button>
           <div className="flex gap-2 overflow-x-auto flex-1 items-center w-full pb-1">
              {subjects.map(s => (
@@ -1017,7 +1011,7 @@ function ScoresPanel({ students, isAdmin }: { students: Student[]; isAdmin: bool
                 <th className="p-2 sm:p-3 text-left whitespace-nowrap sticky left-0 z-10 bg-slate-100">ឈ្មោះសិស្ស</th>
                 {subjects.map(s => <th className="p-2 sm:p-3 text-center whitespace-nowrap" key={s}>{s}</th>)}
                 <th className="p-2 sm:p-3 text-center whitespace-nowrap">មធ្យមភាគ</th>
-                {isAdmin && <th className="p-2 sm:p-3 text-center whitespace-nowrap">Action</th>}
+                {isAdmin && <th className="p-2 sm:p-3 text-center whitespace-nowrap">សកម្មភាព</th>}
               </tr>
             </thead>
             <tbody>
@@ -1087,7 +1081,7 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
 
   async function deleteCard(dbId: string) {
     if(!canCreateCard) return;
-    if(!window.confirm("Delete this card?")) return;
+    if(!window.confirm("តើអ្នកពិតជាចង់លុបកាតនេះមែនទេ?")) return;
     await supabase.from('custom_cards').delete().eq('id', dbId);
   }
 
@@ -1261,7 +1255,7 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
   ); 
 }
 
-function Scanner({ onClose, students, refresh, adminInfo, today }: any) { 
+function Scanner({ onClose, refresh, today }: any) { 
   const [value, setValue] = useState(''); 
   const [message, setMessage] = useState<{text: string, type: 'success'|'error'} | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -1299,26 +1293,55 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: any) {
     if (processingRef.current) return;
     processingRef.current = true;
     
-    let student = null;
+    const scanNow = new Date();
+    const scanToday = `${scanNow.getFullYear()}-${String(scanNow.getMonth() + 1).padStart(2, '0')}-${String(scanNow.getDate()).padStart(2, '0')}`;
+    const scanTime = scanNow.toLocaleTimeString('en-GB');
     
-    if (val.trim() === `PSB-ATTENDANCE-${today}`) {
+    let student = null;
+    const rawVal = String(val || '').trim();
+    const upperVal = rawVal.toUpperCase();
+    
+    const isSharedQR = upperVal.includes('CHECK-IN-NOW') || upperVal.includes('UNIVERSAL') || upperVal.includes('ATTENDANCE');
+
+    const { data: schData } = await supabase.from('schedules').select('data_json').eq('type', 'school_info').maybeSingle();
+    const liveAdminInfo = schData?.data_json || {};
+    
+    if (isSharedQR) {
+       if (liveAdminInfo.allowUniversalQR === false) {
+         setMessage({ text: "មុខងារស្កែន QR រួម ត្រូវបានបិទ!", type: 'error' });
+         setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
+         return;
+       }
+
        const linkedId = localStorage.getItem('my_stu_id');
        if (!linkedId) {
-         setMessage({ text: "សូមភ្ជាប់អត្តលេខរបស់អ្នកសិន មុននឹងស្កែន!", type: 'error' });
+         setMessage({ text: "សូមភ្ជាប់គណនីជាមុនសិន!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
-       student = students.find((s:any) => s.stu_id === linkedId);
+       
+       const { data: stuData } = await supabase.from('students').select('*').ilike('stu_id', String(linkedId).trim()).maybeSingle();
+       student = stuData;
+       
        if (!student) {
-         setMessage({ text: "រកមិនឃើញគណនីរបស់អ្នកក្នុងប្រព័ន្ធទេ!", type: 'error' });
+         setMessage({ text: "រកមិនឃើញអត្តលេខក្នុងប្រព័ន្ធទេ!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
+
+       if (student.stu_id && liveAdminInfo.blockedQRStudents?.includes(String(student.stu_id))) {
+         setMessage({ text: "អ្នកត្រូវបានបិទសិទ្ធិស្កែនពីចម្ងាយ!", type: 'error' });
+         setTimeout(() => { setMessage(null); processingRef.current = false; }, 4000);
+         return;
+       }
+
     } else {
-       student = students.find((s:any) => s.stu_id === val.trim()); 
+       const { data: stuData } = await supabase.from('students').select('*').ilike('stu_id', rawVal).maybeSingle();
+       student = stuData;
+
        if (!student) {
-         setMessage({ text: "មិនស្គាល់អត្តលេខនេះទេ", type: 'error' });
-         setTimeout(() => { setMessage(null); processingRef.current = false; }, 2500);
+         setMessage({ text: `មិនស្គាល់អត្តលេខ៖ [${rawVal}]`, type: 'error' });
+         setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
     }
@@ -1326,7 +1349,7 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: any) {
     const { data: existing } = await supabase.from('attendance')
       .select('id, status, created_at')
       .eq('student_id', student.id)
-      .eq('date', today)
+      .eq('date', scanToday) 
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -1337,7 +1360,7 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: any) {
           setTimeout(() => { setMessage(null); processingRef.current = false; }, 2500);
           return;
        } else {
-          await supabase.from('attendance').update({ status: statuses[0], time: new Date().toLocaleTimeString('en-GB') }).eq('id', existing[0].id);
+          await supabase.from('attendance').update({ status: statuses[0], time: scanTime }).eq('id', existing[0].id);
           if(refresh) refresh();
           setValue('');
           setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
@@ -1356,20 +1379,18 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: any) {
       name: student.name, 
       gender: student.gender, 
       status: statuses[0], 
-      date: today,
-      time: new Date().toLocaleTimeString('en-GB'),
-      shift: adminInfo.shift || '',
-      room: adminInfo.room || '',
-      teacher: adminInfo.teacher || '',
-      subject: adminInfo.subject || ''
+      date: scanToday,
+      time: scanTime,
+      shift: liveAdminInfo.shift || '',
+      room: liveAdminInfo.room || '',
+      teacher: liveAdminInfo.teacher || '',
+      subject: liveAdminInfo.subject || ''
     }); 
     if(refresh) refresh();
     setValue('');
     
     setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
-    setTimeout(() => {
-      onClose();
-    }, 1500);
+    setTimeout(() => { onClose(); }, 1500);
   }
 
   return (
@@ -1378,9 +1399,9 @@ function Scanner({ onClose, students, refresh, adminInfo, today }: any) {
       <div className="relative z-10 flex h-full flex-col items-center justify-center p-4">
         
         {message && (
-          <div className={`absolute top-10 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-full text-sm font-bold text-white shadow-lg animate-fade-in z-50 flex items-center gap-2 ${message.type === 'success' ? 'bg-success' : 'bg-danger'}`}>
+          <div className={`absolute top-10 left-1/2 -translate-x-1/2 w-max max-w-[90%] px-5 py-2.5 rounded-full text-sm font-bold text-white shadow-lg animate-fade-in z-50 flex items-center justify-center gap-2 ${message.type === 'success' ? 'bg-success' : 'bg-danger'}`}>
             {message.type === 'success' ? <CheckCircle2 size={18}/> : <X size={18}/>}
-            {message.text}
+            <span className="truncate">{message.text}</span>
           </div>
         )}
 
@@ -1463,7 +1484,7 @@ function SchedulePanel({ isAdmin }: { isAdmin: boolean }) {
           </tbody>
         </table>
       </div>
-      {isAdmin && <button className="btn btn-success mt-4" disabled={saving} onClick={saveSchedule}><CheckCircle2 size={16} /> {saving ? 'Saving...' : 'Save Schedule'}</button>}
+      {isAdmin && <button className="btn btn-success mt-4" disabled={saving} onClick={saveSchedule}><CheckCircle2 size={16} /> {saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកកាលវិភាគ'}</button>}
     </div>
   ); 
 }
@@ -1553,7 +1574,7 @@ function CleaningSchedule({ isAdmin }: { isAdmin: boolean }) {
         ))}
       </div>
 
-      {isAdmin && <button className="btn btn-success mt-5 w-full" disabled={saving} onClick={save}><CheckCircle2 size={16}/> {saving ? 'Saving...' : 'Save Data'}</button>}
+      {isAdmin && <button className="btn btn-success mt-5 w-full" disabled={saving} onClick={save}><CheckCircle2 size={16}/> {saving ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកទិន្នន័យ'}</button>}
     </section>
   );
 }

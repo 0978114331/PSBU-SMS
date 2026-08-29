@@ -1,140 +1,145 @@
 import { useState } from 'react';
-import { Pencil, Plus, Save, Trash2, X, Printer } from 'lucide-react';
+import { Search, Plus, Trash2, Pencil, CheckCircle2, X, GraduationCap, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Student } from '@/types';
 
-type StudentForm = Omit<Student, 'id'>;
-const emptyForm: StudentForm = { stu_id: '', name: '', gender: 'ប្រុស', dob: '', pob: '', note: '' };
-
-type Props = { students: Student[]; isAdmin: boolean; allowEdit?: boolean; refresh: () => Promise<void> };
-
-export function MasterStudentList({ students, isAdmin, allowEdit, refresh }: Props) {
-  const [form, setForm] = useState<StudentForm>(emptyForm);
-  const [editingId, setEditingId] = useState<string | null>(null);
+export function MasterStudentList({ students, isAdmin, allowEdit, refresh, adminInfo, setAdminInfo }: any) {
+  const [search, setSearch] = useState('');
+  const [form, setForm] = useState<{ id: string; stu_id: string; name: string; gender: string }>({ id: '', stu_id: '', name: '', gender: 'Male' });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
 
   const canEdit = isAdmin || allowEdit;
+  const filtered = students.filter((s: Student) => 
+    (s.name || '').toLowerCase().includes(search.toLowerCase()) || 
+    (s.stu_id || '').toLowerCase().includes(search.toLowerCase())
+  );
 
   async function saveStudent() {
-    if (!(form.stu_id ?? '').trim() || !form.name.trim()) { setError('Error'); return; }
-    setSaving(true); setError('');
-    const result = editingId
-      ? await supabase.from('students').update(form).eq('id', editingId)
-      : await supabase.from('students').insert(form);
+    if (!form.name.trim() || !form.stu_id.trim()) return;
+    setSaving(true);
+    
+    if (form.id) {
+      await supabase.from('students').update({ stu_id: form.stu_id, name: form.name, gender: form.gender }).eq('id', form.id);
+    } else {
+      await supabase.from('students').insert([{ stu_id: form.stu_id, name: form.name, gender: form.gender }]);
+    }
+    
+    setForm({ id: '', stu_id: '', name: '', gender: 'Male' });
+    if(refresh) refresh();
     setSaving(false);
-    if (result.error) { setError('Error'); return; }
-    setForm(emptyForm); setEditingId(null); await refresh();
   }
 
-  function editStudent(student: Student) {
-    setEditingId(student.id);
-    setForm({ stu_id: student.stu_id ?? '', name: student.name, gender: student.gender ?? 'ប្រុស', dob: student.dob ?? '', pob: student.pob ?? '', note: student.note ?? '' });
+  function edit(s: Student) {
+    setForm({ 
+      id: s.id || '', 
+      stu_id: s.stu_id || '', 
+      name: s.name || '', 
+      gender: s.gender || 'Male' 
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  async function deleteStudent(id: string) {
-    if (!window.confirm('Delete?')) return;
+  async function deleteStudent(id: string | null | undefined) {
+    if(!id || !window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យនេះមែនទេ?")) return;
     await supabase.from('students').delete().eq('id', id);
-    await refresh();
+    if(refresh) refresh();
   }
 
-  const printPDF = () => {
-    window.print();
-  };
+  async function toggleQRBlock(stu_id: string | null | undefined) {
+    if (!isAdmin || !stu_id) return;
+    
+    const currentBlocked = adminInfo?.blockedQRStudents || [];
+    const isBlocked = currentBlocked.includes(stu_id);
+    
+    let newBlocked;
+    if (isBlocked) {
+       newBlocked = currentBlocked.filter((id: string) => id !== stu_id);
+    } else {
+       newBlocked = [...currentBlocked, stu_id];
+    }
+
+    const newAdminInfo = { ...adminInfo, blockedQRStudents: newBlocked };
+    if(setAdminInfo) setAdminInfo(newAdminInfo);
+
+    const { data } = await supabase.from('schedules').select('id').eq('type', 'school_info').maybeSingle();
+    if (data?.id) {
+      await supabase.from('schedules').update({ data_json: newAdminInfo }).eq('id', data.id);
+    }
+  }
 
   return (
-    <section className="card w-full">
-      <style>{`
-        @media print {
-          body * { visibility: hidden; background: white; }
-          #student-print-area, #student-print-area * { visibility: visible; }
-          #student-print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; }
-          .no-print { display: none !important; }
-          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        }
-      `}</style>
-      
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 no-print">
-        <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold text-dark">
-            <span className="rounded-lg bg-primary/10 p-2 text-primary">☷</span> បញ្ជីឈ្មោះសិស្សសរុប
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-           <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">{students.length}</span>
-           <button className="btn bg-[#2c3e50] text-white !py-1.5 !px-3 text-xs shadow-sm" onClick={printPDF}>
-             <Printer size={14} /> Save PDF
-           </button>
+    <div className="card w-full">
+      <div className="flex flex-wrap items-center justify-between mb-5 gap-3">
+        <h2 className="flex items-center gap-2 text-lg sm:text-xl font-bold text-slate-800"><GraduationCap className="text-primary" /> បញ្ជីឈ្មោះសិស្ស ({students.length})</h2>
+        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl w-full sm:w-[250px]">
+           <Search size={16} className="text-slate-400" />
+           <input className="bg-transparent outline-none w-full text-sm" placeholder="ស្វែងរកអត្តលេខ ឬឈ្មោះ..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
-      
+
       {canEdit && (
-        <div className="mb-6 rounded-xl border border-primary/10 bg-slate-50 p-4 no-print">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="font-bold text-dark">{editingId ? 'Edit Student' : 'បន្ថែមសិស្សថ្មី'}</h3>
-            {editingId && <button className="text-sm text-slate-500 hover:text-danger" onClick={() => { setEditingId(null); setForm(emptyForm); }}><X size={17} /></button>}
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            <input className="field" placeholder="អត្តលេខ ID" value={form.stu_id ?? ''} onChange={e => setForm({ ...form, stu_id: e.target.value })} />
-            <input className="field" placeholder="គោត្តនាម-នាម" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-            <select className="field" value={form.gender ?? ''} onChange={e => setForm({ ...form, gender: e.target.value })}>
-              <option>ប្រុស</option><option>ស្រី</option>
-            </select>
-            <input className="field" type="date" value={form.dob ?? ''} onChange={e => setForm({ ...form, dob: e.target.value })} />
-            <input className="field" placeholder="មកពីរាជធានី/ខេត្ត" value={form.pob ?? ''} onChange={e => setForm({ ...form, pob: e.target.value })} />
-            <input className="field" placeholder="ផ្សេងៗ" value={form.note ?? ''} onChange={e => setForm({ ...form, note: e.target.value })} />
-            <button className="btn btn-primary md:col-span-3" disabled={saving} onClick={() => void saveStudent()}>
-              {editingId ? <Save size={17} /> : <Plus size={17} />}
-              {editingId ? 'Save Changes' : 'បន្ថែមឈ្មោះសិស្សិ'}
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-5 grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1fr_auto] gap-3">
+          <input className="field bg-white" placeholder="អត្តលេខ (ID)" value={form.stu_id} onChange={e => setForm({...form, stu_id: e.target.value})} />
+          <input className="field bg-white" placeholder="ឈ្មោះសិស្ស" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+          <select className="field bg-white" value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}>
+            <option value="Male">ប្រុស (Male)</option>
+            <option value="Female">ស្រី (Female)</option>
+          </select>
+          <div className="flex gap-2">
+            {form.id && <button className="btn bg-slate-200 text-slate-700 hover:bg-slate-300" onClick={() => setForm({ id: '', stu_id: '', name: '', gender: 'Male' })}><X size={16}/></button>}
+            <button className="btn btn-primary" disabled={saving || !form.name || !form.stu_id} onClick={saveStudent}>
+               {saving ? '...' : (form.id ? 'រក្សាទុក' : 'បន្ថែមសិស្ស')}
             </button>
           </div>
-          {error && <p className="mt-3 text-sm text-danger">{error}</p>}
         </div>
       )}
-      
-      <div className="rounded-xl border border-slate-200 overflow-hidden" id="student-print-area">
-        <h2 className="hidden print:block text-center text-xl font-bold mb-4">បញ្ជីឈ្មោះសិស្សសរុប</h2>
-        <div className="max-h-[400px] overflow-y-auto overflow-x-auto w-full print:max-h-none print:overflow-visible">
-          <table className="w-full min-w-[800px] text-sm relative print:min-w-full">
-            <thead className="sticky top-0 z-10 shadow-sm print:static">
-              <tr className="bg-slate-100 text-left">
-                <th className="p-3">ល.រ</th>
-                <th className="p-3">អត្តលេខ (ID)</th>
-                <th className="p-3">គោត្តនាម-នាម</th>
-                <th className="p-3">ភេទ</th>
-                <th className="p-3">ថ្ងៃខែឆ្នាំកំណើត</th>
-                <th className="p-3">មកពី</th>
-                <th className="p-3">ផ្សេងៗ</th>
-                {canEdit && <th className="p-3 text-center no-print">សកម្មភាព</th>}
+
+      <div className="rounded-xl border border-slate-200 overflow-hidden w-full">
+        <div className="max-h-[500px] overflow-y-auto w-full">
+          <table className="w-full min-w-[600px] text-xs sm:text-sm">
+            <thead className="sticky top-0 z-10 bg-slate-100 shadow-sm">
+              <tr>
+                <th className="p-3 text-center w-[60px]">ល.រ</th>
+                <th className="p-3 text-left">អត្តលេខ</th>
+                <th className="p-3 text-left">ឈ្មោះសិស្ស</th>
+                <th className="p-3 text-center">ភេទ</th>
+                {isAdmin && <th className="p-3 text-center">សិទ្ធិស្កែន QR</th>}
+                {canEdit && <th className="p-3 text-center">សកម្មភាព</th>}
               </tr>
             </thead>
             <tbody>
-              {students.length ? students.map((student, index) => (
-                <tr key={student.id} className="border-t transition hover:bg-primary/5">
-                  <td className="p-3">{index + 1}</td>
-                  <td className="p-3 font-bold text-primary">{student.stu_id || '---'}</td>
-                  <td className="p-3 font-medium">{student.name}</td>
-                  <td className="p-3">{student.gender || '---'}</td>
-                  <td className="p-3">{student.dob || '---'}</td>
-                  <td className="p-3">{student.pob || '---'}</td>
-                  <td className="max-w-40 truncate p-3 text-slate-500 print:whitespace-normal print:max-w-none">{student.note || '---'}</td>
+              {filtered.length ? filtered.map((s: Student, index: number) => {
+                const isBlocked = s.stu_id ? adminInfo?.blockedQRStudents?.includes(s.stu_id) : false;
+                return (
+                <tr className="border-t hover:bg-slate-50 transition" key={s.id || index}>
+                  <td className="p-3 text-center font-bold text-slate-400">{index + 1}</td>
+                  <td className="p-3 font-bold text-slate-600">{s.stu_id || '---'}</td>
+                  <td className="p-3 font-bold text-primary">{s.name || '---'}</td>
+                  <td className="p-3 text-center">{s.gender === 'Female' ? 'ស្រី' : 'ប្រុស'}</td>
+                  
+                  {isAdmin && (
+                    <td className="p-3 text-center">
+                       <button 
+                         onClick={() => toggleQRBlock(s.stu_id)}
+                         className={`flex items-center justify-center gap-1.5 mx-auto px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isBlocked ? 'bg-rose-100 text-rose-600 border border-rose-200' : 'bg-emerald-100 text-emerald-600 border border-emerald-200'}`}
+                       >
+                         {isBlocked ? <><ShieldAlert size={14} /> បានបិទ</> : <><ShieldCheck size={14} /> អនុញ្ញាត</>}
+                       </button>
+                    </td>
+                  )}
+
                   {canEdit && (
-                    <td className="p-3 no-print">
-                      <div className="flex justify-center gap-2">
-                        <button className="rounded-lg p-2 text-primary hover:bg-primary/10" onClick={() => editStudent(student)}><Pencil size={17} /></button>
-                        {isAdmin && <button className="rounded-lg p-2 text-danger hover:bg-red-50" onClick={() => void deleteStudent(student.id)}><Trash2 size={17} /></button>}
-                      </div>
+                    <td className="p-3 text-center">
+                      <button className="text-blue-500 hover:bg-blue-100 p-1.5 rounded mr-1" onClick={() => edit(s)}><Pencil size={14}/></button>
+                      <button className="text-danger hover:bg-rose-100 p-1.5 rounded" onClick={() => deleteStudent(s.id)}><Trash2 size={14}/></button>
                     </td>
                   )}
                 </tr>
-              )) : (
-                <tr><td className="p-10 text-center text-slate-400" colSpan={canEdit ? 8 : 7}>No Data</td></tr>
-              )}
+              ) }) : <tr><td colSpan={isAdmin ? 6 : 5} className="p-8 text-center text-slate-400">មិនមានទិន្នន័យសិស្សទេ</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
