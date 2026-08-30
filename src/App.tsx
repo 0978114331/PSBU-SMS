@@ -145,7 +145,8 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const [attendance, setAttendance] = useState<any[]>([]); 
   const [search, setSearch] = useState('');
   
-  const [adminInfo, setAdminInfo] = useState({ 
+ const [adminInfo, setAdminInfo] = useState({ 
+    schoolName: 'PSB University',
     teacher: '', room: '', subject: '', shift: 'Morning', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
     allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false,
     devPhoto: '', devName: '', devTitle: '', devDescription: '', contactEmail: '', contactGithub: '', contactFacebook: '', contactPhone: '', contactPortfolio: '',
@@ -328,7 +329,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
 
   return (
     <div className="min-h-screen w-full bg-light pb-24 lg:pb-5 overflow-x-hidden">
-      <Navbar activeTab={tab as any} isAdmin={isAdmin} userLabel={profile?.full_name || user?.email || ''} role={role} mobileOpen={menu} logoUrl={adminInfo.logo} onTabChange={(nextTab) => { setTab(nextTab); setMenu(false); }} onScanner={() => setScanner(true)} onSignOut={() => void signOut()} onMobileToggle={() => setMenu(!menu)} />
+      <Navbar activeTab={tab as any} isAdmin={isAdmin} userLabel={profile?.full_name || user?.email || ''} role={role} mobileOpen={menu} logoUrl={adminInfo.logo} schoolName={adminInfo.schoolName} onTabChange={(nextTab) => { setTab(nextTab); setMenu(false); }} onScanner={() => setScanner(true)} onSignOut={() => void signOut()} onMobileToggle={() => setMenu(!menu)} />
       
       <div className="mx-auto max-w-[1200px] w-full px-2 sm:px-3 pt-20 sm:pt-24 overflow-x-hidden">
         
@@ -367,6 +368,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
               
               <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">១. ព័ត៌មានទូទៅ (ថ្នាក់រៀន និង Logo)</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+                <input className="field bg-slate-50 md:col-span-4 font-bold text-primary" placeholder="ឈ្មោះសាលា ឬស្ថាប័ន..." value={adminInfo.schoolName || ''} onChange={e => setAdminInfo({...adminInfo, schoolName: e.target.value})} />
                 <input className="field bg-slate-50" placeholder="ឈ្មោះគ្រូ..." value={adminInfo.teacher} onChange={e => setAdminInfo({...adminInfo, teacher: e.target.value})} />
                 <input className="field bg-slate-50" placeholder="បន្ទប់រៀន" value={adminInfo.room} onChange={e => setAdminInfo({...adminInfo, room: e.target.value})} />
                 <input className="field bg-slate-50" placeholder="មុខវិជ្ជា..." value={adminInfo.subject} onChange={e => setAdminInfo({...adminInfo, subject: e.target.value})} />
@@ -875,7 +877,7 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today, refre
             <div className="relative flex justify-center items-start w-full mb-4 pt-2">
               <div className="absolute left-0 top-0 flex flex-col items-center w-max">
                  {adminInfo.logo && <img src={adminInfo.logo} alt="Logo" className="w-12 h-12 sm:w-16 sm:h-16 object-contain mb-1 drop-shadow-sm" />}
-                 <span className="font-moul text-[8px] sm:text-[10px] text-blue-900 text-center leading-tight">PSB University<br/></span>
+                 <span className="font-moul text-[8px] sm:text-[10px] text-blue-900 text-center leading-tight max-w-[120px] sm:max-w-[150px] whitespace-normal break-words">{adminInfo.schoolName || 'PSB University'}<br/></span>
               </div>
               <div className="flex flex-col items-center text-center">
                  <span className="font-moul text-[12px] sm:text-[16px] text-blue-900 leading-none">ព្រះរាជាណាចក្រកម្ពុជា</span>

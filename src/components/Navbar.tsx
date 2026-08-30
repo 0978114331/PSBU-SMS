@@ -9,6 +9,7 @@ type NavbarProps = {
   role: string;
   mobileOpen: boolean;
   logoUrl?: string;
+  schoolName?: string;
   onTabChange: (tab: string) => void;
   onScanner: () => void;
   onSignOut: () => void;
@@ -22,7 +23,7 @@ const primaryItems: NavItem[] = [
   { id: 'about', label: 'អំពី', icon: Info },
 ];
 
-export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUrl, onTabChange, onScanner, onSignOut, onMobileToggle }: NavbarProps) {
+export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUrl, schoolName, onTabChange, onScanner, onSignOut, onMobileToggle }: NavbarProps) {
   
   const warehouseItems: NavItem[] = [
     { id: 'scores', label: 'ពិន្ទុសិស្ស', icon: GraduationCap },
@@ -52,7 +53,7 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
         ) : (
           <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-primary"><GraduationCap size={22} /></div>
         )}
-        <b className="text-sm sm:text-base font-bold tracking-wide hidden min-[360px]:block">PSB University</b>
+        <b className="text-sm sm:text-base font-bold tracking-wide hidden min-[360px]:block"> {schoolName || 'PSB University'}</b>      
       </div>
       
       <div className="hidden items-center gap-3 lg:flex">
@@ -88,7 +89,7 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
        </div>
 
        <BottomNavItem icon={FileText} label="សុំច្បាប់" active={activeTab === 'leaves'} onClick={() => { onTabChange('leaves'); if(mobileOpen) onMobileToggle(); }} />
-       <BottomNavItem icon={Info} label="អំពី" active={activeTab === 'about'} onClick={() => { onTabChange('about'); if(mobileOpen) onMobileToggle(); }} />
+       <BottomNavItem icon={Info} label="អំពីយើង" active={activeTab === 'about'} onClick={() => { onTabChange('about'); if(mobileOpen) onMobileToggle(); }} />
     </nav>
 
     {mobileOpen && (
