@@ -676,6 +676,7 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
           <div className="text-center border-b-[3px] border-double border-primary pb-3 sm:pb-4 mb-4 sm:mb-5 relative w-full">
             {adminInfo.logo && <img src={adminInfo.logo} className="w-[50px] h-[50px] sm:w-[70px] sm:h-[70px] object-cover mx-auto mb-2 rounded-full shadow-sm border border-primary" alt="Logo" />}
             <h1 className="text-primary text-lg sm:text-2xl font-bold my-1 w-full truncate px-2">របាយការណ៍វត្តមានសិស្សប្រចាំថ្ងៃ</h1>
+              <p>ប្រព័ន្ទគ្រប់គ្រងស្វ័យប្រវត្តិ</p>
           </div>
           
           <div className="flex flex-row justify-between bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-4 text-[10px] sm:text-sm w-full gap-2 overflow-hidden">
@@ -1351,7 +1352,7 @@ function Scanner({ onClose, refresh, today }: any) {
     
     if (isSharedQR) {
        if (liveAdminInfo.allowUniversalQR === false) {
-         setMessage({ text: "មុខងារស្កែនត្រូវបានបិទ!", type: 'error' });
+         setMessage({ text: "មុខងារផ្អាកដំណើរការ!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
          return;
        }
