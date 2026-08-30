@@ -617,13 +617,13 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
           <div className="bg-white rounded-3xl p-6 sm:p-10 text-center max-w-sm w-full shadow-2xl animate-fade-in relative flex flex-col items-center">
             <button className="absolute top-4 right-4 text-slate-400 hover:text-danger bg-slate-100 p-1.5 rounded-full" onClick={() => setShowSharedQR(false)}><X size={20}/></button>
             <h2 className="text-xl sm:text-2xl font-bold text-primary mb-2">ស្កែនដើម្បីចុះវត្តមាន</h2>
-            <p className="text-sm text-slate-500 mb-6">QR Code នេះអាច Print ទុកប្រើបានរហូត</p>
+            <p className="text-sm text-slate-500 mb-6">ស្គែនខ្ញុំដើម្បីភាពងាយស្រួល នឹងទាន់សម័យកាល</p>
             <div className="p-2 border-4 border-slate-100 rounded-2xl shadow-sm bg-white">
               <img src={qrUrl} alt="Shared QR" className="w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] object-contain" />
             </div>
             <p className="mt-4 text-[10px] text-slate-400 font-bold tracking-widest uppercase">UNIVERSAL SCANNER</p>
             <a href={qrUrl} download={`Permanent_QR_Scanner.png`} className="btn btn-success w-full mt-6 shadow-md shadow-success/30 py-3 font-bold flex justify-center items-center gap-2">
-              <Download size={18} /> រក្សាទុក QR Code នេះ
+              <Download size={18} /> រក្សាទុក QR Code
             </a>
           </div>
         </div>
@@ -728,6 +728,7 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
               </table>
             </div>
           </div>
+
           <div className="mt-4 sm:mt-5 flex flex-wrap justify-center gap-2 border-t-2 border-primary pt-3 sm:pt-4 w-full">
             <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-blue-50 text-blue-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">ស.សរុប: {displayRecords.length}</div>
             <div className="flex-1 min-w-[70px] sm:min-w-[100px] bg-green-50 text-green-700 p-2 sm:p-2.5 rounded-xl text-center font-bold text-[10px] sm:text-xs shadow-sm">វត្តមាន: {displayRecords.filter((r:any)=>r.status===statuses[0] || r.status==='វត្តមាន').length}</div>
@@ -736,14 +737,27 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
           </div>
         </div>
         
-        <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 items-center justify-center w-full">
-           <div className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-sm w-full sm:w-auto justify-center">
-              <label className="font-bold text-xs sm:text-sm text-slate-700">សិស្សសរុប៖</label>
-              <div className="field !w-16 !py-1 text-center text-xs bg-slate-100 font-bold">{displayRecords.length}</div>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3 w-full no-print">
+           <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+              <label className="font-bold text-sm text-slate-700">សិស្សសរុប៖</label>
+              <div className="bg-slate-100 rounded-md px-3 py-0.5 text-center text-sm font-bold">{displayRecords.length}</div>
            </div>
-           <div className="flex w-full sm:w-auto gap-2">
-             {isAdmin && <button className="btn bg-danger text-white flex-1 sm:flex-none" onClick={deleteAll}><Trash2 size={16} /> លុបទាំងអស់</button>}
-             <button className="btn bg-[#2c3e50] text-white flex-1 sm:flex-none shadow-md shadow-[#2c3e50]/20" onClick={downloadPDF}><Printer size={16} /> បោះពុម្ព PDF</button>
+           
+           <div className="flex items-center gap-2">
+             {isAdmin && (
+                <button 
+                  className="flex items-center justify-center gap-1.5 bg-danger text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all w-auto" 
+                  onClick={deleteAll}
+                >
+                  <Trash2 size={16} /> លុប
+                </button>
+             )}
+             <button 
+               className="flex items-center justify-center gap-1.5 bg-[#2c3e50] text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-md shadow-[#2c3e50]/20 hover:opacity-90 active:scale-95 transition-all w-auto" 
+               onClick={downloadPDF}
+             >
+                <Printer size={16} /> PDF
+             </button>
            </div>
         </div>
       </div>
@@ -1373,7 +1387,7 @@ function Scanner({ onClose, refresh, today }: any) {
        }
 
        if (student.stu_id && liveAdminInfo.blockedQRStudents?.includes(String(student.stu_id))) {
-         setMessage({ text: "ទីតាំងមិនត្រឹមត្រូវ សូមស្កែនផ្ទាល់នៅសាលា!", type: 'error' });
+         setMessage({ text: "រកទីតាំងមិនឃើញ!", type: 'error' });
          setTimeout(() => { setMessage(null); processingRef.current = false; }, 4000);
          return;
        }
@@ -1400,7 +1414,7 @@ function Scanner({ onClose, refresh, today }: any) {
        if (curStat === statuses[0] || curStat === 'វត្តមាន') {
           setMessage({ text: "ស្កែនរួចរាល់ហើយ", type: 'error' });
        } else if (curStat === statuses[2] || curStat === 'អវត្តមាន') {
-          setMessage({ text: "អ្នកផុតម៉ោងកំណត់ស្កែន ឬអវត្តមានហើយ!", type: 'error' });
+          setMessage({ text: "អ្នកផុតម៉ោងកំណត់ស្កែន!", type: 'error' });
        } else if (curStat === statuses[1] || curStat === 'ច្បាប់') {
           setMessage({ text: "អ្នកបានសុំច្បាប់រួចហើយ!", type: 'error' });
        } else {
