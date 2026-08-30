@@ -61,11 +61,11 @@ function AuthScreen() {
     <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-cover bg-center p-4 sm:p-5 font-sans antialiased" style={{ backgroundImage: "url('https://i.ibb.co/nqpzhb09/Kc-hacker.png')" }}>
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-800/85 to-blue-900/80 backdrop-blur-[2px]" />
       <section className="relative z-10 w-full max-w-[420px] rounded-[24px] border border-white/30 bg-white/80 p-6 sm:p-8 text-center shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] backdrop-blur-xl mx-auto transition-all duration-300">
-        <div className="mx-auto mb-6 flex h-20 w-20 sm:h-24 sm:w-24 animate-bot-pulse items-center justify-center rounded-full bg-gradient-to-tr from-blue-600/10 to-indigo-500/20 text-blue-600 shadow-[inset_0_4px_20px_rgba(0,0,0,0.05)] border border-white/60">
-          <GraduationCap size={48} strokeWidth={1.5} className="drop-shadow-sm" />
+        <div className="mx-auto mb-4 flex h-24 w-24 sm:h-28 sm:w-28 animate-bot-pulse items-center justify-center rounded-full overflow-hidden shadow-md border-4 border-white/80 bg-white">
+          <img src="https://i.ibb.co/JjdQf0hK/ce2e43f3-9d48-4d71-86a6-dd1ac3d77c49.png" alt="Logo" className="w-full h-full object-cover" />
         </div>
         <h1 className="mb-6 text-2xl sm:text-[28px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-700 tracking-tight">
-          School MS
+          School <p>Management System</p>
         </h1>
         <div className="mb-6 flex rounded-xl bg-slate-200/50 p-1.5 shadow-inner">
           <button className={`flex-1 rounded-lg py-2.5 text-[13px] sm:text-sm font-bold transition-all duration-300 ${mode === 'login' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`} onClick={() => setMode('login')}>ចូលប្រើ (Login)</button>
