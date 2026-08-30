@@ -150,7 +150,8 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
     teacher: '', room: '', subject: '', shift: 'Morning', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
     allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false,
     devPhoto: '', devName: '', devTitle: '', devDescription: '', contactEmail: '', contactGithub: '', contactFacebook: '', contactPhone: '', contactPortfolio: '',
-    allowUniversalQR: true, blockedQRStudents: [] as string[] 
+    allowUniversalQR: true, blockedQRStudents: [] as string[],
+    allowManualScanInput: false
   });
 
   const [tempLogo, setTempLogo] = useState('');
@@ -410,6 +411,10 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
                      <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowStudentEdit || false} onChange={e => setAdminInfo({...adminInfo, allowStudentEdit: e.target.checked})} /> កែប្រែបញ្ជីសិស្ស</label>
                      <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowLeaveManualName || false} onChange={e => setAdminInfo({...adminInfo, allowLeaveManualName: e.target.checked})} /> បញ្ចូលការសុំច្បាប់</label>
                      <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} /> បង្កើតកាតសិស្ស</label>
+                     <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition">
+                        <input type="checkbox" className="w-4 h-4 text-primary rounded border-slate-300 focus:ring-primary" checked={adminInfo.allowManualScanInput} onChange={e => setAdminInfo({...adminInfo, allowManualScanInput: e.target.checked})} />
+                        <span className="text-sm font-medium text-slate-700">បិទ/បើក បញ្ចូលID QR</span>
+                     </label>
                    </div>
                 </div>
                 <button className="btn btn-success w-full md:w-auto py-3 px-8 text-base font-bold shadow-md shadow-success/20 mt-4 md:mt-0" disabled={savingConfig} onClick={saveAdminConfig}>
@@ -435,8 +440,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
           )}
         </div>
       </div>
-      {scanner && <Scanner onClose={() => setScanner(false)} refresh={fetchInitialData} today={today} />}
-    </div>
+        {scanner && <Scanner onClose={() => setScanner(false)} refresh={fetchInitialData} today={today} adminInfo={adminInfo} />}     </div>
   );
 }
 
@@ -1313,7 +1317,7 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
   ); 
 }
 
-function Scanner({ onClose, refresh, today }: any) { 
+function Scanner({ onClose, refresh, today, adminInfo }: any) { 
   const [value, setValue] = useState(''); 
   const [message, setMessage] = useState<{text: string, type: 'success'|'error'} | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -1473,11 +1477,12 @@ function Scanner({ onClose, refresh, today }: any) {
         </div>
         
         <p className="mt-8 text-center text-slate-300 text-sm font-medium tracking-wide">ដាក់កូដ QR ឱ្យចំកណ្តាល</p>
-        
-        <div className="mt-5 flex w-full max-w-[280px] gap-2">
-          <input className="field !bg-white/10 !border-white/20 !text-white placeholder:text-slate-400 !py-2" placeholder="បញ្ចូល ID ដោយដៃ" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void recordText(value); }} />
-          <button className="btn bg-success text-white px-3" onClick={() => void recordText(value)}><CheckCircle2 size={18} /></button>
-        </div>
+        {adminInfo.allowManualScanInput && (
+          <div className="mt-5 flex w-full max-w-[280px] gap-2">
+            <input className="field !bg-white/10 !border-white/20 !text-white placeholder:text-slate-400 !py-2" placeholder="បញ្ចូល ID ដោយដៃ" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void recordText(value); }} />
+            <button className="btn bg-success text-white px-3" onClick={() => void recordText(value)}><CheckCircle2 size={18} /></button>
+          </div>
+        )}
         
         <button className="btn mt-6 border border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md px-5 py-2.5 text-sm" onClick={onClose}><X size={16} /> បិទកាំមេរ៉ា</button>
       </div>
