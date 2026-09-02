@@ -490,6 +490,63 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
 
   const canManualEntry = isAdmin || adminInfo.allowManual;
 
+  const [autoClass, setAutoClass] = useState({ teacher: '', subject: '', time: '' });
+
+  useEffect(() => {
+    let interval: any;
+    
+    async function fetchAutoSchedule() {
+      const { data } = await supabase.from('schedules').select('data_json').eq('type', 'class_schedule').maybeSingle();
+      if (!data?.data_json) return;
+      
+      const updateData = () => {
+        const sch = data.data_json as Record<string, string>;
+        const now = new Date();
+        const dayCol = now.getDay() - 1; 
+        
+        if (dayCol < 0 || dayCol > 4) {
+           setAutoClass({ teacher: '', subject: '', time: '' });
+           return;
+        }
+        
+        const defaultTimes = ['07:30 - 09:00', '09:30 - 11:00', '01:00 - 14:30', '14:45 - 16:15'];
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+        let activeRow = 0; 
+        
+        if (currentMins >= 0 && currentMins < 555) { 
+           activeRow = 0;
+        } else if (currentMins >= 555 && currentMins < 720) { 
+           activeRow = 1;
+        } else if (currentMins >= 720 && currentMins < 875) { 
+           activeRow = 2;
+        } else { 
+           activeRow = 3;
+        }
+
+        const cellText = sch[`sch_${activeRow}_${dayCol}`] || '';
+        const lines = cellText.split('\n').map((l: string) => l.trim()).filter((l: string) => l !== '');
+        
+        if (lines.length > 0) {
+           setAutoClass({
+              teacher: lines[0] || '', 
+              subject: lines.length > 1 ? lines.slice(1).join(' ') : lines[0],
+              time: sch[`rowTime_${activeRow}`] || defaultTimes[activeRow]
+           });
+        }
+      };
+
+      updateData(); 
+      interval = setInterval(updateData, 60000);
+    }
+    
+    fetchAutoSchedule();
+    return () => { if (interval) clearInterval(interval); };
+  }, []);
+
+  const finalTeacher = autoClass.teacher || adminInfo.teacher || '---';
+  const finalSubject = autoClass.subject || adminInfo.subject || '---';
+  const finalTime = adminInfo.time || '---';
+
   const displayRecords = allRecords.filter((a: any) => {
     const matchSearch = a.name.toLowerCase().includes((searchQuery || '').toLowerCase()) || String(a.stu_id || '').toLowerCase().includes((searchQuery || '').toLowerCase());
     if (!showAllStatus && a.status !== statuses[0] && a.status !== 'វត្តមាន') return false;
@@ -533,8 +590,8 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
       time: new Date().toLocaleTimeString('en-GB'),
       shift: adminInfo.shift || '',
       room: adminInfo.room || '',
-      teacher: adminInfo.teacher || '',
-      subject: adminInfo.subject || ''
+      teacher: finalTeacher,
+      subject: finalSubject
     };
 
     if (student?.id) {
@@ -565,8 +622,8 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
       time: new Date().toLocaleTimeString('en-GB'),
       shift: adminInfo.shift || '',
       room: adminInfo.room || '',
-      teacher: adminInfo.teacher || '',
-      subject: adminInfo.subject || ''
+      teacher: finalTeacher,
+      subject: finalSubject
     }));
 
     await supabase.from('attendance').insert(payloads);
@@ -685,11 +742,11 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
               <p>ប្រព័ន្ទគ្រប់គ្រងស្វ័យប្រវត្តិ</p>
           </div>
           
-          <div className="flex flex-row justify-between bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-4 text-[10px] sm:text-sm w-full gap-2 overflow-hidden">
+          <div className="flex flex-row justify-between bg-slate-50 p-3 sm:p-4 rounded-xl border border-slate-200 mb-4 text-[10px] sm:text-sm w-full gap-2 overflow-hidden relative">
             <div className="flex flex-col gap-y-1.5 flex-1 min-w-0">
-              <div className="flex items-center w-full"><strong className="w-[60px] sm:w-[85px] shrink-0 text-slate-700">គ្រូបង្រៀន៖</strong> <span className="text-slate-600 font-medium truncate">{adminInfo.teacher || '---'}</span></div>
-              <div className="flex items-center w-full"><strong className="w-[60px] sm:w-[85px] shrink-0 text-slate-700">មុខវិជ្ជា៖</strong> <span className="text-slate-600 font-medium truncate">{adminInfo.subject || '---'}</span></div>
-              <div className="flex items-center w-full"><strong className="w-[60px] sm:w-[85px] shrink-0 text-slate-700">ម៉ោងសិក្សា៖</strong> <span className="text-primary font-bold truncate">{adminInfo.time || '---'}</span></div>
+              <div className="flex items-center w-full"><strong className="w-[60px] sm:w-[85px] shrink-0 text-slate-700">គ្រូបង្រៀន៖</strong> <span className="text-slate-600 font-medium truncate">{finalTeacher}</span></div>
+              <div className="flex items-center w-full"><strong className="w-[60px] sm:w-[85px] shrink-0 text-slate-700">មុខវិជ្ជា៖</strong> <span className="text-slate-600 font-medium truncate">{finalSubject}</span></div>
+              <div className="flex items-center w-full"><strong className="w-[60px] sm:w-[85px] shrink-0 text-slate-700">ម៉ោងសិក្សា៖</strong> <span className="text-primary font-bold truncate">{finalTime}</span></div>
             </div>
             <div className="flex flex-col gap-y-1.5 flex-1 min-w-0 items-end text-right">
               <div className="flex items-center justify-end w-full"><strong className="text-slate-700 mr-1.5 shrink-0">បន្ទប់៖</strong> <span className="text-slate-600 font-medium truncate">{adminInfo.room || '---'}</span></div>
@@ -1320,7 +1377,8 @@ function CardsPanel({ isAdmin, adminInfo }: any) {
 function Scanner({ onClose, refresh, today, adminInfo }: any) { 
   const [value, setValue] = useState(''); 
   const [message, setMessage] = useState<{text: string, type: 'success'|'error'} | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const scannerRef = useRef<any>(null);
   const processingRef = useRef(false);
   
   useEffect(() => {
@@ -1354,6 +1412,11 @@ function Scanner({ onClose, refresh, today, adminInfo }: any) {
   async function recordText(val: string) {
     if (processingRef.current) return;
     processingRef.current = true;
+    setIsProcessing(true); 
+
+    if (scannerRef.current && scannerRef.current.isScanning) {
+      try { scannerRef.current.pause(true); } catch(e){}
+    }
     
     const scanNow = new Date();
     const scanToday = `${scanNow.getFullYear()}-${String(scanNow.getMonth() + 1).padStart(2, '0')}-${String(scanNow.getDate()).padStart(2, '0')}`;
@@ -1370,41 +1433,37 @@ function Scanner({ onClose, refresh, today, adminInfo }: any) {
     const { data: stData } = await supabase.from('students').select('*');
     const allStudents = stData || [];
     
+    const finishScan = (msgText: string, msgType: 'success' | 'error') => {
+      setIsProcessing(false);
+      setMessage({ text: msgText, type: msgType });
+      setTimeout(() => { onClose(); }, 2000);
+    };
+
     if (isSharedQR) {
        if (liveAdminInfo.allowUniversalQR === false) {
-         setMessage({ text: "មុខងារផ្អាកដំណើរការ!", type: 'error' });
-         setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
-         return;
+         return finishScan("មុខងារផ្អាកដំណើរការ!", 'error');
        }
 
        const linkedId = localStorage.getItem('my_stu_id');
        if (!linkedId) {
-         setMessage({ text: "អ្នកមិនទាន់បានភ្ជាប់អត្តលេខទេ!", type: 'error' });
-         setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
-         return;
+         return finishScan("អ្នកមិនទាន់បានភ្ជាប់អត្តលេខទេ!", 'error');
        }
        
        student = allStudents.find((s:any) => String(s.stu_id).trim().toLowerCase() === String(linkedId).trim().toLowerCase());
        
        if (!student) {
-         setMessage({ text: `អត្តលេខ [${linkedId}] គ្មានក្នុងបញ្ជីទេ!`, type: 'error' });
-         setTimeout(() => { setMessage(null); processingRef.current = false; }, 4000);
-         return;
+         return finishScan(`អត្តលេខ [${linkedId}] គ្មានក្នុងបញ្ជីទេ!`, 'error');
        }
 
        if (student.stu_id && liveAdminInfo.blockedQRStudents?.includes(String(student.stu_id))) {
-         setMessage({ text: "រកទីតាំងមិនឃើញ!", type: 'error' });
-         setTimeout(() => { setMessage(null); processingRef.current = false; }, 4000);
-         return;
+         return finishScan("រកទីតាំងមិនឃើញ!", 'error');
        }
 
     } else {
        const cleanVal = rawVal.trim().toLowerCase();
        student = allStudents.find((s:any) => String(s.stu_id).trim().toLowerCase() === cleanVal); 
        if (!student) {
-         setMessage({ text: `ខុសអត្តលេខ៖ [${rawVal}]`, type: 'error' });
-         setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
-         return;
+         return finishScan(`ខុសអត្តលេខ៖ [${rawVal}]`, 'error');
        }
     }
 
@@ -1418,23 +1477,16 @@ function Scanner({ onClose, refresh, today, adminInfo }: any) {
     if (existing && existing.length > 0) {
        const curStat = existing[0].status;
        if (curStat === statuses[0] || curStat === 'វត្តមាន') {
-          setMessage({ text: "ស្កែនរួចរាល់ហើយ", type: 'error' });
+          return finishScan("ស្កែនរួចរាល់ហើយ", 'error');
        } else if (curStat === statuses[2] || curStat === 'អវត្តមាន') {
-          setMessage({ text: "អ្នកផុតម៉ោងកំណត់ស្កែន!", type: 'error' });
+          return finishScan("អ្នកផុតម៉ោងកំណត់ស្កែន!", 'error');
        } else if (curStat === statuses[1] || curStat === 'ច្បាប់') {
-          setMessage({ text: "អ្នកបានសុំច្បាប់រួចហើយ!", type: 'error' });
+          return finishScan("អ្នកបានសុំច្បាប់រួចហើយ!", 'error');
        } else {
-          setMessage({ text: "អ្នកមិនអាចស្កែនបានទេ!", type: 'error' });
+          return finishScan("អ្នកមិនអាចស្កែនបានទេ!", 'error');
        }
-       setValue('');
-       setTimeout(() => { setMessage(null); processingRef.current = false; }, 3500);
-       return;
     }
     
-    if (scannerRef.current && scannerRef.current.isScanning) {
-      try { scannerRef.current.pause(true); } catch(e){}
-    }
-
     await supabase.from('attendance').insert({ 
       student_id: student.id, 
       stu_id: student.stu_id, 
@@ -1448,11 +1500,10 @@ function Scanner({ onClose, refresh, today, adminInfo }: any) {
       teacher: liveAdminInfo.teacher || '',
       subject: liveAdminInfo.subject || ''
     }); 
+    
     if(refresh) refresh();
     setValue('');
-    
-    setMessage({ text: "ស្កែនជោគជ័យ", type: 'success' });
-    setTimeout(() => { onClose(); }, 1500);
+    finishScan("ស្កែនជោគជ័យ", 'success');
   }
 
   return (
@@ -1460,23 +1511,41 @@ function Scanner({ onClose, refresh, today, adminInfo }: any) {
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-800 to-black" />
       <div className="relative z-10 flex h-full flex-col items-center justify-center p-4">
         
-        {message && (
-          <div className={`absolute top-10 left-1/2 -translate-x-1/2 w-max max-w-[90%] px-5 py-2.5 rounded-full text-sm font-bold text-white shadow-lg animate-fade-in z-50 flex items-center justify-center gap-2 ${message.type === 'success' ? 'bg-success' : 'bg-danger'}`}>
-            {message.type === 'success' ? <CheckCircle2 size={18}/> : <X size={18}/>}
-            <span className="truncate">{message.text}</span>
-          </div>
-        )}
-
         <div className="relative h-64 w-64 rounded-2xl shadow-[0_0_0_4000px_rgba(0,0,0,.75)] overflow-hidden bg-black/50">
           <span className="absolute left-0 top-0 h-12 w-12 rounded-tl-2xl border-l-4 border-t-4 border-white z-20 pointer-events-none" />
           <span className="absolute right-0 top-0 h-12 w-12 rounded-tr-2xl border-r-4 border-t-4 border-white z-20 pointer-events-none" />
           <span className="absolute bottom-0 left-0 h-12 w-12 rounded-bl-2xl border-b-4 border-l-4 border-white z-20 pointer-events-none" />
           <span className="absolute bottom-0 right-0 h-12 w-12 rounded-br-2xl border-b-4 border-r-4 border-white z-20 pointer-events-none" />
+          
           <div id="reader" className="w-full h-full object-cover relative z-10"></div>
-          <div className="absolute left-[5%] top-0 h-0.5 w-[90%] animate-scan-laser bg-green-400 shadow-[0_0_15px_#00ff00] z-20 pointer-events-none" />
+          
+          {!isProcessing && !message && (
+             <div className="absolute left-[5%] top-0 h-0.5 w-[90%] animate-scan-laser bg-green-400 shadow-[0_0_15px_#00ff00] z-20 pointer-events-none" />
+          )}
+
+          {(isProcessing || message) && (
+             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm transition-all duration-300">
+                {isProcessing ? (
+                   <div className="flex flex-col items-center gap-3">
+                      <div className="h-10 w-10 animate-spin rounded-full border-4 border-white border-t-transparent"></div>
+                      <span className="text-white font-bold text-sm tracking-wide">កំពុងដំណើរការ...</span>
+                   </div>
+                ) : message ? (
+                   <div className="flex flex-col items-center gap-3">
+                      <div className={`flex items-center justify-center h-14 w-14 rounded-full shadow-lg ${message.type === 'success' ? 'bg-success text-white' : 'bg-danger text-white'}`}>
+                         {message.type === 'success' ? <CheckCircle2 size={32}/> : <X size={32}/>}
+                      </div>
+                      <span className={`font-bold text-[15px] px-3 text-center leading-relaxed ${message.type === 'success' ? 'text-success' : 'text-danger'}`}>
+                         {message.text}
+                      </span>
+                   </div>
+                ) : null}
+             </div>
+          )}
         </div>
         
         <p className="mt-8 text-center text-slate-300 text-sm font-medium tracking-wide">ដាក់កូដ QR ឱ្យចំកណ្តាល</p>
+        
         {adminInfo.allowManualScanInput && (
           <div className="mt-5 flex w-full max-w-[280px] gap-2">
             <input className="field !bg-white/10 !border-white/20 !text-white placeholder:text-slate-400 !py-2" placeholder="បញ្ចូល ID ដោយដៃ" value={value} onChange={e => setValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void recordText(value); }} />
@@ -1484,7 +1553,9 @@ function Scanner({ onClose, refresh, today, adminInfo }: any) {
           </div>
         )}
         
-        <button className="btn mt-6 border border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md px-5 py-2.5 text-sm" onClick={onClose}><X size={16} /> បិទកាំមេរ៉ា</button>
+        <button className="btn mt-6 border border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur-md px-5 py-2.5 text-sm" onClick={onClose}>
+           <X size={16} /> បិទកាំមេរ៉ា
+        </button>
       </div>
     </div>
   ); 
