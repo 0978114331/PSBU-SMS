@@ -495,7 +495,7 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
   useEffect(() => {
     let interval: any;
     
-    async function fetchAutoSchedule() {
+    const fetchAutoSchedule = async () => {
       const { data } = await supabase.from('schedules').select('data_json').eq('type', 'class_schedule').maybeSingle();
       if (!data?.data_json) return;
       
@@ -509,20 +509,7 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
            return;
         }
         
-        const defaultTimes = ['07:30 - 09:00', '09:30 - 11:00', '01:00 - 14:30', '14:45 - 16:15'];
-        const currentMins = now.getHours() * 60 + now.getMinutes();
-        let activeRow = 0; 
-        
-        if (currentMins >= 0 && currentMins < 555) { 
-           activeRow = 0;
-        } else if (currentMins >= 555 && currentMins < 720) { 
-           activeRow = 1;
-        } else if (currentMins >= 720 && currentMins < 875) { 
-           activeRow = 2;
-        } else { 
-           activeRow = 3;
-        }
-
+        const activeRow = 0; 
         const cellText = sch[`sch_${activeRow}_${dayCol}`] || '';
         const lines = cellText.split('\n').map((l: string) => l.trim()).filter((l: string) => l !== '');
         
@@ -530,17 +517,28 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
            setAutoClass({
               teacher: lines[0] || '', 
               subject: lines.length > 1 ? lines.slice(1).join(' ') : lines[0],
-              time: sch[`rowTime_${activeRow}`] || defaultTimes[activeRow]
+              time: '' 
            });
+        } else {
+           setAutoClass({ teacher: '', subject: '', time: '' });
         }
       };
 
       updateData(); 
       interval = setInterval(updateData, 60000);
-    }
+    };
     
     fetchAutoSchedule();
-    return () => { if (interval) clearInterval(interval); };
+
+    const schSub = supabase.channel('auto-schedule-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+        if (payload.new && (payload.new as any).type === 'class_schedule') fetchAutoSchedule();
+      }).subscribe();
+
+    return () => { 
+      if (interval) clearInterval(interval); 
+      supabase.removeChannel(schSub);
+    };
   }, []);
 
   const finalTeacher = autoClass.teacher || adminInfo.teacher || '---';
@@ -777,7 +775,9 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
                         <small className="block text-slate-400 mt-0.5 hide-on-print">Time: {r.time || '---'}</small>
                       </td>
                       <td className="p-2 sm:p-3 text-center font-medium show-on-print">{r.time || '---'}</td>
-                      <td className="p-2 sm:p-3 text-center whitespace-nowrap">{r.gender || '---'}</td>
+                      <td className="p-2 sm:p-3 text-center whitespace-nowrap">
+                        {r.gender === 'Female' ? 'ស្រី' : r.gender === 'Male' ? 'ប្រុស' : (r.gender || '---')}
+                      </td>
                       <td className="p-2 sm:p-3 text-center whitespace-nowrap"><span className={`rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-[9px] sm:text-[11px] font-bold inline-block ${r.status === statuses[0] || r.status === 'វត្តមាន' ? 'bg-green-100 text-green-700' : r.status === statuses[1] || r.status === 'ច្បាប់' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{r.status}</span></td>
                       {isAdmin && (
                         <td className="p-2 sm:p-3 text-center no-print whitespace-nowrap">

@@ -1,58 +1,85 @@
 import { useEffect, useState } from 'react';
-import { Eye, Heart, X, Images, Share2, ImageIcon } from 'lucide-react';
+import { Eye, Heart, X, Share2, ImageIcon, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const defaultBanners = [
   "https://i.ibb.co/nqpzhb09/Kc-hacker.png"
 ];
 
+const formatKhmerDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const days = ['អាទិត្យ', 'ច័ន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
+  const months = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+  return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+};
+
 function PostCard({ post, onOpen, onLike, onShare, isLiked }: { post: any, onOpen: (p: any) => void, onLike: (e: any, id: string, likes: number) => void, onShare: (e: any, post: any) => void, isLiked: boolean }) {
   const images = post.image_urls || [];
-  const [imgIdx, setImgIdx] = useState(0);
-
-  useEffect(() => {
-    if (images.length <= 1) return;
-    const timer = setInterval(() => {
-      setImgIdx((prev) => (prev + 1) % images.length);
-    }, 3500);
-    return () => clearInterval(timer);
-  }, [images.length]);
+  const count = images.length;
 
   return (
     <div onClick={() => onOpen(post)} className="bg-gradient-to-br from-white to-slate-50/80 rounded-[24px] overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_15px_35px_rgba(0,0,0,0.1)] border border-slate-100 transition-all duration-300 hover:-translate-y-1.5 cursor-pointer flex flex-col h-full group">
       
       <div className="w-full h-[150px] sm:h-[190px] p-2.5 pb-0">
-         <div className="w-full h-full relative overflow-hidden rounded-[18px] shadow-[inset_0_0_10px_rgba(0,0,0,0.1)] bg-slate-200">
-            {images.length > 0 ? (
-              <img src={images[imgIdx]} alt={post.title} className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110" />
-            ) : (
+         <div className="w-full h-full relative overflow-hidden rounded-[18px] bg-slate-200 shadow-[inset_0_0_10px_rgba(0,0,0,0.1)]">
+            {count === 0 ? (
               <div className="w-full h-full flex items-center justify-center text-slate-300"><ImageIcon size={35} /></div>
-            )}
-            {images.length > 1 && (
-              <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm">
-                <Images size={12} /> {imgIdx + 1}/{images.length}
+            ) : count === 1 ? (
+              <img src={images[0]} alt={post.title} className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
+            ) : count === 2 ? (
+              <div className="grid grid-cols-2 gap-1 w-full h-full">
+                <img src={images[0]} alt="img1" className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
+                <img src={images[1]} alt="img2" className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
+              </div>
+            ) : count === 3 ? (
+              <div className="grid grid-cols-2 grid-rows-2 gap-1 w-full h-full">
+                <img src={images[0]} alt="img1" className="w-full h-full object-cover row-span-2 transition-transform duration-700 ease-in-out group-hover:scale-105" />
+                <img src={images[1]} alt="img2" className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
+                <img src={images[2]} alt="img3" className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 grid-rows-2 gap-1 w-full h-full">
+                <img src={images[0]} alt="img1" className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
+                <img src={images[1]} alt="img2" className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
+                <img src={images[2]} alt="img3" className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
+                <div className="relative w-full h-full overflow-hidden">
+                  <img src={images[3]} alt="img4" className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-105" />
+                  {count > 4 && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center text-white font-bold text-lg sm:text-xl transition-colors group-hover:bg-black/40">
+                      +{count - 4}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
          </div>
       </div>
 
       <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-extrabold text-[14px] sm:text-[16px] mb-2 line-clamp-2 leading-snug text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-600">
+        
+        <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-slate-400 mb-2.5">
+          <Clock size={13} className="text-slate-300" /> 
+          <span>{formatKhmerDate(post.created_at)}</span>
+          <span className="flex items-center gap-1 ml-auto">
+            <Eye size={13} /> {post.views}
+          </span>
+        </div>
+
+        <h3 className="font-extrabold text-[14px] sm:text-[16px] mb-2 line-clamp-2 leading-snug text-slate-800">
           {post.title}
         </h3>
         
         <p className="text-slate-500 text-[11px] sm:text-[13px] mb-4 line-clamp-2 flex-1 leading-relaxed break-words overflow-hidden">{post.description}</p>
         
         <div className="flex items-center justify-between border-t border-slate-100 pt-3 mt-auto">
-          <div className="flex items-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs font-bold text-slate-400">
-            <span className="flex items-center gap-1.5 bg-blue-50/50 px-2.5 py-1 rounded-lg text-blue-600"><Eye size={14} /> {post.views}</span>
-            <button 
-              onClick={(e) => onLike(e, post.id, post.likes)} 
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all active:scale-95 ${isLiked ? 'bg-rose-50 text-rose-500' : 'bg-slate-50 text-slate-500 hover:bg-rose-50 hover:text-rose-500'}`}
-            >
-              <Heart size={14} className={`transition-all ${isLiked ? "fill-rose-500 text-rose-500 scale-110" : "fill-transparent"}`} /> {post.likes}
-            </button>
-          </div>
+          <button 
+            onClick={(e) => onLike(e, post.id, post.likes)} 
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all active:scale-95 text-[11px] sm:text-xs font-bold ${isLiked ? 'bg-rose-50 text-rose-500' : 'bg-slate-50 text-slate-500 hover:bg-rose-50 hover:text-rose-500'}`}
+          >
+            <Heart size={14} className={`transition-all ${isLiked ? "fill-rose-500 text-rose-500 scale-110" : "fill-transparent"}`} /> {post.likes}
+          </button>
+          
           <button onClick={(e) => onShare(e, post)} className="text-slate-400 hover:text-indigo-500 p-1.5 rounded-full hover:bg-indigo-50 transition-colors active:scale-90">
             <Share2 size={15} />
           </button>
@@ -64,6 +91,7 @@ function PostCard({ post, onOpen, onLike, onShare, isLiked }: { post: any, onOpe
 
 export function HomeFeed() {
   const [posts, setPosts] = useState<any[]>([]);
+  const [visibleCount, setVisibleCount] = useState(6);
   const [adBanners, setAdBanners] = useState<string[]>(defaultBanners);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedPost, setSelectedPost] = useState<any>(null);
@@ -174,11 +202,34 @@ export function HomeFeed() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
-        {posts.map((post) => (
+        {posts.slice(0, visibleCount).map((post) => (
           <PostCard key={post.id} post={post} onOpen={openPost} onLike={handleLike} onShare={handleShare} isLiked={likedPosts.has(post.id)} />
         ))}
       </div>
+      
       {posts.length === 0 && <div className="text-center text-slate-400 py-10 font-bold bg-white rounded-2xl border border-dashed border-slate-300 mx-1 mt-4 shadow-sm">មិនទាន់មានព័ត៌មានថ្មីៗទេ</div>}
+
+      <div className="mt-8 flex justify-center items-center gap-3 w-full">
+        {visibleCount < posts.length && (
+          <button 
+            onClick={() => setVisibleCount(prev => prev + 6)} 
+            className="btn bg-white border border-primary text-primary hover:bg-primary/10 px-6 py-2.5 rounded-full shadow-sm font-bold active:scale-95 transition-all text-sm"
+          >
+            មើលបន្ថែម (See More)
+          </button>
+        )}
+        {visibleCount > 6 && (
+          <button 
+            onClick={() => {
+              setVisibleCount(6);
+              window.scrollTo({ top: 300, behavior: 'smooth' });
+            }} 
+            className="btn bg-slate-50 border border-slate-300 text-slate-600 hover:bg-slate-100 px-6 py-2.5 rounded-full shadow-sm font-bold active:scale-95 transition-all text-sm"
+          >
+            បង្រួញវិញ (See Less)
+          </button>
+        )}
+      </div>
 
       {selectedPost && (
         <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md overflow-y-auto" onClick={() => setSelectedPost(null)}>
@@ -200,6 +251,11 @@ export function HomeFeed() {
               </div>
 
               <div className="p-5 sm:p-8 overflow-y-auto flex-1 bg-white relative">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-400 mb-3">
+                  <Clock size={14} className="text-slate-300" /> 
+                  <span>{formatKhmerDate(selectedPost.created_at)}</span>
+                </div>
+                
                 <h1 className="text-lg sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-700 mb-3 leading-snug break-words">{selectedPost.title}</h1>
                 <p className="text-slate-600 leading-[1.8] text-[13px] sm:text-[15px] whitespace-pre-wrap break-words overflow-wrap-anywhere mb-6">{selectedPost.description}</p>
                 
