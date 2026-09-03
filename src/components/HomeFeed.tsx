@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Eye, Heart, X, Share2, ImageIcon, Clock } from 'lucide-react';
+import { Eye, Heart, X, Share2, ImageIcon, Clock, Facebook, Youtube } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const defaultBanners = [
@@ -80,6 +80,15 @@ function PostCard({ post, onOpen, onLike, onShare, isLiked }: { post: any, onOpe
             <Heart size={14} className={`transition-all ${isLiked ? "fill-rose-500 text-rose-500 scale-110" : "fill-transparent"}`} /> {post.likes}
           </button>
           
+          <div className="flex items-center gap-3">
+             <a href="https://www.facebook.com/Chvea" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-blue-600 transition-transform hover:scale-110">
+               <Facebook size={16} />
+             </a>
+             <a href="https://www.youtube.com/@khouvchvea" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-red-600 transition-transform hover:scale-110">
+               <Youtube size={16} />
+             </a>
+          </div>
+
           <button onClick={(e) => onShare(e, post)} className="text-slate-400 hover:text-indigo-500 p-1.5 rounded-full hover:bg-indigo-50 transition-colors active:scale-90">
             <Share2 size={15} />
           </button>
