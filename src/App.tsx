@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin, Image as ImageIcon, FileText, Database } from 'lucide-react';
+import { BarChart3, BookOpen, CalendarDays, Camera, CheckCircle2, ClipboardList, Eye, EyeOff, FileBadge, GraduationCap, Pencil, Plus, QrCode, Search, Trash2, UserCheck, Users, X, Save, Upload, Download, Printer, Filter, RefreshCw, MapPin, Image as ImageIcon, FileText, Share2, Database } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Navbar } from '@/components/Navbar';
@@ -7,7 +7,8 @@ import { AttendanceHistory } from '@/components/data/AttendanceHistory';
 import { MasterStudentList } from '@/components/data/MasterStudentList';
 import { ScoreResults } from '@/components/data/ScoreResults';
 import { statuses } from '@/types';
-import html2canvas from 'html2canvas';
+import   html2canvas from 'html2canvas';
+import { sendTelegramReport } from '@/lib/telegram';
 import { Html5Qrcode } from 'html5-qrcode';
 
 import { HomeFeed } from '@/components/HomeFeed';
@@ -662,6 +663,34 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
     setTimeout(() => { document.body.classList.remove('print-attendance'); }, 500);
   };
 
+  async function handleSendTelegram() {
+    const d = new Date();
+    const khmerDays = ['អាទិត្យ', 'ច័ន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
+    const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+    const dateStr = `ថ្ងៃ${khmerDays[d.getDay()]} ទី${String(d.getDate()).padStart(2,'0')} ខែ${khmerMonths[d.getMonth()]} ឆ្នាំ${d.getFullYear()}`;
+
+    const totalStu = students.length;
+    const presentStu = allRecords.filter((r: any) => r.status === 'វត្តមាន' || r.status === statuses[0]).length;
+    const leaveStu = allRecords.filter((r: any) => r.status === 'ច្បាប់' || r.status === statuses[1]).length;
+    const unexcused = totalStu - presentStu - leaveStu; 
+    const totalAbsent = leaveStu + unexcused; 
+
+    const result = await sendTelegramReport({
+       dateStr,
+       teacher: finalTeacher,
+       subject: finalSubject,
+       shift: adminInfo.shift || 'ព្រឹក',
+       room: adminInfo.room || '502',
+       totalStu,
+       presentStu,
+       leaveStu,
+       unexcused,
+       totalAbsent
+    });
+
+    alert(result.message);
+  }
+
   return (
     <div className="grid gap-3 lg:gap-4 lg:grid-cols-[.8fr_1.5fr] w-full">
       <style>{`
@@ -821,6 +850,15 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
              >
                 <Printer size={16} /> PDF
              </button>
+             {isAdmin && (
+               <button 
+                 className="flex items-center justify-center gap-1.5 bg-[#0088cc] text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-md shadow-[#0088cc]/20 hover:opacity-90 active:scale-95 transition-all w-auto ml-2" 
+                 onClick={handleSendTelegram}
+               >
+                
+                  <Share2 size={16} /> bot
+               </button>
+             )}
            </div>
         </div>
       </div>
