@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Eye, Heart, X, Share2, ImageIcon, Clock, Facebook, Youtube } from 'lucide-react';
+import { Eye, Heart, X, Share2, ImageIcon, Clock, Facebook, Youtube, Bell, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 const defaultBanners = [
@@ -56,21 +56,25 @@ function PostCard({ post, onOpen, onLike, onShare, isLiked }: { post: any, onOpe
          </div>
       </div>
 
-      <div className="p-4 flex flex-col flex-1">
+      <div className="p-3 sm:p-4 flex flex-col flex-1">
         
-        <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-slate-400 mb-2.5">
-          <Clock size={13} className="text-slate-300" /> 
-          <span>{formatKhmerDate(post.created_at)}</span>
-          <span className="flex items-center gap-1 ml-auto">
-            <Eye size={13} /> {post.views}
+        <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-medium text-slate-400 mb-2.5">
+          <div className="flex items-center gap-1.5 min-w-0 pr-2">
+            <Clock size={12} className="text-slate-300 shrink-0" /> 
+            <span className="truncate">{formatKhmerDate(post.created_at)}</span>
+          </div>
+          <span className="flex items-center gap-1 shrink-0">
+            <Eye size={12} /> {post.views}
           </span>
         </div>
 
-        <h3 className="font-extrabold text-[14px] sm:text-[16px] mb-2 line-clamp-2 leading-snug text-slate-800">
+        <h3 className="font-extrabold text-[13px] sm:text-[15px] mb-2 line-clamp-2 leading-snug text-slate-800">
           {post.title}
         </h3>
         
-        <p className="text-slate-500 text-[11px] sm:text-[13px] mb-4 line-clamp-2 flex-1 leading-relaxed break-words overflow-hidden">{post.description}</p>
+        <p className="text-slate-500 text-[11px] sm:text-[12px] mb-4 line-clamp-2 flex-1 leading-relaxed break-words overflow-hidden">
+          {post.description}
+        </p>
         
         <div className="flex items-center justify-between border-t border-slate-100 pt-3 mt-auto">
           <button 
@@ -81,17 +85,16 @@ function PostCard({ post, onOpen, onLike, onShare, isLiked }: { post: any, onOpe
           </button>
           
           <div className="flex items-center gap-3">
-             <a href="https://www.facebook.com/Chvea" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-blue-600 transition-transform hover:scale-110">
-               <Facebook size={16} />
+             <a href="https://www.facebook.com/psbucambodia" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-blue-600 transition-transform hover:scale-110">
+               <Facebook size={15} />
              </a>
-             <a href="https://www.youtube.com/@khouvchvea" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-red-600 transition-transform hover:scale-110">
+             <a href="https://www.youtube.com/@psbucambodia" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-red-600 transition-transform hover:scale-110">
                <Youtube size={16} />
              </a>
+             <button onClick={(e) => onShare(e, post)} className="text-slate-300 hover:text-indigo-500 transition-colors active:scale-90 ml-1">
+               <Share2 size={14} />
+             </button>
           </div>
-
-          <button onClick={(e) => onShare(e, post)} className="text-slate-400 hover:text-indigo-500 p-1.5 rounded-full hover:bg-indigo-50 transition-colors active:scale-90">
-            <Share2 size={15} />
-          </button>
         </div>
       </div>
     </div>
@@ -193,9 +196,20 @@ export function HomeFeed() {
     <div className="w-full mx-auto pb-6 px-1">
       
       <div className="relative w-full h-[160px] sm:h-[280px] rounded-[24px] overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.15)] bg-slate-900 border border-slate-200">
+        {/* Banner Buttons (Bell & Profile) */}
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex gap-2">
+          <button className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-orange-600 active:scale-95 transition-all">
+            <Bell size={16} className="sm:w-5 sm:h-5" />
+          </button>
+          <button className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-orange-600 active:scale-95 transition-all">
+            <User size={16} className="sm:w-5 sm:h-5" />
+          </button>
+        </div>
+
         {adBanners.map((img, i) => (
           <img key={i} src={img} className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 transform ${i === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`} alt={`banner-${i}`} />
         ))}
+        
         <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
           {adBanners.map((_, i) => (
             <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentSlide ? 'bg-primary w-6' : 'bg-white/50 w-2'}`}></div>
