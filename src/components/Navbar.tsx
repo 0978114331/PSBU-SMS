@@ -51,9 +51,11 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
         {logoUrl ? (
           <img src={logoUrl} alt="Logo" className="h-9 w-9 sm:h-10 sm:w-10 rounded-full object-cover border-2 border-white/20 bg-white shadow-sm" />
         ) : (
-          <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-primary"><GraduationCap size={22} /></div>
+          <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white text-primary overflow-hidden border border-white/20">
+             <img src="https://i.ibb.co/JjdQf0hK/ce2e43f3-9d48-4d71-86a6-dd1ac3d77c49.png" alt="My Logo" className="w-full h-full object-cover" />
+          </div>
         )}
-        <b className="text-sm sm:text-base font-bold tracking-wide hidden min-[360px]:block"> {schoolName || 'PSB University'}</b>      
+        <b className="text-sm sm:text-base font-bold tracking-wide hidden min-[360px]:block"> {schoolName || 'School MS'}</b>      
       </div>
       
       <div className="hidden items-center gap-3 lg:flex">

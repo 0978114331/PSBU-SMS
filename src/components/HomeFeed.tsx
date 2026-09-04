@@ -85,10 +85,10 @@ function PostCard({ post, onOpen, onLike, onShare, isLiked }: { post: any, onOpe
           </button>
           
           <div className="flex items-center gap-3">
-             <a href="https://www.facebook.com/psbucambodia" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-blue-600 transition-transform hover:scale-110">
+             <a href="https://www.facebook.com/Chvea" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-blue-600 transition-transform hover:scale-110">
                <Facebook size={15} />
              </a>
-             <a href="https://www.youtube.com/@psbucambodia" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-red-600 transition-transform hover:scale-110">
+             <a href="https://www.youtube.com/@khouvchvea" target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-slate-300 hover:text-red-600 transition-transform hover:scale-110">
                <Youtube size={16} />
              </a>
              <button onClick={(e) => onShare(e, post)} className="text-slate-300 hover:text-indigo-500 transition-colors active:scale-90 ml-1">
