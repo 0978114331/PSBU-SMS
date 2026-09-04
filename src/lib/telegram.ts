@@ -9,10 +9,8 @@ export async function sendTelegramReport(data: {
   totalStu: number;
   presentStu: number;
   leaveStu: number;
-  unexcused: number;
-  totalAbsent: number;
+  absentStu: number;
 }) {
-  // ទាញយក Token និង ID ពី File .env
   const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
   const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
 
@@ -20,7 +18,7 @@ export async function sendTelegramReport(data: {
     return { success: false, message: "មិនទាន់បានកំណត់ Token ឬ Chat ID ក្នុង File .env ទេ!" };
   }
 
-  // ទម្រង់អត្ថបទដែលត្រូវផ្ញើទៅ Telegram
+  // Format Telegram message
   const text = `ជម្រាបសួរលោកគ្រូ/អ្នកគ្រូ🙏\n*សូមជូនវត្តមានដូចខាងក្រោម៖
 +កាលបរិច្ឆេទ: ${data.dateStr}
 (ជំនាន់ទី២០ ឆ្នាំទី២ ឆមាសទី០២)
@@ -30,9 +28,8 @@ export async function sendTelegramReport(data: {
 .បន្ទប់លេខ : ${data.room}
 .និស្សិតសរុប :  ${data.totalStu} អង្គ / នាក់
 .និស្សិតវត្តមាន  : ${data.presentStu} អង្គ/ នាក់
-.និស្សិតអវត្តមាន : ${data.totalAbsent} អង្គ/នាក់
 .និស្សិតសុំច្បាប់ :  ${data.leaveStu} អង្គ/នាក់
-.និស្សិតអត់ច្បាប់: ${data.unexcused} អង្គ/នាក់
+.និស្សិតអវត្តមាន : ${data.absentStu} អង្គ/នាក់
 
 សេចក្តីដូចមានជូនវត្តមានអវត្តមានខាងលើសូមលោកគ្រូ/អ្នកគ្រូមេត្តាគោរពជូនជ្រាបសូមអគុណ!🙏`;
 

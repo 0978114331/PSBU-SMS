@@ -669,23 +669,24 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
     const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
     const dateStr = `ថ្ងៃ${khmerDays[d.getDay()]} ទី${String(d.getDate()).padStart(2,'0')} ខែ${khmerMonths[d.getMonth()]} ឆ្នាំ${d.getFullYear()}`;
 
+    // Calculate exact attendance data
     const totalStu = students.length;
     const presentStu = allRecords.filter((r: any) => r.status === 'វត្តមាន' || r.status === statuses[0]).length;
     const leaveStu = allRecords.filter((r: any) => r.status === 'ច្បាប់' || r.status === statuses[1]).length;
-    const unexcused = totalStu - presentStu - leaveStu; 
-    const totalAbsent = leaveStu + unexcused; 
+    
+    // Calculate absent students (Total - Present - Leave)
+    const absentStu = totalStu - presentStu - leaveStu; 
 
     const result = await sendTelegramReport({
        dateStr,
        teacher: finalTeacher,
        subject: finalSubject,
        shift: adminInfo.shift || 'ព្រឹក',
-       room: adminInfo.room || '502',
+       room: adminInfo.room || 'A01',
        totalStu,
        presentStu,
        leaveStu,
-       unexcused,
-       totalAbsent
+       absentStu
     });
 
     alert(result.message);
