@@ -18,7 +18,7 @@ export async function sendTelegramReport(data: {
     return { success: false, message: "មិនទាន់បានកំណត់ Token ឬ Chat ID ក្នុង File .env ទេ!" };
   }
 
-  // Format Telegram message
+  // Format Telegram message body
   const text = `ជម្រាបសួរលោកគ្រូ/អ្នកគ្រូ🙏\n*សូមជូនវត្តមានដូចខាងក្រោម៖
 +កាលបរិច្ឆេទ: ${data.dateStr}
 (ជំនាន់ទី២០ ឆ្នាំទី២ ឆមាសទី០២)
@@ -37,7 +37,25 @@ export async function sendTelegramReport(data: {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: text })
+      body: JSON.stringify({ 
+        chat_id: chatId, 
+        text: text,
+        // Inline keyboard configuration with user web link
+        reply_markup: {
+          inline_keyboard: [
+            // First row of buttons
+            [
+              { text: "📝 សុំច្បាប់", url: "https://psbu-sms.vercel.app" },
+              { text: "📊 ឆែកវត្តមាន", url: "https://psbu-sms.vercel.app" }
+            ],
+            // Second row of buttons
+            [
+              { text: "📅 កាលវិភាគរៀន", url: "https://psbu-sms.vercel.app" },
+              { text: "🌐 ចូលទៅកាន់ប្រព័ន្ធ", url: "https://psbu-sms.vercel.app" }
+            ]
+          ]
+        }
+      })
     });
     
     if (res.ok) {
