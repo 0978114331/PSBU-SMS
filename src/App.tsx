@@ -147,13 +147,13 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   const [search, setSearch] = useState('');
   
  const [adminInfo, setAdminInfo] = useState({ 
-    schoolName: 'PSB University',
-    teacher: '', room: '', subject: '', shift: 'Morning', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
-    allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false,
-    devPhoto: '', devName: '', devTitle: '', devDescription: '', contactEmail: '', contactGithub: '', contactFacebook: '', contactPhone: '', contactPortfolio: '',
-    allowUniversalQR: true, blockedQRStudents: [] as string[],
-    allowManualScanInput: false
-  });
+  schoolName: 'PSB University',
+  teacher: '', room: '', subject: '', shift: 'ព្រឹក', time: '7:30-11:00', logo: '', mapUrl: 'https://www.google.com/maps?q=Preah+Sihamoniraja+Buddhist+University&output=embed', bgUrls: '', 
+  allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false,
+  devPhoto: '', devName: '', devTitle: '', devDescription: '', contactEmail: '', contactGithub: '', contactFacebook: '', contactPhone: '', contactPortfolio: '',
+  allowUniversalQR: true, blockedQRStudents: [] as string[],
+  allowManualScanInput: false
+});
 
   const [tempLogo, setTempLogo] = useState('');
   const [tempBg, setTempBg] = useState('');
@@ -682,7 +682,7 @@ function AttendancePanel({ students, allRecords, showAllStatus, searchQuery, isA
        teacher: finalTeacher,
        subject: finalSubject,
        shift: adminInfo.shift || 'ព្រឹក',
-       room: adminInfo.room || 'A01',
+       room: adminInfo.room || '502',
        totalStu,
        presentStu,
        leaveStu,
@@ -878,6 +878,60 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today, refre
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewLetter, setViewLetter] = useState<any>(null);
 
+  const [autoClass, setAutoClass] = useState({ teacher: '', subject: '', time: '' });
+
+  useEffect(() => {
+    let interval: any;
+    
+    const fetchAutoSchedule = async () => {
+      const { data } = await supabase.from('schedules').select('data_json').eq('type', 'class_schedule').maybeSingle();
+      if (!data?.data_json) return;
+      
+      const updateData = () => {
+        const sch = data.data_json as Record<string, string>;
+        const now = new Date();
+        const dayCol = now.getDay() === 0 ? 6 : now.getDay() - 1; 
+        
+        if (dayCol < 0 || dayCol > 6) {
+           setAutoClass({ teacher: '', subject: '', time: '' });
+           return;
+        }
+        
+        const activeRow = 0; 
+        const cellText = sch[`sch_${activeRow}_${dayCol}`] || '';
+        const lines = cellText.split('\n').map((l: string) => l.trim()).filter((l: string) => l !== '');
+        
+        if (lines.length > 0) {
+           setAutoClass({
+              teacher: lines[0] || '', 
+              subject: lines.length > 1 ? lines.slice(1).join(' ') : lines[0],
+              time: '' 
+           });
+        } else {
+           setAutoClass({ teacher: '', subject: '', time: '' });
+        }
+      };
+
+      updateData(); 
+      interval = setInterval(updateData, 60000);
+    };
+    
+    fetchAutoSchedule();
+
+    const schSub = supabase.channel('leave-auto-schedule-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, payload => {
+        if (payload.new && (payload.new as any).type === 'class_schedule') fetchAutoSchedule();
+      }).subscribe();
+
+    return () => { 
+      if (interval) clearInterval(interval); 
+      supabase.removeChannel(schSub);
+    };
+  }, []);
+
+  const finalTeacher = autoClass.teacher || adminInfo.teacher || '---';
+  const finalSubject = autoClass.subject || adminInfo.subject || '---';
+
   const leaveRecords = records.filter((r: any) => (r.status === statuses[1] || r.status === 'ច្បាប់') && r.date === viewDate);
   const canManualName = isAdmin || adminInfo.allowLeaveManualName;
 
@@ -918,7 +972,7 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today, refre
     const payloads = dates.map(d => ({
       student_id: student?.id || null, stu_id: finalId, name: finalName, gender: finalGender,
       status: 'ច្បាប់', date: d, time: new Date().toLocaleTimeString('en-GB'),
-      shift: adminInfo.shift || '', room: adminInfo.room || '', teacher: adminInfo.teacher || '', subject: adminInfo.subject || '',
+      shift: adminInfo.shift || '', room: adminInfo.room || '', teacher: finalTeacher, subject: finalSubject,
       reason: fullReason, photo: photo || ''
     }));
 
@@ -994,7 +1048,7 @@ function LeaveRequestPanel({ students, records, isAdmin, adminInfo, today, refre
                  <span className="font-bold whitespace-nowrap">អត្តលេខ៖</span> <span className="font-bold uppercase text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 ml-1 text-center whitespace-nowrap">{viewLetter.stu_id || studentDetail?.stu_id || '......'}</span>
                </div>
                <div className="mb-5 flex items-end justify-between w-full text-[10px] sm:text-[14px]">
-                 <span className="font-bold whitespace-nowrap">មុខវិជ្ជា៖</span> <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.subject || adminInfo.subject || '...................'}</span>
+                 <span className="font-bold whitespace-nowrap">មុខវិជ្ជា៖</span> <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 flex-1 text-center whitespace-nowrap overflow-hidden text-ellipsis">{viewLetter.subject || finalSubject || '...................'}</span>
                  <span className="font-bold whitespace-nowrap">បន្ទប់៖</span> <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 mx-1 text-center whitespace-nowrap">{viewLetter.room || adminInfo.room || '......'}</span>
                  <span className="font-bold whitespace-nowrap">វេន៖</span> <span className="font-bold text-blue-800 border-b border-dotted border-slate-400 px-1 sm:px-2 pb-0.5 ml-1 text-center whitespace-nowrap">{viewLetter.shift || adminInfo.shift || '......'}</span>
                </div>
@@ -1601,7 +1655,7 @@ function Scanner({ onClose, refresh, today, adminInfo }: any) {
 }
 
 function SchedulePanel({ isAdmin }: { isAdmin: boolean }) { 
-  const days = ['ច័ន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ']; 
+  const days = ['ច័ន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍', 'អាទិត្យ'];  
   const defaultTimes = ['07:30 - 09:00', '09:30 - 11:00', '01:00 - 14:30', '14:45 - 16:15']; 
   const [scheduleData, setScheduleData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
