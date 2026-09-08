@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, Plus, Trash2, CheckCircle2, Pencil, Image as ImageIcon, X, Eye, Heart } from 'lucide-react';
+import { Upload, Plus, Trash2, CheckCircle2, Pencil, Image as ImageIcon, X, Eye, Heart, BookMarked, Save, Link as LinkIcon, DownloadCloud } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export function AdminPostDashboard() {
@@ -12,9 +12,14 @@ export function AdminPostDashboard() {
   const [tempBanner, setTempBanner] = useState('');
   const [savingBanner, setSavingBanner] = useState(false);
 
+  const [libItems, setLibItems] = useState<any[]>([]);
+  const [libForm, setLibForm] = useState({ id: '', title: '', description: '', cover_url: '', file_url: '' });
+  const [savingLib, setSavingLib] = useState(false);
+
   useEffect(() => {
     fetchPosts();
     fetchBanners();
+    fetchLibItems();
   }, []);
 
   async function fetchPosts() {
@@ -26,6 +31,13 @@ export function AdminPostDashboard() {
     const { data } = await supabase.from('schedules').select('data_json').eq('type', 'home_banners').maybeSingle();
     if (data?.data_json && Array.isArray(data.data_json)) {
       setBanners(data.data_json);
+    }
+  }
+
+  async function fetchLibItems() {
+    const { data } = await supabase.from('schedules').select('data_json').eq('type', 'library_items').maybeSingle();
+    if (data?.data_json && Array.isArray(data.data_json)) {
+      setLibItems(data.data_json);
     }
   }
 
@@ -119,10 +131,44 @@ export function AdminPostDashboard() {
     reader.readAsDataURL(file);
   }
 
+  async function saveLibItem() {
+    if (!libForm.title.trim() || !libForm.file_url.trim()) return;
+    setSavingLib(true);
+    let updated = [...libItems];
+    
+    if (libForm.id) {
+      updated = updated.map(item => item.id === libForm.id ? { ...item, title: libForm.title, description: libForm.description, cover_url: libForm.cover_url, file_url: libForm.file_url, updated_at: new Date().toISOString() } : item);
+    } else {
+      updated.unshift({ ...libForm, id: Date.now().toString(), created_at: new Date().toISOString(), views: 0, downloads: 0 });
+    }
+    
+    const { data } = await supabase.from('schedules').select('id').eq('type', 'library_items').maybeSingle();
+    if (data?.id) {
+      await supabase.from('schedules').update({ data_json: updated }).eq('id', data.id);
+    } else {
+      await supabase.from('schedules').insert({ type: 'library_items', data_json: updated });
+    }
+    
+    setLibItems(updated);
+    setLibForm({ id: '', title: '', description: '', cover_url: '', file_url: '' });
+    setSavingLib(false);
+  }
+
+  function editLibItem(item: any) {
+    setLibForm({ id: item.id, title: item.title, description: item.description || '', cover_url: item.cover_url || '', file_url: item.file_url || '' });
+  }
+
+  async function deleteLibItem(id: string) {
+    if (!window.confirm("តើអ្នកពិតជាចង់លុបឯកសារនេះមែនទេ?")) return;
+    const updated = libItems.filter(item => item.id !== id);
+    const { data } = await supabase.from('schedules').select('id').eq('type', 'library_items').maybeSingle();
+    if (data?.id) await supabase.from('schedules').update({ data_json: updated }).eq('id', data.id);
+    setLibItems(updated);
+  }
+
   return (
     <div className="flex flex-col gap-6 w-full max-w-[800px] mx-auto px-1 sm:px-0">
       
-      {/* កំណត់ Banner ក្បាលលើ */}
       <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
         <h2 className="mb-5 text-[15px] sm:text-lg font-bold flex items-center gap-2 text-primary"><ImageIcon size={18} /> កំណត់រូបភាព Banner ក្បាលលើ</h2>
         
@@ -153,7 +199,6 @@ export function AdminPostDashboard() {
         )}
       </div>
 
-      {/* បង្កើត ឬកែប្រែព័ត៌មាន */}
       <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
         <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100">
           <h2 className="text-[15px] sm:text-lg font-bold flex items-center gap-2 text-primary"><Plus size={18} /> {form.id ? 'កែប្រែព័ត៌មាន (Edit)' : 'បង្កើតព័ត៌មានថ្មី (New Post)'}</h2>
@@ -206,8 +251,7 @@ export function AdminPostDashboard() {
         </div>
       </div>
 
-      {/* បញ្ជីព័ត៌មានដែលបានបង្ហោះ */}
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border mb-[80px]">
+      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
         <h2 className="mb-5 text-[15px] sm:text-lg font-bold text-slate-800">ព័ត៌មានដែលបានបង្ហោះរួច</h2>
         <div className="flex flex-col gap-3 w-full">
           {posts.map(post => (
@@ -235,6 +279,61 @@ export function AdminPostDashboard() {
             </div>
           ))}
           {posts.length === 0 && <p className="text-center text-slate-400 py-6 text-[13px] bg-slate-50 rounded-xl border border-dashed border-slate-200">មិនទាន់មានព័ត៌មាននៅឡើយទេ</p>}
+        </div>
+      </div>
+
+      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border mb-[80px]">
+        <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100">
+          <h2 className="text-[15px] sm:text-lg font-bold flex items-center gap-2 text-primary"><BookMarked size={18} /> {libForm.id ? 'កែប្រែឯកសារបណ្ណាល័យ' : 'បង្ហោះឯកសារបណ្ណាល័យថ្មី'}</h2>
+          {libForm.id && <button className="text-slate-400 hover:text-danger bg-slate-100 hover:bg-red-50 p-1.5 rounded-full transition-colors" onClick={() => setLibForm({ id: '', title: '', description: '', cover_url: '', file_url: '' })}><X size={16}/></button>}
+        </div>
+        
+        <div className="flex flex-col gap-5 w-full">
+          <label className="block w-full">
+            <span className="text-[13px] font-bold text-slate-700 mb-2 block">ចំណងជើងសៀវភៅ / ឯកសារ</span>
+            <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="..." value={libForm.title} onChange={e => setLibForm({...libForm, title: e.target.value})} />
+          </label>
+          <label className="block w-full">
+            <span className="text-[13px] font-bold text-slate-700 mb-2 flex items-center gap-1.5"><LinkIcon size={14}/> តំណភ្ជាប់ឯកសារ (PDF/Drive)</span>
+            <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="https://..." value={libForm.file_url} onChange={e => setLibForm({...libForm, file_url: e.target.value})} />
+          </label>
+          <label className="block w-full">
+            <span className="text-[13px] font-bold text-slate-700 mb-2 flex items-center gap-1.5"><ImageIcon size={14}/> តំណភ្ជាប់រូបគម្រប</span>
+            <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="https://..." value={libForm.cover_url} onChange={e => setLibForm({...libForm, cover_url: e.target.value})} />
+          </label>
+          <label className="block w-full">
+            <span className="text-[13px] font-bold text-slate-700 mb-2 block">ការពណ៌នាអត្ថន័យសង្ខេប</span>
+            <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[120px] resize-none text-sm leading-relaxed outline-none focus:border-primary transition-colors" placeholder="..." value={libForm.description} onChange={e => setLibForm({...libForm, description: e.target.value})}></textarea>
+          </label>
+          
+          <button className="w-full bg-[#3498db] hover:bg-[#2980b9] text-white py-3.5 rounded-xl shadow-md text-[14px] font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.98] mt-2" disabled={savingLib || !libForm.title.trim() || !libForm.file_url.trim()} onClick={saveLibItem}>
+            <Save size={18} /> រក្សាទុកឯកសារ
+          </button>
+        </div>
+
+        <div className="mt-8 border-t border-slate-100 pt-6">
+           <h3 className="font-bold text-slate-800 mb-4">បញ្ជីឯកសារបណ្ណាល័យ</h3>
+           <div className="flex flex-col gap-3">
+             {libItems.map(item => (
+                <div key={item.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-primary/40 transition-colors">
+                   <div className="flex items-center gap-3 overflow-hidden flex-1">
+                     {item.cover_url ? <img src={item.cover_url} className="w-12 h-12 object-cover rounded-lg shadow-sm border border-slate-200" alt="cover"/> : <div className="w-12 h-12 bg-slate-200 flex items-center justify-center rounded-lg shadow-sm"><BookMarked size={18} className="text-slate-400"/></div>}
+                     <div className="flex flex-col min-w-0 pr-2">
+                       <span className="font-bold text-[13px] sm:text-sm text-slate-700 truncate mb-1">{item.title}</span>
+                       <span className="text-[10px] font-bold text-slate-500 flex gap-3">
+                          <span className="flex items-center gap-1 text-blue-500"><Eye size={12}/> {item.views || 0}</span> 
+                          <span className="flex items-center gap-1 text-emerald-500"><DownloadCloud size={12}/> {item.downloads || 0}</span>
+                       </span>
+                     </div>
+                   </div>
+                   <div className="flex gap-2 shrink-0">
+                      <button className="p-2.5 text-blue-600 bg-blue-100/50 hover:bg-blue-100 rounded-lg active:scale-95 transition-transform" onClick={() => editLibItem(item)}><Pencil size={14}/></button>
+                      <button className="p-2.5 text-rose-600 bg-rose-100/50 hover:bg-rose-100 rounded-lg active:scale-95 transition-transform" onClick={() => deleteLibItem(item.id)}><Trash2 size={14}/></button>
+                   </div>
+                </div>
+             ))}
+             {libItems.length === 0 && <p className="text-center text-slate-400 py-6 text-[13px] bg-slate-50 rounded-xl border border-dashed border-slate-200">មិនទាន់មានឯកសារទេ</p>}
+           </div>
         </div>
       </div>
       

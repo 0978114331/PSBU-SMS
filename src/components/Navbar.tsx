@@ -1,4 +1,4 @@
-import { BarChart3, CalendarDays, ChevronDown, ClipboardList, Database, FileBadge, GraduationCap, LogOut, Menu, QrCode, UserCheck, Users, FileText, Home, Info, ImagePlus } from 'lucide-react';
+import { BarChart3, CalendarDays, ChevronDown, ClipboardList, Database, FileBadge, GraduationCap, LogOut, Menu, QrCode, UserCheck, Users, FileText, Home, Info, ImagePlus, BookMarked, LifeBuoy } from 'lucide-react';
 
 type NavItem = { id: string; label: string; icon: any };
 
@@ -17,7 +17,7 @@ type NavbarProps = {
 };
 
 const primaryItems: NavItem[] = [
-  { id: 'Home', label: 'ផ្ទះ', icon: Home },
+  { id: 'home', label: 'ផ្ទះ', icon: Home },
   { id: 'attendance', label: 'វត្តមាន', icon: UserCheck },
   { id: 'leaves', label: 'សុំច្បាប់', icon: FileText },
   { id: 'about', label: 'អំពី', icon: Info },
@@ -43,7 +43,7 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
       );
     }
 
-  const isMenuTabActive = warehouseItems.some(item => item.id === activeTab);
+  const isMenuTabActive = warehouseItems.some(item => item.id === activeTab) || activeTab === 'library' || activeTab === 'support';
 
   return <>
     <header className="fixed top-0 z-40 flex w-full items-center justify-between bg-[#2c3e50] px-4 py-3 sm:py-2.5 text-white shadow-md">
@@ -65,6 +65,8 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
           <button className={`btn !min-h-[38px] !py-1.5 ${isMenuTabActive ? 'bg-[#3b31c4] text-white shadow-md shadow-[#3b31c4]/20' : 'bg-[#3b31c4] text-white hover:brightness-110'}`}><Database size={16} /> ម៉ឺនុយទិន្នន័យ <ChevronDown size={14} /></button>
           <div className="invisible absolute right-0 top-full z-50 mt-2 w-56 translate-y-2 overflow-hidden rounded-xl bg-white opacity-0 shadow-xl transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 border border-slate-100">
             {warehouseItems.map(item => { const Icon = item.icon; return <button key={item.id} className="flex w-full items-center gap-3 border-b border-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-slate-700 transition hover:bg-primary/5 hover:text-primary" onClick={() => onTabChange(item.id)}><Icon size={16} className="text-slate-400" />{item.label}</button>; })}
+            <button className="flex w-full items-center gap-3 border-b border-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-slate-700 transition hover:bg-primary/5 hover:text-primary" onClick={() => onTabChange('library')}><BookMarked size={16} className="text-slate-400" />បណ្ណាល័យ</button>
+            <button className="flex w-full items-center gap-3 border-b border-slate-50 px-4 py-3.5 text-left text-[13px] font-bold text-slate-700 transition hover:bg-primary/5 hover:text-primary" onClick={() => onTabChange('support')}><LifeBuoy size={16} className="text-slate-400" />ជំនួយសិស្ស</button>
           </div>
         </div>
         
@@ -103,19 +105,37 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
              {warehouseItems.map(item => (
                 <MoreMenuButton key={item.id} icon={item.icon} label={item.label} active={activeTab === item.id} onClick={() => { onTabChange(item.id); onMobileToggle(); }} />
              ))}
+             
+             {/* New Styled Buttons for Library and Support */}
+             <button 
+                className={`group flex flex-col items-center justify-center gap-1.5 rounded-xl border py-2.5 px-1 transition-all duration-300 ease-out hover:-translate-y-1 active:scale-90 ${activeTab === 'library' ? 'bg-blue-600/30 border-blue-400 text-blue-200 shadow-[0_0_15px_rgba(59,130,246,0.4)]' : 'bg-slate-800/40 border-slate-700/60 hover:border-blue-400 hover:bg-blue-900/30 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]'}`} 
+                onClick={() => { onTabChange('library'); onMobileToggle(); }}
+             >
+                <BookMarked size={20} className={`transition-colors ${activeTab === 'library' ? 'text-blue-300' : 'text-slate-400 group-hover:text-blue-400'}`} />
+                <span className={`text-[10px] font-bold transition-colors leading-tight text-center ${activeTab === 'library' ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-100'}`}>បណ្ណាល័យ</span>
+             </button>
+
+             <button 
+                className={`group flex flex-col items-center justify-center gap-1.5 rounded-xl border py-2.5 px-1 transition-all duration-300 ease-out hover:-translate-y-1 active:scale-90 ${activeTab === 'support' ? 'bg-blue-600/30 border-blue-400 text-blue-200 shadow-[0_0_15px_rgba(59,130,246,0.4)]' : 'bg-slate-800/40 border-slate-700/60 hover:border-blue-400 hover:bg-blue-900/30 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]'}`} 
+                onClick={() => { onTabChange('support'); onMobileToggle(); }}
+             >
+                <LifeBuoy size={20} className={`transition-colors ${activeTab === 'support' ? 'text-blue-300' : 'text-slate-400 group-hover:text-blue-400'}`} />
+                <span className={`text-[10px] font-bold transition-colors leading-tight text-center ${activeTab === 'support' ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-100'}`}>ជំនួយសិស្ស</span>
+             </button>
           </div>
-          
+
           <div className="border-t border-white/10 pt-6 mt-2">
-             <div className="flex flex-col items-center justify-center mb-5">
+              <div className="flex flex-col items-center justify-center mb-5">
                 <div className="w-16 h-16 bg-primary/20 text-primary rounded-full flex items-center justify-center mb-2 border border-primary/30">
                    <UserCheck size={32} />
                 </div>
                 <span className="text-white font-bold tracking-wide">{userLabel}</span>
                 <span className="text-warning text-[10px] uppercase font-bold mt-1 px-2.5 py-0.5 bg-warning/10 rounded-full border border-warning/20">{role}</span>
-             </div>
-            <button className="mx-auto flex w-fit items-center justify-center gap-1.5 rounded-full bg-red-500/10 border border-red-500/20 px-4 py-1.5 text-sm font-bold text-red-400 hover:bg-red-500/20 transition active:scale-95" onClick={onSignOut}>
-              <LogOut size={12} />ចេញពីប្រព័ន្ធ
-            </button>
+              </div>
+              
+              <button className="mx-auto flex w-fit items-center justify-center gap-1.5 rounded-full bg-red-500/10 border border-red-500/20 px-4 py-1.5 text-sm font-bold text-red-400 hover:bg-red-500/20 transition active:scale-95" onClick={onSignOut}>
+                <LogOut size={14} />ចេញ
+              </button>
           </div>
         </div>
       </div>
@@ -141,9 +161,9 @@ function BottomNavItem({ icon: Icon, label, active, onClick }: { icon: any, labe
 
 function MoreMenuButton({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button onClick={onClick} className={`flex flex-col items-center justify-center gap-2 p-3.5 rounded-xl transition-all active:scale-[0.98] border ${active ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'}`}>
-      <Icon size={20} className={active ? 'text-white' : 'text-slate-400'} />
-      <span className="text-[10px] sm:text-[12px] font-bold text-center leading-tight">{label}</span>
+    <button onClick={onClick} className={`group flex flex-col items-center justify-center gap-1.5 rounded-xl border py-2.5 px-1 transition-all duration-300 ease-out hover:-translate-y-1 active:scale-90 ${active ? 'bg-blue-600/30 border-blue-400 text-blue-200 shadow-[0_0_15px_rgba(59,130,246,0.4)]' : 'bg-slate-800/40 border-slate-700/60 hover:border-blue-400 hover:bg-blue-900/30 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]'}`}>
+      <Icon size={20} className={`transition-colors ${active ? 'text-blue-300' : 'text-slate-400 group-hover:text-blue-400'}`} />
+      <span className={`text-[10px] font-bold transition-colors leading-tight text-center ${active ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-100'}`}>{label}</span>
     </button>
   );
 }

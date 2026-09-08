@@ -10,7 +10,8 @@ import { statuses } from '@/types';
 import   html2canvas from 'html2canvas';
 import { sendTelegramReport } from '@/lib/telegram';
 import { Html5Qrcode } from 'html5-qrcode';
-
+import { LibraryPanel } from '@/components/LibraryPanel';
+import { SupportPanel } from '@/components/SupportPanel';
 import { HomeFeed } from '@/components/HomeFeed';
 import { AdminPostDashboard } from '@/components/AdminPostDashboard';
 import { AboutUs } from '@/components/AboutUs';
@@ -326,9 +327,7 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   }, [processedToday.length, students.length, isAdmin, adminInfo, today, earliestPresent, hasAbsent]);
 
   const counts = { present: processedToday.filter(a => a.status === statuses[0] || a.status === 'វត្តមាន').length, leave: processedToday.filter(a => a.status === statuses[1] || a.status === 'ច្បាប់').length, absent: processedToday.filter(a => a.status === statuses[2] || a.status === 'អវត្តមាន').length };
-  
-  const isDashboardView = !['home', 'about', 'admin_posts', 'settings'].includes(tab);
-
+  const isDashboardView = !['home', 'about', 'admin_posts', 'settings', 'library', 'support'].includes(tab);
   return (
     <div className="min-h-screen w-full bg-light pb-24 lg:pb-5 overflow-x-hidden">
       <Navbar activeTab={tab as any} isAdmin={isAdmin} userLabel={profile?.full_name || user?.email || ''} role={role} mobileOpen={menu} logoUrl={adminInfo.logo} schoolName={adminInfo.schoolName} onTabChange={(nextTab) => { setTab(nextTab); setMenu(false); }} onScanner={() => setScanner(true)} onSignOut={() => void signOut()} onMobileToggle={() => setMenu(!menu)} />
@@ -363,6 +362,8 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
           {tab === 'home' && <HomeFeed />}
           {tab === 'admin_posts' && isAdmin && <AdminPostDashboard />}
           {tab === 'about' && <AboutUs adminInfo={adminInfo} />}
+          {tab === 'library' && <LibraryPanel />}
+          {tab === 'support' && <SupportPanel isAdmin={isAdmin} />}
           
           {tab === 'settings' && isAdmin && (
             <div className="bg-white p-4 sm:p-6 rounded-[24px] shadow-sm border border-slate-200 w-full animate-fade-in mb-[80px]">
