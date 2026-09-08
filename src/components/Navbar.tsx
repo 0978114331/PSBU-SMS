@@ -113,10 +113,9 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
                 <span className="text-white font-bold tracking-wide">{userLabel}</span>
                 <span className="text-warning text-[10px] uppercase font-bold mt-1 px-2.5 py-0.5 bg-warning/10 rounded-full border border-warning/20">{role}</span>
              </div>
-             
-             <button className="mx-auto flex w-full max-w-[250px] items-center justify-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-8 py-3 font-bold text-red-400 hover:bg-red-500/20 transition active:scale-95" onClick={onSignOut}>
-                <LogOut size={18} /> ចាកចេញពីប្រព័ន្ធ
-             </button>
+            <button className="mx-auto flex w-fit items-center justify-center gap-1.5 rounded-full bg-red-500/10 border border-red-500/20 px-4 py-1.5 text-sm font-bold text-red-400 hover:bg-red-500/20 transition active:scale-95" onClick={onSignOut}>
+              <LogOut size={12} />ចេញពីប្រព័ន្ធ
+            </button>
           </div>
         </div>
       </div>
