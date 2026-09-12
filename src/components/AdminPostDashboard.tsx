@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Upload, Plus, Trash2, CheckCircle2, Pencil, Image as ImageIcon, X, Eye, Heart, BookMarked, Save, Link as LinkIcon, DownloadCloud, Archive, BrainCircuit, Lock, Globe, Check, File } from 'lucide-react';
+import { Upload, Plus, Trash2, CheckCircle2, Pencil, Image as ImageIcon, X, Eye, Heart, BookMarked, Save, Link as LinkIcon, DownloadCloud, Archive, BrainCircuit, Lock, Globe, Check, File, LayoutDashboard } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export function AdminPostDashboard() {
+  const [activeTab, setActiveTab] = useState<'banners' | 'posts' | 'library' | 'vault' | 'flashcards'>('posts');
+
   const [posts, setPosts] = useState<any[]>([]);
   const [form, setForm] = useState<{ id: string, title: string, description: string, image_urls: string[] }>({ id: '', title: '', description: '', image_urls: [] });
   const [saving, setSaving] = useState(false);
@@ -15,6 +17,10 @@ export function AdminPostDashboard() {
   const [libItems, setLibItems] = useState<any[]>([]);
   const [libForm, setLibForm] = useState({ id: '', title: '', description: '', cover_url: '', file_url: '' });
   const [savingLib, setSavingLib] = useState(false);
+  
+  const [libBanners, setLibBanners] = useState<string[]>([]);
+  const [tempLibBanner, setTempLibBanner] = useState('');
+  const [savingLibBanner, setSavingLibBanner] = useState(false);
 
   const [vaultItems, setVaultItems] = useState<any[]>([]);
   const [vaultForm, setVaultForm] = useState({ id: '', title: '', content: '', type: 'document', is_private: false });
@@ -29,6 +35,7 @@ export function AdminPostDashboard() {
     fetchPosts();
     fetchBanners();
     fetchLibItems();
+    fetchLibBanners();
     fetchVaultItems();
     fetchFlashcards();
   }, []);
@@ -52,6 +59,13 @@ export function AdminPostDashboard() {
     }
   }
 
+  async function fetchLibBanners() {
+    const { data } = await supabase.from('schedules').select('data_json').eq('type', 'library_banner').maybeSingle();
+    if (data?.data_json && Array.isArray(data.data_json)) {
+      setLibBanners(data.data_json);
+    }
+  }
+
   async function fetchVaultItems() {
     const { data } = await supabase.from('schedules').select('data_json').eq('type', 'vault_items').maybeSingle();
     if (data?.data_json && Array.isArray(data.data_json)) {
@@ -68,13 +82,8 @@ export function AdminPostDashboard() {
     if (!form.title.trim()) return;
     setSaving(true);
     const payload = { title: form.title, description: form.description, image_urls: form.image_urls };
-    
-    if (form.id) {
-      await supabase.from('posts').update(payload).eq('id', form.id);
-    } else {
-      await supabase.from('posts').insert([payload]);
-    }
-    
+    if (form.id) await supabase.from('posts').update(payload).eq('id', form.id);
+    else await supabase.from('posts').insert([payload]);
     setForm({ id: '', title: '', description: '', image_urls: [] });
     setSaving(false);
     fetchPosts();
@@ -86,7 +95,7 @@ export function AdminPostDashboard() {
   }
 
   async function deletePost(id: string) {
-    if (!window.confirm("តើអ្នកពិតជាចង់លុបមែនទេ?")) return;
+    if (!window.confirm("Confirm delete?")) return;
     await supabase.from('posts').delete().eq('id', id);
     fetchPosts();
   }
@@ -120,19 +129,15 @@ export function AdminPostDashboard() {
   async function saveBannersToDb(updatedBanners: string[]) {
     setSavingBanner(true);
     const { data } = await supabase.from('schedules').select('id').eq('type', 'home_banners').maybeSingle();
-    if (data?.id) {
-      await supabase.from('schedules').update({ data_json: updatedBanners }).eq('id', data.id);
-    } else {
-      await supabase.from('schedules').insert({ type: 'home_banners', data_json: updatedBanners });
-    }
+    if (data?.id) await supabase.from('schedules').update({ data_json: updatedBanners }).eq('id', data.id);
+    else await supabase.from('schedules').insert({ type: 'home_banners', data_json: updatedBanners });
     setBanners(updatedBanners);
     setSavingBanner(false);
   }
 
   function addBanner() {
     if (tempBanner.trim() && !banners.includes(tempBanner.trim())) {
-      const newBanners = [...banners, tempBanner.trim()];
-      saveBannersToDb(newBanners);
+      saveBannersToDb([...banners, tempBanner.trim()]);
       setTempBanner('');
     }
   }
@@ -148,30 +153,73 @@ export function AdminPostDashboard() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const result = ev.target?.result as string;
-      saveBannersToDb([...banners, result]);
+      saveBannersToDb([...banners, ev.target?.result as string]);
     };
     reader.readAsDataURL(file);
   }
+
+  async function saveLibBannersToDb(updatedBanners: string[]) {
+    setSavingLibBanner(true);
+    const { data } = await supabase.from('schedules').select('id').eq('type', 'library_banner').maybeSingle();
+    if (data?.id) await supabase.from('schedules').update({ data_json: updatedBanners }).eq('id', data.id);
+    else await supabase.from('schedules').insert({ type: 'library_banner', data_json: updatedBanners });
+    setLibBanners(updatedBanners);
+    setSavingLibBanner(false);
+  }
+
+  function addLibBanner() {
+    if (tempLibBanner.trim() && !libBanners.includes(tempLibBanner.trim())) {
+      saveLibBannersToDb([...libBanners, tempLibBanner.trim()]);
+      setTempLibBanner('');
+    }
+  }
+
+  function removeLibBanner(index: number) {
+    const newBanners = [...libBanners];
+    newBanners.splice(index, 1);
+    saveLibBannersToDb(newBanners);
+  }
+
+  function handleLibBannerUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      saveLibBannersToDb([...libBanners, ev.target?.result as string]);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSavingLib(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('documents').upload(fileName, file);
+      if (uploadError) throw uploadError;
+      const { data } = supabase.storage.from('documents').getPublicUrl(fileName);
+      setLibForm({ ...libForm, file_url: data.publicUrl });
+    } catch (error: any) {
+      alert('Upload Error');
+    } finally {
+      setSavingLib(false);
+    }
+  };
 
   async function saveLibItem() {
     if (!libForm.title.trim() || !libForm.file_url.trim()) return;
     setSavingLib(true);
     let updated = [...libItems];
-    
     if (libForm.id) {
-      updated = updated.map(item => item.id === libForm.id ? { ...item, title: libForm.title, description: libForm.description, cover_url: libForm.cover_url, file_url: libForm.file_url, updated_at: new Date().toISOString() } : item);
+      updated = updated.map(item => item.id === libForm.id ? { ...item, ...libForm, updated_at: new Date().toISOString() } : item);
     } else {
       updated.unshift({ ...libForm, id: Date.now().toString(), created_at: new Date().toISOString(), views: 0, downloads: 0 });
     }
-    
     const { data } = await supabase.from('schedules').select('id').eq('type', 'library_items').maybeSingle();
-    if (data?.id) {
-      await supabase.from('schedules').update({ data_json: updated }).eq('id', data.id);
-    } else {
-      await supabase.from('schedules').insert({ type: 'library_items', data_json: updated });
-    }
-    
+    if (data?.id) await supabase.from('schedules').update({ data_json: updated }).eq('id', data.id);
+    else await supabase.from('schedules').insert({ type: 'library_items', data_json: updated });
     setLibItems(updated);
     setLibForm({ id: '', title: '', description: '', cover_url: '', file_url: '' });
     setSavingLib(false);
@@ -182,7 +230,7 @@ export function AdminPostDashboard() {
   }
 
   async function deleteLibItem(id: string) {
-    if (!window.confirm("តើអ្នកពិតជាចង់លុបឯកសារនេះមែនទេ?")) return;
+    if (!window.confirm("Confirm delete?")) return;
     const updated = libItems.filter(item => item.id !== id);
     const { data } = await supabase.from('schedules').select('id').eq('type', 'library_items').maybeSingle();
     if (data?.id) await supabase.from('schedules').update({ data_json: updated }).eq('id', data.id);
@@ -199,11 +247,8 @@ export function AdminPostDashboard() {
       updated.unshift({ ...vaultForm, id: Date.now().toString(), created_at: new Date().toISOString() });
     }
     const { data } = await supabase.from('schedules').select('id').eq('type', 'vault_items').maybeSingle();
-    if (data?.id) {
-      await supabase.from('schedules').update({ data_json: updated }).eq('id', data.id);
-    } else {
-      await supabase.from('schedules').insert({ type: 'vault_items', data_json: updated });
-    }
+    if (data?.id) await supabase.from('schedules').update({ data_json: updated }).eq('id', data.id);
+    else await supabase.from('schedules').insert({ type: 'vault_items', data_json: updated });
     setVaultItems(updated);
     setVaultForm({ id: '', title: '', content: '', type: 'document', is_private: false });
     setSavingVault(false);
@@ -214,7 +259,7 @@ export function AdminPostDashboard() {
   }
 
   async function deleteVaultItem(id: string) {
-    if (!window.confirm("តើអ្នកពិតជាចង់លុបមែនទេ?")) return;
+    if (!window.confirm("Confirm delete?")) return;
     const updated = vaultItems.filter(item => item.id !== id);
     const { data } = await supabase.from('schedules').select('id').eq('type', 'vault_items').maybeSingle();
     if (data?.id) await supabase.from('schedules').update({ data_json: updated }).eq('id', data.id);
@@ -239,301 +284,379 @@ export function AdminPostDashboard() {
   }
 
   async function deleteFlashcard(id: string) {
-    if (!window.confirm("តើអ្នកពិតជាចង់លុបមែនទេ?")) return;
+    if (!window.confirm("Confirm delete?")) return;
     await supabase.from('flashcards').delete().eq('id', id);
     fetchFlashcards();
   }
 
+  const tabs = [
+    { id: 'posts', label: 'ព័ត៌មាន (Posts)', icon: LayoutDashboard },
+    { id: 'banners', label: 'Banners', icon: ImageIcon },
+    { id: 'library', label: 'បណ្ណាល័យ', icon: BookMarked },
+    { id: 'vault', label: 'ឃ្លាំង (Vault)', icon: Archive },
+    { id: 'flashcards', label: 'Flashcards', icon: BrainCircuit },
+  ] as const;
+
   return (
-    <div className="flex flex-col gap-6 w-full max-w-[800px] mx-auto px-1 sm:px-0">
+    <div className="flex flex-col gap-6 w-full max-w-[900px] mx-auto px-2 sm:px-0 mb-[80px] animate-fade-in">
       
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
-        <h2 className="mb-5 text-[15px] sm:text-lg font-bold flex items-center gap-2 text-primary"><ImageIcon size={18} /> កំណត់រូបភាព Banner ក្បាលលើ</h2>
-        
-        <div className="flex flex-col sm:flex-row gap-3 w-full mb-5">
-           <input className="flex-1 w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="ដាក់ Link រូបភាពទីនេះ..." value={tempBanner} onChange={e => setTempBanner(e.target.value)} onKeyDown={e => {if(e.key === 'Enter') addBanner()}} />
-           <div className="flex gap-2 w-full sm:w-auto">
-              <button className="flex-1 sm:flex-none px-4 py-3 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-sm rounded-xl transition-colors" onClick={addBanner}>Add Link</button>
-              <label className={`flex-1 sm:flex-none flex items-center justify-center px-4 py-3 bg-primary text-white font-bold text-sm rounded-xl cursor-pointer transition-colors hover:bg-blue-700 ${savingBanner ? 'opacity-50 pointer-events-none' : ''}`}>
-                {savingBanner ? 'Saving...' : <><Upload size={16} className="mr-1.5" /> Upload</>}
-                <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} disabled={savingBanner} />
-              </label>
-           </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-0 z-40">
+        <div className="flex overflow-x-auto hide-scrollbar">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-5 py-4 text-sm font-bold whitespace-nowrap transition-colors border-b-2 outline-none
+                  ${isActive ? 'border-primary text-primary bg-primary/5' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+              >
+                <Icon size={18} />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
-        
-        {banners.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
-            {banners.map((url, i) => (
-              <div key={i} className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-video">
-                <img src={url} className="w-full h-full object-cover" alt={`banner-${i}`} />
-                <button className="absolute top-1.5 right-1.5 bg-rose-500 hover:bg-rose-600 text-white p-1.5 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shadow-sm" onClick={() => removeBanner(i)}>
-                   <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center text-slate-400 py-6 text-[13px] bg-slate-50 rounded-xl border border-dashed border-slate-200">មិនទាន់មាន Banner ទេ</div>
-        )}
       </div>
 
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
-        <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100">
-          <h2 className="text-[15px] sm:text-lg font-bold flex items-center gap-2 text-primary"><Plus size={18} /> {form.id ? 'កែប្រែព័ត៌មាន (Edit)' : 'បង្កើតព័ត៌មានថ្មី (New Post)'}</h2>
-          {form.id && <button className="text-slate-400 hover:text-rose-500 bg-slate-100 hover:bg-rose-50 p-1.5 rounded-full transition-colors" onClick={() => setForm({ id: '', title: '', description: '', image_urls: [] })}><X size={16}/></button>}
-        </div>
-        
-        <div className="flex flex-col gap-5 w-full">
-          <label className="block w-full">
-            <span className="text-[13px] font-bold text-slate-700 mb-2 block">ចំណងជើង (Title)</span>
-            <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="សរសេរចំណងជើង..." value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
-          </label>
-          
-          <label className="block w-full">
-            <span className="text-[13px] font-bold text-slate-700 mb-2 block">ខ្លឹមសារ (Description)</span>
-            <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[120px] resize-none text-sm leading-relaxed outline-none focus:border-primary transition-colors" placeholder="សរសេរខ្លឹមសារលម្អិតទីនេះ..." value={form.description} onChange={e => setForm({...form, description: e.target.value})}></textarea>
-          </label>
-          
-          <label className="block w-full">
-            <span className="text-[13px] font-bold text-slate-700 mb-2 block">រូបភាព (Images) - ដាក់បានច្រើនសន្លឹក</span>
-            
-            <div className="flex flex-col sm:flex-row gap-3 w-full mb-4">
-               <input className="flex-1 w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="Paste Link រូបភាពទីនេះ..." value={tempUrl} onChange={e => setTempUrl(e.target.value)} onKeyDown={e => {if(e.key === 'Enter') addImageUrl()}} />
-               <div className="flex gap-2 w-full sm:w-auto">
-                  <button className="flex-1 sm:flex-none px-4 py-3 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-sm rounded-xl transition-colors" onClick={addImageUrl}>Add Link</button>
-                  <label className="flex-1 sm:flex-none flex items-center justify-center px-4 py-3 bg-primary text-white font-bold text-sm rounded-xl cursor-pointer transition-colors hover:bg-blue-700">
-                    <Upload size={16} className="mr-1.5" /> Upload
-                    <input type="file" className="hidden" accept="image/*" multiple onChange={handleFileUpload} />
-                  </label>
-               </div>
+      {activeTab === 'posts' && (
+        <div className="flex flex-col gap-6 animate-fade-in">
+          <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
+            <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100">
+              <h2 className="text-[15px] sm:text-lg font-bold flex items-center gap-2 text-primary"><Plus size={18} /> {form.id ? 'កែប្រែព័ត៌មាន (Edit)' : 'បង្កើតព័ត៌មានថ្មី (New Post)'}</h2>
+              {form.id && <button className="text-slate-400 hover:text-rose-500 bg-slate-100 hover:bg-rose-50 p-1.5 rounded-full transition-colors" onClick={() => setForm({ id: '', title: '', description: '', image_urls: [] })}><X size={16}/></button>}
             </div>
             
-            {form.image_urls.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-[300px] overflow-y-auto w-full">
-                {form.image_urls.map((url, i) => (
-                  <div key={i} className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-square">
-                    <img src={url} className="w-full h-full object-cover" alt={`preview-${i}`} />
-                    <button className="absolute top-1.5 right-1.5 bg-rose-500 hover:bg-rose-600 text-white p-1.5 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shadow-sm" onClick={() => removeImage(i)}>
+            <div className="flex flex-col gap-5 w-full">
+              <label className="block w-full">
+                <span className="text-[13px] font-bold text-slate-700 mb-2 block">ចំណងជើង (Title)</span>
+                <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="សរសេរចំណងជើង..." value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+              </label>
+              
+              <label className="block w-full">
+                <span className="text-[13px] font-bold text-slate-700 mb-2 block">ខ្លឹមសារ (Description)</span>
+                <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[120px] resize-none text-sm leading-relaxed outline-none focus:border-primary transition-colors" placeholder="សរសេរខ្លឹមសារលម្អិតទីនេះ..." value={form.description} onChange={e => setForm({...form, description: e.target.value})}></textarea>
+              </label>
+              
+              <label className="block w-full">
+                <span className="text-[13px] font-bold text-slate-700 mb-2 block">រូបភាព (Images)</span>
+                <div className="flex flex-col sm:flex-row gap-3 w-full mb-4">
+                  <input className="flex-1 w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="Paste Link រូបភាពទីនេះ..." value={tempUrl} onChange={e => setTempUrl(e.target.value)} onKeyDown={e => {if(e.key === 'Enter') addImageUrl()}} />
+                  <div className="flex gap-2 w-full sm:w-auto">
+                      <button className="flex-1 sm:flex-none px-4 py-3 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-sm rounded-xl transition-colors" onClick={addImageUrl}>Add Link</button>
+                      <label className="flex-1 sm:flex-none flex items-center justify-center px-4 py-3 bg-primary text-white font-bold text-sm rounded-xl cursor-pointer transition-colors hover:bg-blue-700">
+                        <Upload size={16} className="mr-1.5" /> Upload
+                        <input type="file" className="hidden" accept="image/*" multiple onChange={handleFileUpload} />
+                      </label>
+                  </div>
+                </div>
+                
+                {form.image_urls.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-[300px] overflow-y-auto w-full">
+                    {form.image_urls.map((url, i) => (
+                      <div key={i} className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-square">
+                        <img src={url} className="w-full h-full object-cover" alt={`preview-${i}`} />
+                        <button className="absolute top-1.5 right-1.5 bg-rose-500 hover:bg-rose-600 text-white p-1.5 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shadow-sm" onClick={() => removeImage(i)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </label>
+              
+              <button className="w-full bg-[#1dd1a1] hover:bg-[#10ac84] text-white py-3.5 rounded-xl shadow-md text-[14px] font-bold flex items-center justify-center gap-2 mt-2" disabled={saving || !form.title.trim()} onClick={savePost}>
+                {saving ? 'កំពុងរក្សាទុក...' : <><CheckCircle2 size={18} /> {form.id ? 'រក្សាទុកការកែប្រែ' : 'បង្ហោះចូលផ្ទាំង Home'}</>}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
+            <h2 className="mb-5 text-[15px] sm:text-lg font-bold text-slate-800">ព័ត៌មានដែលបានបង្ហោះរួច</h2>
+            <div className="flex flex-col gap-3 w-full">
+              {posts.map(post => (
+                <div key={post.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-primary/40 transition-colors w-full box-border">
+                  <div className="flex items-center gap-3 overflow-hidden flex-1">
+                    {post.image_urls?.[0] ? (
+                      <img src={post.image_urls[0]} alt="thumb" className="w-14 h-14 object-cover rounded-lg shrink-0 border border-slate-200 shadow-sm" />
+                    ) : (
+                      <div className="w-14 h-14 bg-slate-200 rounded-lg flex items-center justify-center shrink-0 text-slate-400 shadow-sm"><ImageIcon size={20}/></div>
+                    )}
+                    <div className="min-w-0 pr-2">
+                      <h4 className="font-bold text-[13px] sm:text-sm text-slate-800 truncate mb-1">{post.title}</h4>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                        <span className="truncate">{new Date(post.created_at).toLocaleDateString('en-GB')}</span>
+                        <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0"></span>
+                        <span className="flex items-center gap-1 text-blue-500 shrink-0"><Eye size={12}/> {post.views}</span>
+                        <span className="flex items-center gap-1 text-rose-500 shrink-0"><Heart size={12}/> {post.likes}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button className="p-2.5 text-blue-600 bg-blue-100/50 hover:bg-blue-100 rounded-lg active:scale-95 transition-transform" onClick={() => editPost(post)}><Pencil size={14}/></button>
+                    <button className="p-2.5 text-rose-600 bg-rose-100/50 hover:bg-rose-100 rounded-lg active:scale-95 transition-transform" onClick={() => deletePost(post.id)}><Trash2 size={14}/></button>
+                  </div>
+                </div>
+              ))}
+              {posts.length === 0 && <p className="text-center text-slate-400 py-6 text-[13px] bg-slate-50 rounded-xl border border-dashed border-slate-200">មិនទាន់មានព័ត៌មាននៅឡើយទេ</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'banners' && (
+        <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border animate-fade-in">
+          <h2 className="mb-5 text-[15px] sm:text-lg font-bold flex items-center gap-2 text-primary"><ImageIcon size={18} /> កំណត់រូបភាព Banner ក្បាលលើ</h2>
+          
+          <div className="flex flex-col sm:flex-row gap-3 w-full mb-5">
+            <input className="flex-1 w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="ដាក់ Link រូបភាពទីនេះ..." value={tempBanner} onChange={e => setTempBanner(e.target.value)} onKeyDown={e => {if(e.key === 'Enter') addBanner()}} />
+            <div className="flex gap-2 w-full sm:w-auto">
+                <button className="flex-1 sm:flex-none px-4 py-3 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-sm rounded-xl transition-colors" onClick={addBanner}>Add Link</button>
+                <label className={`flex-1 sm:flex-none flex items-center justify-center px-4 py-3 bg-primary text-white font-bold text-sm rounded-xl cursor-pointer transition-colors hover:bg-blue-700 ${savingBanner ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {savingBanner ? 'Saving...' : <><Upload size={16} className="mr-1.5" /> Upload</>}
+                  <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} disabled={savingBanner} />
+                </label>
+            </div>
+          </div>
+          
+          {banners.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
+              {banners.map((url, i) => (
+                <div key={i} className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-video">
+                  <img src={url} className="w-full h-full object-cover" alt={`banner-${i}`} />
+                  <button className="absolute top-1.5 right-1.5 bg-rose-500 hover:bg-rose-600 text-white p-1.5 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shadow-sm" onClick={() => removeBanner(i)}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-slate-400 py-6 text-[13px] bg-slate-50 rounded-xl border border-dashed border-slate-200">មិនទាន់មាន Banner ទេ</div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'library' && (
+        <div className="flex flex-col gap-6 animate-fade-in">
+          <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
+            <h2 className="mb-5 text-[15px] sm:text-lg font-bold flex items-center gap-2 text-primary"><ImageIcon size={18} /> កំណត់រូបភាព Banner បណ្ណាល័យ</h2>
+            
+            <div className="flex flex-col sm:flex-row gap-3 w-full mb-5">
+              <input className="flex-1 w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="ដាក់ Link រូបភាពទីនេះ..." value={tempLibBanner} onChange={e => setTempLibBanner(e.target.value)} onKeyDown={e => {if(e.key === 'Enter') addLibBanner()}} />
+              <div className="flex gap-2 w-full sm:w-auto">
+                  <button className="flex-1 sm:flex-none px-4 py-3 bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-sm rounded-xl transition-colors" onClick={addLibBanner}>Add Link</button>
+                  <label className={`flex-1 sm:flex-none flex items-center justify-center px-4 py-3 bg-primary text-white font-bold text-sm rounded-xl cursor-pointer transition-colors hover:bg-blue-700 ${savingLibBanner ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {savingLibBanner ? 'Saving...' : <><Upload size={16} className="mr-1.5" /> Upload</>}
+                    <input type="file" className="hidden" accept="image/*" onChange={handleLibBannerUpload} disabled={savingLibBanner} />
+                  </label>
+              </div>
+            </div>
+
+            {libBanners.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full">
+                {libBanners.map((url, i) => (
+                  <div key={i} className="relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-video">
+                    <img src={url} className="w-full h-full object-cover" alt={`lib-banner-${i}`} />
+                    <button className="absolute top-1.5 right-1.5 bg-rose-500 hover:bg-rose-600 text-white p-1.5 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shadow-sm" onClick={() => removeLibBanner(i)}>
                       <Trash2 size={14} />
                     </button>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white text-[10px] p-1.5 pt-4 text-center font-bold">{i + 1}</div>
                   </div>
                 ))}
               </div>
+            ) : (
+              <div className="text-center text-slate-400 py-6 text-[13px] bg-slate-50 rounded-xl border border-dashed border-slate-200">មិនទាន់មាន Banner ទេ</div>
             )}
-          </label>
-          
-          <button className="w-full bg-[#1dd1a1] hover:bg-[#10ac84] text-white py-3.5 rounded-xl shadow-md shadow-[#1dd1a1]/30 text-[14px] font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.98] mt-2" disabled={saving || !form.title.trim()} onClick={savePost}>
-            {saving ? 'កំពុងរក្សាទុក...' : <><CheckCircle2 size={18} /> {form.id ? 'រក្សាទុកការកែប្រែ' : 'បង្ហោះចូលផ្ទាំង Home'}</>}
-          </button>
-        </div>
-      </div>
+          </div>
 
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
-        <h2 className="mb-5 text-[15px] sm:text-lg font-bold text-slate-800">ព័ត៌មានដែលបានបង្ហោះរួច</h2>
-        <div className="flex flex-col gap-3 w-full">
-          {posts.map(post => (
-            <div key={post.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-primary/40 transition-colors w-full box-border">
-              <div className="flex items-center gap-3 overflow-hidden flex-1">
-                {post.image_urls?.[0] ? (
-                  <img src={post.image_urls[0]} alt="thumb" className="w-14 h-14 object-cover rounded-lg shrink-0 border border-slate-200 shadow-sm" />
-                ) : (
-                  <div className="w-14 h-14 bg-slate-200 rounded-lg flex items-center justify-center shrink-0 text-slate-400 shadow-sm"><ImageIcon size={20}/></div>
-                )}
-                <div className="min-w-0 pr-2">
-                  <h4 className="font-bold text-[13px] sm:text-sm text-slate-800 truncate mb-1">{post.title}</h4>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                    <span className="truncate">{new Date(post.created_at).toLocaleDateString('en-GB')}</span>
-                    <span className="w-1 h-1 rounded-full bg-slate-300 shrink-0"></span>
-                    <span className="flex items-center gap-1 text-blue-500 shrink-0"><Eye size={12}/> {post.views}</span>
-                    <span className="flex items-center gap-1 text-rose-500 shrink-0"><Heart size={12}/> {post.likes}</span>
-                  </div>
+          <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
+            <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100">
+              <h2 className="text-[15px] sm:text-lg font-bold flex items-center gap-2 text-primary"><BookMarked size={18} /> {libForm.id ? 'កែប្រែឯកសារបណ្ណាល័យ' : 'បង្ហោះឯកសារបណ្ណាល័យថ្មី'}</h2>
+              {libForm.id && <button className="text-slate-400 hover:text-danger bg-slate-100 hover:bg-red-50 p-1.5 rounded-full transition-colors" onClick={() => setLibForm({ id: '', title: '', description: '', cover_url: '', file_url: '' })}><X size={16}/></button>}
+            </div>
+            
+            <div className="flex flex-col gap-5 w-full">
+              <label className="block w-full">
+                <span className="text-[13px] font-bold text-slate-700 mb-2 block">ចំណងជើងសៀវភៅ / ឯកសារ</span>
+                <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="..." value={libForm.title} onChange={e => setLibForm({...libForm, title: e.target.value})} />
+              </label>
+              
+              <div className="block w-full">
+                <span className="text-[13px] font-bold text-slate-700 mb-2 flex items-center gap-1.5"><LinkIcon size={14}/> តំណភ្ជាប់ឯកសារ ឬ Upload PDF</span>
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <input className="flex-1 bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="https://..." value={libForm.file_url} onChange={e => setLibForm({...libForm, file_url: e.target.value})} />
+                  <label className="sm:w-auto w-full flex items-center justify-center px-6 py-3 bg-blue-50 text-blue-600 font-bold text-sm rounded-xl cursor-pointer transition-colors hover:bg-blue-100 border border-blue-200">
+                    <Upload size={16} className="mr-2" /> Upload PDF
+                    <input type="file" accept=".pdf,application/pdf" className="hidden" onChange={handlePdfUpload} disabled={savingLib} />
+                  </label>
                 </div>
               </div>
-              <div className="flex gap-2 shrink-0">
-                <button className="p-2.5 text-blue-600 bg-blue-100/50 hover:bg-blue-100 rounded-lg active:scale-95 transition-transform" onClick={() => editPost(post)}><Pencil size={14}/></button>
-                <button className="p-2.5 text-rose-600 bg-rose-100/50 hover:bg-rose-100 rounded-lg active:scale-95 transition-transform" onClick={() => deletePost(post.id)}><Trash2 size={14}/></button>
+              
+              <label className="block w-full">
+                <span className="text-[13px] font-bold text-slate-700 mb-2 flex items-center gap-1.5"><ImageIcon size={14}/> តំណភ្ជាប់រូបគម្រប</span>
+                <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="https://..." value={libForm.cover_url} onChange={e => setLibForm({...libForm, cover_url: e.target.value})} />
+              </label>
+              <label className="block w-full">
+                <span className="text-[13px] font-bold text-slate-700 mb-2 block">ការពណ៌នាអត្ថន័យសង្ខេប</span>
+                <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[120px] resize-none text-sm leading-relaxed outline-none focus:border-primary transition-colors" placeholder="..." value={libForm.description} onChange={e => setLibForm({...libForm, description: e.target.value})}></textarea>
+              </label>
+              
+              <button className="w-full bg-[#3498db] hover:bg-[#2980b9] text-white py-3.5 rounded-xl shadow-md text-[14px] font-bold flex items-center justify-center gap-2 mt-2" disabled={savingLib || !libForm.title.trim() || !libForm.file_url.trim()} onClick={saveLibItem}>
+                {savingLib ? 'កំពុងរក្សាទុក...' : <><Save size={18} /> រក្សាទុកឯកសារ</>}
+              </button>
+            </div>
+
+            <div className="mt-8 border-t border-slate-100 pt-6">
+              <h3 className="font-bold text-slate-800 mb-4">បញ្ជីឯកសារបណ្ណាល័យ</h3>
+              <div className="flex flex-col gap-3">
+                {libItems.map(item => (
+                    <div key={item.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-primary/40 transition-colors">
+                      <div className="flex items-center gap-3 overflow-hidden flex-1">
+                        {item.cover_url ? <img src={item.cover_url} className="w-12 h-12 object-cover rounded-lg shadow-sm border border-slate-200" alt="cover"/> : <div className="w-12 h-12 bg-slate-200 flex items-center justify-center rounded-lg shadow-sm"><BookMarked size={18} className="text-slate-400"/></div>}
+                        <div className="flex flex-col min-w-0 pr-2">
+                          <span className="font-bold text-[13px] sm:text-sm text-slate-700 truncate mb-1">{item.title}</span>
+                          <span className="text-[10px] font-bold text-slate-500 flex gap-3">
+                              <span className="flex items-center gap-1 text-blue-500"><Eye size={12}/> {item.views || 0}</span> 
+                              <span className="flex items-center gap-1 text-emerald-500"><DownloadCloud size={12}/> {item.downloads || 0}</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                          <button className="p-2.5 text-blue-600 bg-blue-100/50 hover:bg-blue-100 rounded-lg active:scale-95 transition-transform" onClick={() => editLibItem(item)}><Pencil size={14}/></button>
+                          <button className="p-2.5 text-rose-600 bg-rose-100/50 hover:bg-rose-100 rounded-lg active:scale-95 transition-transform" onClick={() => deleteLibItem(item.id)}><Trash2 size={14}/></button>
+                      </div>
+                    </div>
+                ))}
+                {libItems.length === 0 && <p className="text-center text-slate-400 py-6 text-[13px] bg-slate-50 rounded-xl border border-dashed border-slate-200">មិនទាន់មានឯកសារទេ</p>}
               </div>
             </div>
-          ))}
-          {posts.length === 0 && <p className="text-center text-slate-400 py-6 text-[13px] bg-slate-50 rounded-xl border border-dashed border-slate-200">មិនទាន់មានព័ត៌មាននៅឡើយទេ</p>}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
-        <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100">
-          <h2 className="text-[15px] sm:text-lg font-bold flex items-center gap-2 text-primary"><BookMarked size={18} /> {libForm.id ? 'កែប្រែឯកសារបណ្ណាល័យ' : 'បង្ហោះឯកសារបណ្ណាល័យថ្មី'}</h2>
-          {libForm.id && <button className="text-slate-400 hover:text-danger bg-slate-100 hover:bg-red-50 p-1.5 rounded-full transition-colors" onClick={() => setLibForm({ id: '', title: '', description: '', cover_url: '', file_url: '' })}><X size={16}/></button>}
-        </div>
-        
-        <div className="flex flex-col gap-5 w-full">
-          <label className="block w-full">
-            <span className="text-[13px] font-bold text-slate-700 mb-2 block">ចំណងជើងសៀវភៅ / ឯកសារ</span>
-            <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="..." value={libForm.title} onChange={e => setLibForm({...libForm, title: e.target.value})} />
-          </label>
-          <label className="block w-full">
-            <span className="text-[13px] font-bold text-slate-700 mb-2 flex items-center gap-1.5"><LinkIcon size={14}/> តំណភ្ជាប់ឯកសារ (PDF/Drive)</span>
-            <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="https://..." value={libForm.file_url} onChange={e => setLibForm({...libForm, file_url: e.target.value})} />
-          </label>
-          <label className="block w-full">
-            <span className="text-[13px] font-bold text-slate-700 mb-2 flex items-center gap-1.5"><ImageIcon size={14}/> តំណភ្ជាប់រូបគម្រប</span>
-            <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-primary transition-colors" placeholder="https://..." value={libForm.cover_url} onChange={e => setLibForm({...libForm, cover_url: e.target.value})} />
-          </label>
-          <label className="block w-full">
-            <span className="text-[13px] font-bold text-slate-700 mb-2 block">ការពណ៌នាអត្ថន័យសង្ខេប</span>
-            <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[120px] resize-none text-sm leading-relaxed outline-none focus:border-primary transition-colors" placeholder="..." value={libForm.description} onChange={e => setLibForm({...libForm, description: e.target.value})}></textarea>
-          </label>
+      {activeTab === 'vault' && (
+        <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border animate-fade-in">
+          <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100">
+            <h2 className="text-[15px] sm:text-lg font-bold flex items-center gap-2 text-purple-600"><Archive size={18} /> {vaultForm.id ? 'Edit Vault Item' : 'Add Vault Item'}</h2>
+            {vaultForm.id && <button className="text-slate-400 hover:text-danger bg-slate-100 hover:bg-red-50 p-1.5 rounded-full transition-colors" onClick={() => setVaultForm({ id: '', title: '', content: '', type: 'document', is_private: false })}><X size={16}/></button>}
+          </div>
           
-          <button className="w-full bg-[#3498db] hover:bg-[#2980b9] text-white py-3.5 rounded-xl shadow-md text-[14px] font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.98] mt-2" disabled={savingLib || !libForm.title.trim() || !libForm.file_url.trim()} onClick={saveLibItem}>
-            <Save size={18} /> រក្សាទុកឯកសារ
-          </button>
-        </div>
-
-        <div className="mt-8 border-t border-slate-100 pt-6">
-           <h3 className="font-bold text-slate-800 mb-4">បញ្ជីឯកសារបណ្ណាល័យ</h3>
-           <div className="flex flex-col gap-3">
-             {libItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-primary/40 transition-colors">
-                   <div className="flex items-center gap-3 overflow-hidden flex-1">
-                     {item.cover_url ? <img src={item.cover_url} className="w-12 h-12 object-cover rounded-lg shadow-sm border border-slate-200" alt="cover"/> : <div className="w-12 h-12 bg-slate-200 flex items-center justify-center rounded-lg shadow-sm"><BookMarked size={18} className="text-slate-400"/></div>}
-                     <div className="flex flex-col min-w-0 pr-2">
-                       <span className="font-bold text-[13px] sm:text-sm text-slate-700 truncate mb-1">{item.title}</span>
-                       <span className="text-[10px] font-bold text-slate-500 flex gap-3">
-                          <span className="flex items-center gap-1 text-blue-500"><Eye size={12}/> {item.views || 0}</span> 
-                          <span className="flex items-center gap-1 text-emerald-500"><DownloadCloud size={12}/> {item.downloads || 0}</span>
-                       </span>
-                     </div>
-                   </div>
-                   <div className="flex gap-2 shrink-0">
-                      <button className="p-2.5 text-blue-600 bg-blue-100/50 hover:bg-blue-100 rounded-lg active:scale-95 transition-transform" onClick={() => editLibItem(item)}><Pencil size={14}/></button>
-                      <button className="p-2.5 text-rose-600 bg-rose-100/50 hover:bg-rose-100 rounded-lg active:scale-95 transition-transform" onClick={() => deleteLibItem(item.id)}><Trash2 size={14}/></button>
-                   </div>
-                </div>
-             ))}
-             {libItems.length === 0 && <p className="text-center text-slate-400 py-6 text-[13px] bg-slate-50 rounded-xl border border-dashed border-slate-200">មិនទាន់មានឯកសារទេ</p>}
-           </div>
-        </div>
-      </div>
-
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border">
-        <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100">
-          <h2 className="text-[15px] sm:text-lg font-bold flex items-center gap-2 text-purple-600"><Archive size={18} /> {vaultForm.id ? 'Edit Vault Item' : 'Add Vault Item'}</h2>
-          {vaultForm.id && <button className="text-slate-400 hover:text-danger bg-slate-100 hover:bg-red-50 p-1.5 rounded-full transition-colors" onClick={() => setVaultForm({ id: '', title: '', content: '', type: 'document', is_private: false })}><X size={16}/></button>}
-        </div>
-        
-        <div className="flex flex-col gap-5 w-full">
-          <div className="flex gap-3 w-full">
-            <label className="block flex-1">
-              <span className="text-[13px] font-bold text-slate-700 mb-2 block">Title</span>
-              <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-purple-500 transition-colors" placeholder="Title..." value={vaultForm.title} onChange={e => setVaultForm({...vaultForm, title: e.target.value})} />
+          <div className="flex flex-col gap-5 w-full">
+            <div className="flex gap-3 w-full">
+              <label className="block flex-1">
+                <span className="text-[13px] font-bold text-slate-700 mb-2 block">Title</span>
+                <input className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-purple-500 transition-colors" placeholder="Title..." value={vaultForm.title} onChange={e => setVaultForm({...vaultForm, title: e.target.value})} />
+              </label>
+              <label className="block w-1/3">
+                <span className="text-[13px] font-bold text-slate-700 mb-2 block">Type</span>
+                <select className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-purple-500 transition-colors font-bold" value={vaultForm.type} onChange={e => setVaultForm({...vaultForm, type: e.target.value})}>
+                  <option value="document">Document</option>
+                  <option value="password">Password</option>
+                  <option value="link">Link</option>
+                </select>
+              </label>
+            </div>
+            <label className="block w-full">
+              <span className="text-[13px] font-bold text-slate-700 mb-2 block">Content / Link / Details</span>
+              <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[100px] resize-none text-sm leading-relaxed outline-none focus:border-purple-500 transition-colors" placeholder="Content..." value={vaultForm.content} onChange={e => setVaultForm({...vaultForm, content: e.target.value})}></textarea>
             </label>
-            <label className="block w-1/3">
-              <span className="text-[13px] font-bold text-slate-700 mb-2 block">Type</span>
-              <select className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:border-purple-500 transition-colors font-bold" value={vaultForm.type} onChange={e => setVaultForm({...vaultForm, type: e.target.value})}>
-                <option value="document">Document</option>
-                <option value="password">Password</option>
-                <option value="link">Link</option>
-              </select>
+            <label className="flex items-center gap-2 font-bold text-sm cursor-pointer w-fit">
+              <input type="checkbox" checked={vaultForm.is_private} onChange={e => setVaultForm({...vaultForm, is_private: e.target.checked})} className="w-4 h-4 accent-purple-600" />
+              Private (Hidden from public)
             </label>
+            <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl shadow-md text-[14px] font-bold flex items-center justify-center gap-2 mt-2" disabled={savingVault || !vaultForm.title.trim() || !vaultForm.content.trim()} onClick={saveVaultItem}>
+              <Save size={18} /> Save Vault Item
+            </button>
           </div>
-          <label className="block w-full">
-            <span className="text-[13px] font-bold text-slate-700 mb-2 block">Content / Link / Details</span>
-            <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[100px] resize-none text-sm leading-relaxed outline-none focus:border-purple-500 transition-colors" placeholder="Content..." value={vaultForm.content} onChange={e => setVaultForm({...vaultForm, content: e.target.value})}></textarea>
-          </label>
-          <label className="flex items-center gap-2 font-bold text-sm cursor-pointer w-fit">
-            <input type="checkbox" checked={vaultForm.is_private} onChange={e => setVaultForm({...vaultForm, is_private: e.target.checked})} className="w-4 h-4 accent-purple-600" />
-            Private (Hidden from public)
-          </label>
-          <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl shadow-md text-[14px] font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.98] mt-2" disabled={savingVault || !vaultForm.title.trim() || !vaultForm.content.trim()} onClick={saveVaultItem}>
-            <Save size={18} /> Save Vault Item
-          </button>
-        </div>
 
-        <div className="mt-8 border-t border-slate-100 pt-6">
-          <h3 className="font-bold text-slate-800 mb-4">Vault Items</h3>
-          <div className="flex flex-col gap-3">
-            {vaultItems.map(item => (
-              <div key={item.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-purple-500/40 transition-colors">
-                <div className="flex items-center gap-3 overflow-hidden flex-1">
-                  <div className="w-10 h-10 bg-purple-100 text-purple-600 flex items-center justify-center rounded-lg shadow-sm shrink-0">
-                    {item.type === 'link' ? <LinkIcon size={16}/> : item.type === 'password' ? <Lock size={16}/> : <File size={16}/>}
+          <div className="mt-8 border-t border-slate-100 pt-6">
+            <h3 className="font-bold text-slate-800 mb-4">Vault Items</h3>
+            <div className="flex flex-col gap-3">
+              {vaultItems.map(item => (
+                <div key={item.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-purple-500/40 transition-colors">
+                  <div className="flex items-center gap-3 overflow-hidden flex-1">
+                    <div className="w-10 h-10 bg-purple-100 text-purple-600 flex items-center justify-center rounded-lg shadow-sm shrink-0">
+                      {item.type === 'link' ? <LinkIcon size={16}/> : item.type === 'password' ? <Lock size={16}/> : <File size={16}/>}
+                    </div>
+                    <div className="flex flex-col min-w-0 pr-2">
+                      <span className="font-bold text-[13px] sm:text-sm text-slate-700 truncate">{item.title}</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">{item.type} {item.is_private ? <Lock size={10} className="text-rose-500"/> : <Globe size={10} className="text-emerald-500"/>}</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col min-w-0 pr-2">
-                    <span className="font-bold text-[13px] sm:text-sm text-slate-700 truncate">{item.title}</span>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">{item.type} {item.is_private ? <Lock size={10} className="text-rose-500"/> : <Globe size={10} className="text-emerald-500"/>}</span>
+                  <div className="flex gap-2 shrink-0">
+                    <button className="p-2.5 text-blue-600 bg-blue-100/50 hover:bg-blue-100 rounded-lg active:scale-95 transition-transform" onClick={() => editVaultItem(item)}><Pencil size={14}/></button>
+                    <button className="p-2.5 text-rose-600 bg-rose-100/50 hover:bg-rose-100 rounded-lg active:scale-95 transition-transform" onClick={() => deleteVaultItem(item.id)}><Trash2 size={14}/></button>
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <button className="p-2.5 text-blue-600 bg-blue-100/50 hover:bg-blue-100 rounded-lg active:scale-95 transition-transform" onClick={() => editVaultItem(item)}><Pencil size={14}/></button>
-                  <button className="p-2.5 text-rose-600 bg-rose-100/50 hover:bg-rose-100 rounded-lg active:scale-95 transition-transform" onClick={() => deleteVaultItem(item.id)}><Trash2 size={14}/></button>
-                </div>
-              </div>
-            ))}
-            {vaultItems.length === 0 && <p className="text-center text-slate-400 py-6 text-[13px]">No items</p>}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border mb-[80px]">
-        <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100">
-          <h2 className="text-[15px] sm:text-lg font-bold flex items-center gap-2 text-indigo-600"><BrainCircuit size={18} /> {flashcardForm.id ? 'Edit Flashcard' : 'Add Flashcard'}</h2>
-          {flashcardForm.id && <button className="text-slate-400 hover:text-danger bg-slate-100 hover:bg-red-50 p-1.5 rounded-full transition-colors" onClick={() => setFlashcardForm({ id: '', question: '', answer: '', color: '#3b82f6', is_private: false })}><X size={16}/></button>}
-        </div>
-        
-        <div className="flex flex-col gap-5 w-full">
-          <label className="block w-full">
-            <span className="text-[13px] font-bold text-slate-700 mb-2 block">Question</span>
-            <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[80px] resize-none text-sm leading-relaxed outline-none focus:border-indigo-500 transition-colors" placeholder="Question..." value={flashcardForm.question} onChange={e => setFlashcardForm({...flashcardForm, question: e.target.value})}></textarea>
-          </label>
-          <label className="block w-full">
-            <span className="text-[13px] font-bold text-slate-700 mb-2 block">Answer</span>
-            <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[80px] resize-none text-sm leading-relaxed outline-none focus:border-indigo-500 transition-colors" placeholder="Answer..." value={flashcardForm.answer} onChange={e => setFlashcardForm({...flashcardForm, answer: e.target.value})}></textarea>
-          </label>
-          <div>
-            <span className="text-[13px] font-bold text-slate-700 mb-2 block">Color</span>
-            <div className="flex gap-2 flex-wrap mb-2">
-              {PRESET_COLORS.map(c => (
-                <button key={c} onClick={() => setFlashcardForm({...flashcardForm, color: c})} className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white" style={{ background: c, outline: flashcardForm.color === c ? `2px solid ${c}` : 'none' }}>
-                  {flashcardForm.color === c && <Check size={14} color="white"/>}
-                </button>
               ))}
+              {vaultItems.length === 0 && <p className="text-center text-slate-400 py-6 text-[13px]">No items</p>}
             </div>
           </div>
-          <label className="flex items-center gap-2 font-bold text-sm cursor-pointer w-fit">
-            <input type="checkbox" checked={flashcardForm.is_private} onChange={e => setFlashcardForm({...flashcardForm, is_private: e.target.checked})} className="w-4 h-4 accent-indigo-600" />
-            Private (Hidden from public)
-          </label>
-          <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl shadow-md text-[14px] font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.98] mt-2" disabled={savingFlashcard || !flashcardForm.question.trim() || !flashcardForm.answer.trim()} onClick={saveFlashcard}>
-            <Save size={18} /> Save Flashcard
-          </button>
         </div>
+      )}
 
-        <div className="mt-8 border-t border-slate-100 pt-6">
-          <h3 className="font-bold text-slate-800 mb-4">Flashcards Deck</h3>
-          <div className="flex flex-col gap-3">
-            {flashcards.map(card => (
-              <div key={card.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-indigo-500/40 transition-colors">
-                <div className="flex items-start gap-3 overflow-hidden flex-1">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm" style={{ background: card.color }}>
-                    <BrainCircuit size={16}/>
-                  </div>
-                  <div className="flex flex-col min-w-0 pr-2">
-                    <span className="font-bold text-[13px] sm:text-sm text-slate-700 truncate">Q: {card.question}</span>
-                    <span className="text-[12px] text-slate-500 truncate mt-0.5">A: {card.answer}</span>
-                    <span className="text-[10px] mt-1">{card.is_private ? <span className="text-rose-500 flex items-center gap-1"><Lock size={10}/> Private</span> : <span className="text-emerald-500 flex items-center gap-1"><Globe size={10}/> Public</span>}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2 shrink-0 self-center">
-                  <button className="p-2.5 text-blue-600 bg-blue-100/50 hover:bg-blue-100 rounded-lg active:scale-95 transition-transform" onClick={() => editFlashcard(card)}><Pencil size={14}/></button>
-                  <button className="p-2.5 text-rose-600 bg-rose-100/50 hover:bg-rose-100 rounded-lg active:scale-95 transition-transform" onClick={() => deleteFlashcard(card.id)}><Trash2 size={14}/></button>
-                </div>
+      {activeTab === 'flashcards' && (
+        <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden box-border animate-fade-in">
+          <div className="flex justify-between items-center mb-5 pb-4 border-b border-slate-100">
+            <h2 className="text-[15px] sm:text-lg font-bold flex items-center gap-2 text-indigo-600"><BrainCircuit size={18} /> {flashcardForm.id ? 'Edit Flashcard' : 'Add Flashcard'}</h2>
+            {flashcardForm.id && <button className="text-slate-400 hover:text-danger bg-slate-100 hover:bg-red-50 p-1.5 rounded-full transition-colors" onClick={() => setFlashcardForm({ id: '', question: '', answer: '', color: '#3b82f6', is_private: false })}><X size={16}/></button>}
+          </div>
+          
+          <div className="flex flex-col gap-5 w-full">
+            <label className="block w-full">
+              <span className="text-[13px] font-bold text-slate-700 mb-2 block">Question</span>
+              <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[80px] resize-none text-sm leading-relaxed outline-none focus:border-indigo-500 transition-colors" placeholder="Question..." value={flashcardForm.question} onChange={e => setFlashcardForm({...flashcardForm, question: e.target.value})}></textarea>
+            </label>
+            <label className="block w-full">
+              <span className="text-[13px] font-bold text-slate-700 mb-2 block">Answer</span>
+              <textarea className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl min-h-[80px] resize-none text-sm leading-relaxed outline-none focus:border-indigo-500 transition-colors" placeholder="Answer..." value={flashcardForm.answer} onChange={e => setFlashcardForm({...flashcardForm, answer: e.target.value})}></textarea>
+            </label>
+            <div>
+              <span className="text-[13px] font-bold text-slate-700 mb-2 block">Color</span>
+              <div className="flex gap-2 flex-wrap mb-2">
+                {PRESET_COLORS.map(c => (
+                  <button key={c} onClick={() => setFlashcardForm({...flashcardForm, color: c})} className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white" style={{ background: c, outline: flashcardForm.color === c ? `2px solid ${c}` : 'none' }}>
+                    {flashcardForm.color === c && <Check size={14} color="white"/>}
+                  </button>
+                ))}
               </div>
-            ))}
-            {flashcards.length === 0 && <p className="text-center text-slate-400 py-6 text-[13px]">No flashcards</p>}
+            </div>
+            <label className="flex items-center gap-2 font-bold text-sm cursor-pointer w-fit">
+              <input type="checkbox" checked={flashcardForm.is_private} onChange={e => setFlashcardForm({...flashcardForm, is_private: e.target.checked})} className="w-4 h-4 accent-indigo-600" />
+              Private (Hidden from public)
+            </label>
+            <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl shadow-md text-[14px] font-bold flex items-center justify-center gap-2 mt-2" disabled={savingFlashcard || !flashcardForm.question.trim() || !flashcardForm.answer.trim()} onClick={saveFlashcard}>
+              <Save size={18} /> Save Flashcard
+            </button>
+          </div>
+
+          <div className="mt-8 border-t border-slate-100 pt-6">
+            <h3 className="font-bold text-slate-800 mb-4">Flashcards Deck</h3>
+            <div className="flex flex-col gap-3">
+              {flashcards.map(card => (
+                <div key={card.id} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-indigo-500/40 transition-colors">
+                  <div className="flex items-start gap-3 overflow-hidden flex-1">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm" style={{ background: card.color }}>
+                      <BrainCircuit size={16}/>
+                    </div>
+                    <div className="flex flex-col min-w-0 pr-2">
+                      <span className="font-bold text-[13px] sm:text-sm text-slate-700 truncate">Q: {card.question}</span>
+                      <span className="text-[12px] text-slate-500 truncate mt-0.5">A: {card.answer}</span>
+                      <span className="text-[10px] mt-1">{card.is_private ? <span className="text-rose-500 flex items-center gap-1"><Lock size={10}/> Private</span> : <span className="text-emerald-500 flex items-center gap-1"><Globe size={10}/> Public</span>}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0 self-center">
+                    <button className="p-2.5 text-blue-600 bg-blue-100/50 hover:bg-blue-100 rounded-lg active:scale-95 transition-transform" onClick={() => editFlashcard(card)}><Pencil size={14}/></button>
+                    <button className="p-2.5 text-rose-600 bg-rose-100/50 hover:bg-rose-100 rounded-lg active:scale-95 transition-transform" onClick={() => deleteFlashcard(card.id)}><Trash2 size={14}/></button>
+                  </div>
+                </div>
+              ))}
+              {flashcards.length === 0 && <p className="text-center text-slate-400 py-6 text-[13px]">No flashcards</p>}
+            </div>
           </div>
         </div>
-      </div>
-      
+      )}
+
     </div>
   );
 }
