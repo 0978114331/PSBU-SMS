@@ -86,11 +86,12 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
        <BottomNavItem icon={Home} label="ផ្ទះ" active={activeTab === 'home'} onClick={() => { onTabChange('home'); if(mobileOpen) onMobileToggle(); }} />
        <BottomNavItem icon={UserCheck} label="វត្តមាន" active={activeTab === 'attendance'} onClick={() => { onTabChange('attendance'); if(mobileOpen) onMobileToggle(); }} />
        
-       <div className="flex-1 flex justify-center relative -top-6">
-         <button onClick={onMobileToggle} className={`flex items-center justify-center w-[60px] h-[60px] rounded-full text-white shadow-xl transition-transform active:scale-95 border-[4px] border-light ${mobileOpen || isMenuTabActive ? 'bg-secondary shadow-secondary/40' : 'bg-primary shadow-primary/40'}`}>
-           <Menu size={28} />
-         </button>
-       </div>
+       <button onClick={onMobileToggle} className="flex-1 flex flex-col items-center justify-center py-1 gap-[3px] active:scale-95 transition-transform bg-transparent border-none outline-none">
+         <div className={`relative flex items-center justify-center w-[38px] h-[38px] rounded-full transition-all duration-300 shadow-md ${mobileOpen || isMenuTabActive ? 'bg-[#3b31c4] text-white shadow-[#3b31c4]/40' : 'bg-[#2c3e50] text-white shadow-[#2c3e50]/20'}`}>
+           <Menu size={20} strokeWidth={2.5} />
+         </div>
+         <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${mobileOpen || isMenuTabActive ? 'text-[#3b31c4]' : 'text-[#2c3e50]'}`}>ម៉ឺនុយ</span>
+       </button>
 
        <BottomNavItem icon={FileText} label="សុំច្បាប់" active={activeTab === 'leaves'} onClick={() => { onTabChange('leaves'); if(mobileOpen) onMobileToggle(); }} />
        <BottomNavItem icon={Info} label="អំពីយើង" active={activeTab === 'about'} onClick={() => { onTabChange('about'); if(mobileOpen) onMobileToggle(); }} />
@@ -106,7 +107,7 @@ export function Navbar({ activeTab, isAdmin, userLabel, role, mobileOpen, logoUr
                 <MoreMenuButton key={item.id} icon={item.icon} label={item.label} active={activeTab === item.id} onClick={() => { onTabChange(item.id); onMobileToggle(); }} />
              ))}
              
-             {/* New Styled Buttons for Library and Support */}
+             {/* Styled Buttons for Library and Support */}
              <button 
                 className={`group flex flex-col items-center justify-center gap-1.5 rounded-xl border py-2.5 px-1 transition-all duration-300 ease-out hover:-translate-y-1 active:scale-90 ${activeTab === 'library' ? 'bg-blue-600/30 border-blue-400 text-blue-200 shadow-[0_0_15px_rgba(59,130,246,0.4)]' : 'bg-slate-800/40 border-slate-700/60 hover:border-blue-400 hover:bg-blue-900/30 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]'}`} 
                 onClick={() => { onTabChange('library'); onMobileToggle(); }}
@@ -150,8 +151,8 @@ function NavButton({ item, active, onClick }: { item: NavItem; active: boolean; 
 
 function BottomNavItem({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex-1 flex flex-col items-center justify-center py-2 gap-1 active:scale-95 transition-transform bg-transparent border-none outline-none">
-      <div className={`relative p-1.5 rounded-full transition-colors duration-300 ${active ? 'bg-primary/10 text-primary' : 'text-slate-400'}`}>
+    <button onClick={onClick} className="flex-1 flex flex-col items-center justify-center py-1 gap-[3px] active:scale-95 transition-transform bg-transparent border-none outline-none">
+      <div className={`relative flex items-center justify-center w-[34px] h-[34px] rounded-full transition-colors duration-300 ${active ? 'bg-primary/15 text-primary' : 'text-slate-400'}`}>
          <Icon size={22} strokeWidth={active ? 2.5 : 2} />
       </div>
       <span className={`text-[10px] font-bold tracking-wide transition-colors duration-300 ${active ? 'text-primary' : 'text-slate-400'}`}>{label}</span>
