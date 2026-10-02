@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 
 export function FestivalPopup() {
-  const [phase, setPhase] = useState<'hidden' | 'festival' | 'closing'>('hidden');
+  // កំណត់ឱ្យវាឆែកភ្លាមៗមុនពេល Render ដើម្បីកុំឱ្យលោតផ្ទាំង App មកជាន់គ្នា
+  const [phase, setPhase] = useState<'hidden' | 'festival' | 'closing'>(() => {
+    const hasShown = sessionStorage.getItem('appSplashScreenShown');
+    return hasShown ? 'hidden' : 'festival';
+  });
 
   useEffect(() => {
-    const hasShown = sessionStorage.getItem('appSplashScreenShown');
-    if (!hasShown) {
-      setPhase('festival');
-
+    if (phase === 'festival') {
       const autoCloseTimer = setTimeout(() => {
         closeSequence();
       }, 4000);
@@ -17,7 +18,7 @@ export function FestivalPopup() {
         clearTimeout(autoCloseTimer);
       };
     }
-  }, []);
+  }, [phase]);
 
   const closeSequence = () => {
     setPhase('closing');
