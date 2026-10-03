@@ -154,7 +154,13 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
   allowManual: false, allowStudentEdit: false, allowLeaveManualName: false, allowCardCreation: false,
   devPhoto: '', devName: '', devTitle: '', devDescription: '', contactEmail: '', contactGithub: '', contactFacebook: '', contactPhone: '', contactPortfolio: '',
   allowUniversalQR: true, blockedQRStudents: [] as string[],
-  allowManualScanInput: false
+  allowManualScanInput: false,
+  festivalEnable: true,
+  festivalTopImg: '',
+  festivalCenterImg: '',
+  festivalSub: '',
+  festivalTitle: '',
+  festivalColor: '#d4a841'
 });
 
   const [tempLogo, setTempLogo] = useState('');
@@ -403,25 +409,65 @@ function Dashboard({ role }: { role: 'admin' | 'user' }) {
               </div>
 
               <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">៣. ការអនុញ្ញាតមុខងារផ្សេងៗ (Permissions)</h3>
-              <div className="flex flex-wrap items-center justify-between gap-y-4 pt-2">
-                <div className="flex flex-col gap-3 w-full md:w-auto">
-                   <label className="flex items-center gap-2 text-[13px] sm:text-sm font-bold text-slate-700 cursor-pointer bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-                     <input type="checkbox" className="w-5 h-5 accent-primary" checked={adminInfo.allowUniversalQR !== false} onChange={e => setAdminInfo({...adminInfo, allowUniversalQR: e.target.checked})} /> 
-                     បើកដំណើរការមុខងារស្កែន QR រួម (Universal QR)
+              <div className="flex flex-col gap-3 w-full mb-8 pt-2">
+                 <label className="flex items-center gap-2 text-[13px] sm:text-sm font-bold text-slate-700 cursor-pointer bg-slate-50 p-2.5 rounded-lg border border-slate-200 w-max">
+                   <input type="checkbox" className="w-5 h-5 accent-primary" checked={adminInfo.allowUniversalQR !== false} onChange={e => setAdminInfo({...adminInfo, allowUniversalQR: e.target.checked})} /> 
+                   បើកដំណើរការមុខងារស្កែន QR រួម (Universal QR)
+                 </label>
+                 
+                 <div className="flex flex-wrap gap-x-5 gap-y-3 mt-2">
+                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} /> ចុះវត្តមានដោយដៃ</label>
+                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowStudentEdit || false} onChange={e => setAdminInfo({...adminInfo, allowStudentEdit: e.target.checked})} /> កែប្រែបញ្ជីសិស្ស</label>
+                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowLeaveManualName || false} onChange={e => setAdminInfo({...adminInfo, allowLeaveManualName: e.target.checked})} /> បញ្ចូលការសុំច្បាប់</label>
+                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} /> បង្កើតកាតសិស្ស</label>
+                   <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition">
+                      <input type="checkbox" className="w-4 h-4 text-primary rounded border-slate-300 focus:ring-primary" checked={adminInfo.allowManualScanInput} onChange={e => setAdminInfo({...adminInfo, allowManualScanInput: e.target.checked})} />
+                      <span className="text-sm font-medium text-slate-700">បិទ/បើក បញ្ចូលID QR</span>
                    </label>
-                   
-                   <div className="flex flex-wrap gap-x-5 gap-y-3 mt-2">
-                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowManual || false} onChange={e => setAdminInfo({...adminInfo, allowManual: e.target.checked})} /> ចុះវត្តមានដោយដៃ</label>
-                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowStudentEdit || false} onChange={e => setAdminInfo({...adminInfo, allowStudentEdit: e.target.checked})} /> កែប្រែបញ្ជីសិស្ស</label>
-                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowLeaveManualName || false} onChange={e => setAdminInfo({...adminInfo, allowLeaveManualName: e.target.checked})} /> បញ្ចូលការសុំច្បាប់</label>
-                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-primary" checked={adminInfo.allowCardCreation || false} onChange={e => setAdminInfo({...adminInfo, allowCardCreation: e.target.checked})} /> បង្កើតកាតសិស្ស</label>
-                     <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-200 transition">
-                        <input type="checkbox" className="w-4 h-4 text-primary rounded border-slate-300 focus:ring-primary" checked={adminInfo.allowManualScanInput} onChange={e => setAdminInfo({...adminInfo, allowManualScanInput: e.target.checked})} />
-                        <span className="text-sm font-medium text-slate-700">បិទ/បើក បញ្ចូលID QR</span>
-                     </label>
-                   </div>
+                 </div>
+              </div>
+
+              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">៤. កំណត់ផ្ទាំងអបអរបុណ្យ (Popup)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <label className="flex items-center gap-2 text-[13px] sm:text-sm font-bold text-slate-700 cursor-pointer md:col-span-2">
+                  <input type="checkbox" className="w-5 h-5 accent-primary" checked={adminInfo.festivalEnable !== false} onChange={e => setAdminInfo({...adminInfo, festivalEnable: e.target.checked})} />
+                  បើកបង្ហាញផ្ទាំងអបអរពេលចូលកម្មវិធី
+                </label>
+
+                <div className="flex flex-col gap-2 w-full md:col-span-2">
+                  <span className="text-sm font-bold text-slate-700">ចំណងជើងរង និង ចំណងជើងធំ៖</span>
+                  <div className="flex gap-2">
+                    <input className="field bg-white flex-1" placeholder="ចំណងជើងរង" value={adminInfo.festivalSub || ''} onChange={e => setAdminInfo({...adminInfo, festivalSub: e.target.value})} />
+                    <input className="field bg-white flex-1" placeholder="ចំណងជើងធំ" value={adminInfo.festivalTitle || ''} onChange={e => setAdminInfo({...adminInfo, festivalTitle: e.target.value})} />
+                  </div>
                 </div>
-                <button className="btn btn-success w-full md:w-auto py-3 px-8 text-base font-bold shadow-md shadow-success/20 mt-4 md:mt-0" disabled={savingConfig} onClick={saveAdminConfig}>
+
+                <div className="flex flex-col gap-2 w-full">
+                  <span className="text-sm font-bold text-slate-700">រូបភាពខាងលើ (Header)៖</span>
+                  <div className="flex gap-2">
+                    <input className="field bg-white flex-1" placeholder="Link រូបភាព" value={adminInfo.festivalTopImg || ''} onChange={e => setAdminInfo({...adminInfo, festivalTopImg: e.target.value})} />
+                    <label className="btn btn-primary cursor-pointer px-3 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAdminInfo({...adminInfo, festivalTopImg: ev.target?.result as string}); r.readAsDataURL(f); } }} /></label>
+                  </div>
+                  {adminInfo.festivalTopImg && <img src={adminInfo.festivalTopImg} className="h-24 w-full object-cover rounded-lg border border-slate-200 shadow-sm" alt="Top" />}
+                </div>
+
+                <div className="flex flex-col gap-2 w-full">
+                  <span className="text-sm font-bold text-slate-700">រូបភាពកណ្តាល (Logo)៖</span>
+                  <div className="flex gap-2">
+                    <input className="field bg-white flex-1" placeholder="Link រូបភាព" value={adminInfo.festivalCenterImg || ''} onChange={e => setAdminInfo({...adminInfo, festivalCenterImg: e.target.value})} />
+                    <label className="btn btn-primary cursor-pointer px-3 shrink-0"><Upload size={16} /><input type="file" className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if(f) { const r = new FileReader(); r.onload=(ev)=>setAdminInfo({...adminInfo, festivalCenterImg: ev.target?.result as string}); r.readAsDataURL(f); } }} /></label>
+                  </div>
+                  {adminInfo.festivalCenterImg && <img src={adminInfo.festivalCenterImg} className="h-24 w-24 object-cover rounded-full border border-slate-200 shadow-sm mx-auto" alt="Center" />}
+                </div>
+
+                <div className="flex gap-2 w-full items-center md:col-span-2 mt-2">
+                  <span className="text-sm font-bold text-slate-700 shrink-0">ពណ៌អក្សរ៖</span>
+                  <input type="color" className="h-10 w-full rounded-lg cursor-pointer bg-white" value={adminInfo.festivalColor || '#d4a841'} onChange={e => setAdminInfo({...adminInfo, festivalColor: e.target.value})} />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button className="btn btn-success w-full md:w-auto py-3 px-8 text-base font-bold shadow-md shadow-success/20" disabled={savingConfig} onClick={saveAdminConfig}>
                    <Save size={18} /> {savingConfig ? 'កំពុងរក្សាទុក...' : 'រក្សាទុកការកំណត់'}
                 </button>
               </div>
